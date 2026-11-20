@@ -1,0 +1,501 @@
+{
+  "application": "UVelocity",
+  "version": "1.0.0",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 108,
+      "sha256": "5b36f8fc3f980fa927a8884f8fa6480118fe49642d493edd66598df800df6648"
+    },
+    {
+      "path": ".env.example",
+      "bytes": 477,
+      "sha256": "f7bf7cd5989ad58fb17cb645ce52680dd874351141cccb79c322f64363829196"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 88,
+      "sha256": "22125ac2f8ee1d148b31b91c53b48c18654473c7f4d873c540c8882de8913283"
+    },
+    {
+      "path": "Dockerfile",
+      "bytes": 877,
+      "sha256": "5993a77e5c017a80bfeae52807bbdc21d4fe7dde9bfb474d3aa83270897c7176"
+    },
+    {
+      "path": "README.md",
+      "bytes": 15487,
+      "sha256": "143fe86aeb96f104d5ac1b5866a1efe9490104c3dd1533ee21a35521db93db69"
+    },
+    {
+      "path": "client/index.html",
+      "bytes": 408,
+      "sha256": "b8183cc9a31a3cf9d819b6dc224e179f0da3ff29e8d7e42fbd7b6c8dabb43ba4"
+    },
+    {
+      "path": "client/src/Admin.tsx",
+      "bytes": 27408,
+      "sha256": "9a2834a185a550d05c7ef99b9358d10ea71400c02e5d11fc75d15ca9311ef054"
+    },
+    {
+      "path": "client/src/App.tsx",
+      "bytes": 25797,
+      "sha256": "5522770452b74b32b0c4e5b57325d112e242cb3a3f852e9c874e2b82121c3d9d"
+    },
+    {
+      "path": "client/src/Auth.tsx",
+      "bytes": 4142,
+      "sha256": "095710ca47f417a1793f718d7409d07c0a73ece813db5e618b17b910455e8f79"
+    },
+    {
+      "path": "client/src/GameFrame.tsx",
+      "bytes": 1736,
+      "sha256": "941ed110eedba64caa04a94976a8c5bd4b3c8d4bae0115234fb6958a5caac801"
+    },
+    {
+      "path": "client/src/Profile.tsx",
+      "bytes": 3751,
+      "sha256": "397dba35b2febd69772afd807527e1d7b5ce434a1fe14e840973650ba95674ff"
+    },
+    {
+      "path": "client/src/RacePanel.tsx",
+      "bytes": 8184,
+      "sha256": "51b4193cda6fefe9bb79080e38ad1ec3786f8145d0e2494477eb3dfa5954c6b5"
+    },
+    {
+      "path": "client/src/api.ts",
+      "bytes": 3233,
+      "sha256": "885a31ccfbe2095393f2d3bb8f4401950f76dc670ce3106fd98d90e14423ce4c"
+    },
+    {
+      "path": "client/src/game.ts",
+      "bytes": 1206,
+      "sha256": "61c72da3968725f0bdbe2fddd395605e256b045ccfb9d7bb37aa560a7371f098"
+    },
+    {
+      "path": "client/src/icons.tsx",
+      "bytes": 1728,
+      "sha256": "798e2d4aa028ffb03884c3c7009ab4a4dcfceb721c733cca3412a2e23a06caf7"
+    },
+    {
+      "path": "client/src/main.tsx",
+      "bytes": 134,
+      "sha256": "fbbfdd8b0753d8d3f0aa9d993fd9520d387305590999eb3afafe9d10227a8d81"
+    },
+    {
+      "path": "client/src/network.ts",
+      "bytes": 17581,
+      "sha256": "c8f92ae5d525fb461f2b89633f06d1b0e3ff0384e193fc114ea19b3a0b0ee96c"
+    },
+    {
+      "path": "client/src/styles.css",
+      "bytes": 41166,
+      "sha256": "e6499db7cfdcd8adc39985d76ea2543d4824b727f956063cd68843efde329b7a"
+    },
+    {
+      "path": "compose.https.yaml",
+      "bytes": 506,
+      "sha256": "915416a490caaa018f26a8a2f1287f18b47cb8bcd844e4f786cb6258adddf4a7"
+    },
+    {
+      "path": "compose.yaml",
+      "bytes": 1001,
+      "sha256": "e7633518cb939dcf17434a3836146cc5a6d750dd9580661668d9607d0ff985d2"
+    },
+    {
+      "path": "database/migrations/001_initial.sql",
+      "bytes": 6807,
+      "sha256": "a088bc3f936ab10735dc8fd4d96a118386e02b563f83e16a6897112b2294f854"
+    },
+    {
+      "path": "database/migrations/002_catalog_seed.sql",
+      "bytes": 2234,
+      "sha256": "4ccf55de431119e9b20af4759d2821408cdaeee3425947c2f466c9e0e9665b01"
+    },
+    {
+      "path": "database/migrations/003_session_controls.sql",
+      "bytes": 467,
+      "sha256": "acecff832c0a87bf66a669a5c9131f4783d32364cc40d9242f7676f3f34bc201"
+    },
+    {
+      "path": "database/migrations/004_profile_avatars.sql",
+      "bytes": 164,
+      "sha256": "7da414f6cd9cfb3a4c5e805a2acfa4d1ebf9fff3960c9605f24a474e9bb0534e"
+    },
+    {
+      "path": "database/migrations/005_rim_color.sql",
+      "bytes": 120,
+      "sha256": "5a6ed1abc816137f2ada658a8a73897b1b101db31e1cb0a64e4e153824163892"
+    },
+    {
+      "path": "deployment/Caddyfile",
+      "bytes": 63,
+      "sha256": "8ac912337c81faf9634a702231deab421f01f00786dc8b100545e05dd4cc8980"
+    },
+    {
+      "path": "docs/API.md",
+      "bytes": 16647,
+      "sha256": "401a8f84f602eb266564d75fb69560464b3dde4d1b3b85dd6bd146c3819d49e6"
+    },
+    {
+      "path": "docs/GRAPHICS.md",
+      "bytes": 10025,
+      "sha256": "3c57d688fa1b04c385480ffe40a1204d10e014537a636c924232e1c0778207a6"
+    },
+    {
+      "path": "docs/VERIFICATION.md",
+      "bytes": 8604,
+      "sha256": "a956f53186492e23ccb6a1f9b3c58d7aaf8a8543fa4caae5a860bf882fb7b8b0"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 159212,
+      "sha256": "4dfc41db50898092a536ed8b3e859b8cd6f4d2e6ccb8d22363c99ba1089968cf"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1715,
+      "sha256": "2ceae3cd997c2ed3fd072b0189432ddfe72f3dfc49d360cb77c984912fa97520"
+    },
+    {
+      "path": "public/branding/uika-logo-original.jpg",
+      "bytes": 490616,
+      "sha256": "b3974f303640281e876a71c0c833591df22f0cde4082adf2e69fb4e14b7b189f"
+    },
+    {
+      "path": "public/branding/uvelocity-logo.png",
+      "bytes": 728929,
+      "sha256": "6855b2b971390d5e8aadf15b84a53d2bf79465998367c1abc83c4693b66bf05d"
+    },
+    {
+      "path": "public/credits.html",
+      "bytes": 6667,
+      "sha256": "2d8d2e902a3c46ba577282a0d9e769ca72af927cc5d1c570e33c946ca3e6dc10"
+    },
+    {
+      "path": "public/game/assets/CREDITS.txt",
+      "bytes": 4840,
+      "sha256": "7adca3b8c2cf206017d92607780b798af1e8806ed2299ef8bbef67ab4ecd4658"
+    },
+    {
+      "path": "public/game/assets/biomes.js",
+      "bytes": 43753,
+      "sha256": "a64e963ceb86691632e97d8eff76f389f8ffb6aeec95bde3f5e2205d3eb1e9bf"
+    },
+    {
+      "path": "public/game/assets/car-models.js",
+      "bytes": 22268,
+      "sha256": "3e59b39bcee77e1ceaf7b39cdc880328c5a85b8923dd5ea4f3e73e76ca679526"
+    },
+    {
+      "path": "public/game/assets/cars/apex.glb",
+      "bytes": 1253448,
+      "sha256": "9bec7404e2c0b4ab001244fb12dfd13c70b19f4975c51fc6c4bcf87512795193"
+    },
+    {
+      "path": "public/game/assets/cars/aventador.glb",
+      "bytes": 8652076,
+      "sha256": "def52aa321714ecf0c12afa742da2d5662045b5c7ad746acd282c0b9b599f040"
+    },
+    {
+      "path": "public/game/assets/cars/brz.glb",
+      "bytes": 4783524,
+      "sha256": "3ae526e9cb9f80a225a6044855a561d75296a7e08fff93b9c18ae96ef161f942"
+    },
+    {
+      "path": "public/game/assets/cars/cinder.glb",
+      "bytes": 1294736,
+      "sha256": "9ba7d0daadd78a2d897e4011ae00bd12b83f728d8259101a09160d455f1d535b"
+    },
+    {
+      "path": "public/game/assets/cars/kaze.glb",
+      "bytes": 1381892,
+      "sha256": "696c5512253bf3734e722267e233168f63731cd14cb0b8b245db5a4fb7ede0e9"
+    },
+    {
+      "path": "public/game/assets/cars/skyline.glb",
+      "bytes": 5385104,
+      "sha256": "2325a76a5df70bd456bed9882b1bfab36b16a38b14a6c1d18008be754f3c7669"
+    },
+    {
+      "path": "public/game/assets/cars/veloce.glb",
+      "bytes": 4850896,
+      "sha256": "4317132fb404d7a34a6116f46528645f8bd921b11347032ec754bcbdcc618cf0"
+    },
+    {
+      "path": "public/game/assets/cars/veyron77.glb",
+      "bytes": 3072404,
+      "sha256": "00ae5490572ddb085ba791df725584d5d4629ab72f14e76be267795eec0eb6a7"
+    },
+    {
+      "path": "public/game/assets/city.js",
+      "bytes": 23642,
+      "sha256": "106703bfab1d7426cafc97ccc450553ba1272643229c717850b278d1b35cefed"
+    },
+    {
+      "path": "public/game/assets/imported-cars.js",
+      "bytes": 9350,
+      "sha256": "ec7df17eb59c9c830d2e9d6599c657ce6fa3a1d76cce0015ad786059ba019c97"
+    },
+    {
+      "path": "public/game/assets/model-manifest.js",
+      "bytes": 410,
+      "sha256": "bb3e163bb2a154d045273c750e27598893d8da39accf03ae0f0646e554e814e2"
+    },
+    {
+      "path": "public/game/assets/police.js",
+      "bytes": 9019,
+      "sha256": "657c1b346961e916804a0d281a931f239d640af1b5875c34ab6bb704cb49f813"
+    },
+    {
+      "path": "public/game/engine-bridge.js",
+      "bytes": 3936,
+      "sha256": "3ed61eb297877889edf64eff10432bd9239a40c20d42256bb702b9c21f12c4eb"
+    },
+    {
+      "path": "public/game/game-api.js",
+      "bytes": 457,
+      "sha256": "3debfa48be2427f5fc6efecb07284cbb0ead5322ad89b953586dbd8a4b4dca5e"
+    },
+    {
+      "path": "public/game/game.html",
+      "bytes": 21349,
+      "sha256": "7f8a4c7b20f36973125a20e60888f98930065146a9a4d72dd7d1a5c9c6f588f3"
+    },
+    {
+      "path": "public/game/game.js",
+      "bytes": 180230,
+      "sha256": "eb36f4b84e09761f42e89867cd4a6a2fd6a6d526c72c34492b1832bdec7e8f27"
+    },
+    {
+      "path": "public/game/styles.css",
+      "bytes": 47092,
+      "sha256": "782d482464e61f8cca4f3ab5dd35198a14baff1f4e8d44f13cace70b75a166d4"
+    },
+    {
+      "path": "public/game/vendor/GLTFLoader.js",
+      "bytes": 96550,
+      "sha256": "5c15967ba830918a9caea6338712c994c354bccd4edc4569bde411c3ec06a3e6"
+    },
+    {
+      "path": "public/game/vendor/THREE-LICENSE.txt",
+      "bytes": 1081,
+      "sha256": "7dddf7c5b8fd10ee654db8857d75d104b5557889aa5a91fc4ca545ea7c07062f"
+    },
+    {
+      "path": "public/game/vendor/three.min.js",
+      "bytes": 603445,
+      "sha256": "9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2"
+    },
+    {
+      "path": "public/game/wheel-customization.js",
+      "bytes": 15017,
+      "sha256": "e07b2090a8cff5df12c6126a6482090519a3a0e2fa5c0f39ec836bb91ed797e3"
+    },
+    {
+      "path": "public/game/workshop.js",
+      "bytes": 19341,
+      "sha256": "8f23e9d51ae86b9e53a65d248c7c5af3047b8f62d181388fba004e5b47c8a859"
+    },
+    {
+      "path": "scripts/admin-create.ts",
+      "bytes": 2264,
+      "sha256": "3f58283ed09f0363b8c012045db4d97567327a948f3f47b42f16f6a2a50d3fad"
+    },
+    {
+      "path": "scripts/migrate.ts",
+      "bytes": 458,
+      "sha256": "2692299e2071aa0ee69ea712e5fed60477015307c003477794573a4afef6af6a"
+    },
+    {
+      "path": "scripts/setup.mjs",
+      "bytes": 2551,
+      "sha256": "e4c40bf31d0e5fa45e7479d94509fde572b21c04162f2792f7160164bb735fc2"
+    },
+    {
+      "path": "server/db/migrate.ts",
+      "bytes": 1424,
+      "sha256": "153fe24a6a6bad0aedff2730ebc306e4557dc88b16450fdcc2bd8b2b94394e6e"
+    },
+    {
+      "path": "server/db/pool.ts",
+      "bytes": 1056,
+      "sha256": "e6bf63b1b29a2994b0e0cb7598eff378bd29908192b44afe5fa0769b749fde0c"
+    },
+    {
+      "path": "server/dev.ts",
+      "bytes": 519,
+      "sha256": "b0ececd7539fea77bb845b54d95e23d1882c508ead5f80d2d47de0f87d215025"
+    },
+    {
+      "path": "server/index.ts",
+      "bytes": 6523,
+      "sha256": "dc12d67817a99de9f6fb6c66ff1430a352a0bf836e754b5c8080a5d30959fc8f"
+    },
+    {
+      "path": "server/realtime/RaceRoom.ts",
+      "bytes": 19151,
+      "sha256": "3213758628ef465f2a5b3d09753234d5426e95b2bd6027e5bdf62b297e5ec858"
+    },
+    {
+      "path": "server/realtime/RaceRuntime.ts",
+      "bytes": 6662,
+      "sha256": "4ca95ecb181ba758bd7fe4c5bc3f1067716efba23dfbb3aabd98e8e6ff7d9f78"
+    },
+    {
+      "path": "server/realtime/contracts.ts",
+      "bytes": 1260,
+      "sha256": "c398b5faa668ede5f2e713935648c4e4b90f4a7c57fdc27c6cb8728c7d427ff5"
+    },
+    {
+      "path": "server/realtime/index.ts",
+      "bytes": 124,
+      "sha256": "b24d8e560cf067681a1962b5809180fdfb676f7181aaebdf7dec414c346ef88c"
+    },
+    {
+      "path": "server/routes/index.ts",
+      "bytes": 6827,
+      "sha256": "28352498078a2006a19dd7ab4cccd355e7c306c4eef9154eb7316fe6116d9be6"
+    },
+    {
+      "path": "server/services/__tests__/backend.integration.test.ts",
+      "bytes": 19446,
+      "sha256": "6012e8e52d25fcb363c5a8833e0a23be6a6961f52e7a62cbba14f1bac89c8f98"
+    },
+    {
+      "path": "server/services/__tests__/response-fixtures.json",
+      "bytes": 9581,
+      "sha256": "5917756beb8945bf8b844ec4628eeb5e0c5e6bf408da7219f37a93418e79c9b5"
+    },
+    {
+      "path": "server/services/accounts.ts",
+      "bytes": 9922,
+      "sha256": "5c54ad8bc3feae846e173a9f13d1f63eb42aa50e1ad8e98d561ca716bad95b49"
+    },
+    {
+      "path": "server/services/admin.ts",
+      "bytes": 10637,
+      "sha256": "e770a1a7101035d7f418fd61e60ab7ed383e5c55239bffd50960f6c958d902ec"
+    },
+    {
+      "path": "server/services/economy.ts",
+      "bytes": 19022,
+      "sha256": "460203b946aa1274407e6417f843224542265519f99af3dd140fadcc61b4623d"
+    },
+    {
+      "path": "server/services/errors.ts",
+      "bytes": 474,
+      "sha256": "291d9a235cd875d8a77bfd8f87fd97c1d552027ebce67a8c9a91efea8557fc4c"
+    },
+    {
+      "path": "server/services/idempotency.ts",
+      "bytes": 1349,
+      "sha256": "14d759a1d7daf20dbba5230446c07e54d032e2e33115d8eb9018f9da16f8bf6e"
+    },
+    {
+      "path": "server/services/index.ts",
+      "bytes": 692,
+      "sha256": "b860cb6ac091c56908247bce0154891a401f290607f53b650dbb2f57882c7e92"
+    },
+    {
+      "path": "server/services/passwords.ts",
+      "bytes": 1966,
+      "sha256": "9a2482502250a505a6a23504deed8c00e6983bf1186eefa999dc57a8639462dc"
+    },
+    {
+      "path": "server/services/validation.ts",
+      "bytes": 3113,
+      "sha256": "2276dce797450697c82ea4687aa962c84091212ee125dcec01c1ca80036c4c7a"
+    },
+    {
+      "path": "server/services/wallet.ts",
+      "bytes": 2163,
+      "sha256": "ef6a06ab4b767ac17230673cef6649122459cc183841c0e8b108670ace7f9ac0"
+    },
+    {
+      "path": "shared/catalog.ts",
+      "bytes": 951,
+      "sha256": "63c60fb1aab7a8ac7aabd67ef97df4701b2d8724c705ac98f1d256a95d44149b"
+    },
+    {
+      "path": "shared/config.ts",
+      "bytes": 4369,
+      "sha256": "799a7a3af1ef2d2057f7471008b04e81643bd6f7d7438d101070f43dd6680008"
+    },
+    {
+      "path": "shared/simulation.ts",
+      "bytes": 12037,
+      "sha256": "a9a2e5c339172850afa98202dc248c0f4c18d50c029bc53a34e78ca8139a4e0b"
+    },
+    {
+      "path": "shared/track-data.ts",
+      "bytes": 79656,
+      "sha256": "d7c9b2b2a47a486ae3fdfd4f167a92565983dbe92d1d22c733b2356655cb3364"
+    },
+    {
+      "path": "shared/track.ts",
+      "bytes": 2896,
+      "sha256": "4e49bef5432d96cf162dbae8bb52f2a8bfee272af40d79ad3c0af5c663bee8da"
+    },
+    {
+      "path": "shared/types.ts",
+      "bytes": 5224,
+      "sha256": "a470274f7f005affd8e942e5bd5a25f69576139d80a73379c189d78c2658f085"
+    },
+    {
+      "path": "tests/dev-runtime.ts",
+      "bytes": 5204,
+      "sha256": "eeee6c1caf68541efc02cb4e5e7d17b149f7d80dc1f0d41dc09ce926a056ed86"
+    },
+    {
+      "path": "tests/integration.ts",
+      "bytes": 20292,
+      "sha256": "3fcba70ec10af339122eacedc9e10095543893600dfa280fe705b1f86becee8b"
+    },
+    {
+      "path": "tests/race/client.test.ts",
+      "bytes": 9580,
+      "sha256": "3a2bea7c4d8c58aff0513e4b98cc8acecaa25c6f4602a63ec61ff9b82a3e40f5"
+    },
+    {
+      "path": "tests/race/network.test.ts",
+      "bytes": 13269,
+      "sha256": "41f5dc70fc7c720a399c8b13f58f9cba5d9bce1487d48c19a3f1253f0dc49c10"
+    },
+    {
+      "path": "tests/race/simulation.test.ts",
+      "bytes": 7972,
+      "sha256": "a0049df1fd0825a959718b01ac29a923b589369be43a76f6342d88022e239b79"
+    },
+    {
+      "path": "tests/renderer/asset-hashes.json",
+      "bytes": 1475,
+      "sha256": "f2a56a16ad4e1dbb5acbabaf757e30e29da20153ddb721b2158dc6072377dde9"
+    },
+    {
+      "path": "tests/renderer/verify.cjs",
+      "bytes": 19932,
+      "sha256": "b0f5e33cf4d888520c2bee5a8f5d85ed52046e74a740f0e1630f7a10d273a903"
+    },
+    {
+      "path": "tests/with-postgres.mjs",
+      "bytes": 1771,
+      "sha256": "7704c2316ffed8eafb12d4f756d58b76c9b51b0d325fb9efd5c73dd0c511e538"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 504,
+      "sha256": "339d4855a3fa84694bda32d6a85b9e26bef75e747bfba0f941e3913e328ed4c0"
+    },
+    {
+      "path": "tsconfig.server.json",
+      "bytes": 406,
+      "sha256": "b03fdf2b458bd5933d4265ec5044158e5c4a49b2d085da50eb4dc8db2f7808a2"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 332,
+      "sha256": "a86dc22918359ff16fa4522317494f649cb13f9f57d2c36aa1695f8604271bf7"
+    }
+  ]
+}

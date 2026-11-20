@@ -1,0 +1,91 @@
+Original four Tevy models: CC0 1.0, https://tevy.dev/ .
+
+ADDITIONAL VEHICLE MODEL ATTRIBUTION
+
+"Lamborghini Aventador" by BlackCube
+https://sketchfab.com/blackcube4
+Original model: https://sketchfab.com/3d-models/lamborghini-aventador-2263b49846d840618046538012720c59
+Licensed under Creative Commons Attribution 4.0 International:
+https://creativecommons.org/licenses/by/4.0/
+Changes: optimized textures; chassis centered and scaled; original tyre/rim
+geometry split into four steering/spinning wheel assemblies; body paint,
+lighting, and effects adapted for this browser game. Carbon aero textures
+are preserved. This is the original author's carbon-bodykit vehicle variant.
+
+"Nissan Skyline R34 GT-R" by Lexyc16
+https://sketchfab.com/Lexyc16
+Original model: https://sketchfab.com/3d-models/nissan-skyline-r34-gt-r-ff8fb2251dfa4bb9979e7022c5a6666c
+Licensed under Creative Commons Attribution 4.0 International:
+https://creativecommons.org/licenses/by/4.0/
+Changes: optimized textures; chassis centered and scaled; original tyre/rim
+triangles split into four steering/spinning wheel assemblies; body paint,
+lighting, and effects adapted for this browser game.
+
+The CC-BY-4.0 author/license/source entries have been verified against both
+the GLB asset metadata and public Sketchfab API metadata. Brand and model
+names identify the depicted vehicles. This game is not affiliated with or
+endorsed by Lamborghini, Nissan, or the source model artists. In-game speed
+and handling parameters are arcade tuning, not manufacturer specifications.
+
+Publicly redistributed input files used for this adaptation:
+https://github.com/puneethyerninti/lamborghini-configurator/blob/main/public/lamborghini_light.glb
+https://github.com/Verdshy12/HOOD/blob/master/models/nissan_skyline_r34_gt-r.glb
+
+The final optimized files retain their original author, license, and source
+metadata and add the modification description above.
+
+
+NEON VELOCITY — BRZ AND POLICE 77 VEHICLE MODEL ATTRIBUTION
+
+"Subaru BRZ 2022" by mixmamo.studio
+Author: https://sketchfab.com/mixmamo.studio
+Original model:
+https://sketchfab.com/3d-models/subaru-brz-2022-d079f59271df4702bcfdd449ec8241c1
+Licensed under Creative Commons Attribution 4.0 International:
+https://creativecommons.org/licenses/by/4.0/
+
+Adapted from the publicly redistributed, attributed model conversion in
+Ridgeline by rxvy-dev. That vehicle conversion is CC-BY-4.0, distinct from
+the application's MIT code license:
+https://github.com/rxvy-dev/ridgeline/tree/HEAD/cars/brz_2022
+https://raw.githubusercontent.com/rxvy-dev/ridgeline/HEAD/cars/brz_2022/LICENSE.txt
+
+Ridgeline changes retained: re-orientation, scale, removed display slab and
+one unrelated textured component, wheel straightening, and wheel grouping.
+Additional changes for this game: original mesh simplified from 572,263 to
+183,904 triangles using meshoptimizer with normal/UV-aware simplification;
+textures optimized; vertices quantized; semantic PBR body paint, window,
+wheel and lamp materials restored; original four wheels rigged to the game.
+The depicted model includes the author's custom wheel/stance treatment.
+
+"2011 Bugatti Veyron Super Sport" by Galaxy Car Showroom
+Author: https://sketchfab.com/adrianaflak09
+Original model:
+https://sketchfab.com/3d-models/2011-bugatti-veyron-super-sport-30f06fa612e340008023a67ac680ae9c
+Licensed under Creative Commons Attribution 4.0 International:
+https://creativecommons.org/licenses/by/4.0/
+
+Publicly redistributed source file retaining original source/author/license:
+https://github.com/tsukukiku/3Dview/blob/HEAD/assets/Vehicle-%202011_bugatti_veyron.glb
+
+Changes: meshopt compression decoded; textures optimized; chassis centered
+and scaled; original tyre/rim triangles divided into four animated wheels;
+front/rear lamp indices separated; selectable clearcoat paint and pearl-white
+accent trim added. Original Veyron body/wheel geometry is retained.
+The POLICE/77 livery, roof lightbar and flashing red/blue effects are new
+procedural additions made for this fictional game vehicle. They are not an
+official police fleet livery or a claim of manufacturer/agency affiliation.
+
+Both CC-BY author, license and source entries were verified against public
+Sketchfab API metadata on 2026-11-20. Copies of that metadata are retained
+beside the conversion sources as brz-source.json and veyron-source.json.
+Both optimized GLBs retain attribution and descriptions of modifications.
+
+Brands/model names identify the vehicles depicted. This game is not
+affiliated with or endorsed by Subaru, Bugatti, the source model artists,
+or any police agency. Driving parameters are arcade game tuning, not
+manufacturer specifications.
+
+Offline conversion utility: meshoptimizer 0.24 by Arseny Kapoulkine and
+contributors, MIT license (LICENSE.md in this conversion folder).
+https://github.com/zeux/meshoptimizer

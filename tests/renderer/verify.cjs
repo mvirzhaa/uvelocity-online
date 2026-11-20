@@ -1,0 +1,159 @@
+/* Functional verification only. Runs the shipped game and real geometry in a DOM.
+   WebGLRenderer and PMREMGenerator are replaced: no image/render quality claim. */
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const assert=require('node:assert/strict');
+const {createCanvas,loadImage}=require('@napi-rs/canvas');
+const REPO=path.resolve(__dirname,'../..');
+const GAME_DIR=path.join(REPO,'public/game');
+const THREE={};
+const threeScope={exports:THREE,module:{exports:THREE},console,Math,Date,ArrayBuffer,Uint8Array,Uint16Array,Uint32Array,Int8Array,Int16Array,Int32Array,Float32Array,Float64Array};
+vm.runInNewContext(fs.readFileSync(path.join(GAME_DIR,'vendor/three.min.js'),'utf8'),threeScope,{filename:'three.min.js'});
+async function main(){
+ const {parseHTML}=await import('linkedom');
+ const expectedAssets=JSON.parse(fs.readFileSync(path.join(__dirname,'asset-hashes.json'),'utf8'));
+ for(const [relative,expected]of Object.entries(expectedAssets.files)){const actual=require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(REPO,relative))).digest('hex');assert.equal(actual,expected,'Preserved asset changed: '+relative);}
+ const html=fs.readFileSync(process.argv[2]||path.join(GAME_DIR,'game.html'),'utf8');
+ const gameDir=GAME_DIR;
+ const scripts=[...html.matchAll(/<script src="([^"]+)"><\/script>/g)].filter(m=>!m[1].endsWith('game-api.js')).map(m=>fs.readFileSync(path.join(gameDir,m[1]),'utf8'));
+ const {window,document}=parseHTML(html.replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi,''));
+ const errors=[],warnings=[],results=[];
+ const storageMap=new Map();
+ const localStorage={getItem:k=>storageMap.get(k)||null,setItem:(k,v)=>storageMap.set(k,String(v)),removeItem:k=>storageMap.delete(k),clear:()=>storageMap.clear()};
+ let active=document.body,hidden=false,now=1000,rafId=0,timerId=0;
+ const rafs=new Map(),timers=new Map();
+ const nativeCanvases=new WeakMap();
+ const getCanvas=el=>{let c=nativeCanvases.get(el);if(!c){c=createCanvas(el.width||300,el.height||150);nativeCanvases.set(el,c);}if(c.width!==(el.width||300))c.width=el.width||300;if(c.height!==(el.height||150))c.height=el.height||150;return c;};
+ window.HTMLCanvasElement.prototype.getContext=function(type){return getCanvas(this).getContext(type);};
+ window.HTMLCanvasElement.prototype.toDataURL=function(type){return getCanvas(this).toDataURL(type);};
+ Object.defineProperty(document,'activeElement',{get:()=>active});
+ Object.defineProperty(document,'hidden',{get:()=>hidden});
+ Object.defineProperty(document,'visibilityState',{get:()=>hidden?'hidden':'visible'});
+ window.HTMLElement.prototype.focus=function(){active=this;};
+ window.HTMLElement.prototype.blur=function(){if(active===this)active=document.body;};
+ window.HTMLElement.prototype.setPointerCapture=function(){};
+ window.HTMLElement.prototype.releasePointerCapture=function(){};
+ window.HTMLElement.prototype.hasPointerCapture=function(){return true;};
+ window.HTMLElement.prototype.getBoundingClientRect=function(){const r=this.id==='garage-stage'?{x:0,y:0,width:836,height:600}:{x:0,y:0,width:836,height:600};return{...r,left:r.x,top:r.y,right:r.x+r.width,bottom:r.y+r.height};};
+ // LinkeDOM does not implement the select.value setter or dialog methods.
+ Object.defineProperty(window.HTMLSelectElement.prototype,'value',{get(){return this.querySelector('option[selected]')?.value||this.querySelector('option')?.value||'';},set(value){for(const option of this.querySelectorAll('option'))option.toggleAttribute('selected',option.value===String(value));},configurable:true});
+ for(const d of document.querySelectorAll('dialog')){d.showModal=()=>d.setAttribute('open','');d.close=()=>d.removeAttribute('open');}
+ window.innerWidth=836;window.innerHeight=600;window.devicePixelRatio=1;window.localStorage=localStorage;
+ window.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
+ const requestAnimationFrame=fn=>{rafs.set(++rafId,fn);return rafId;};
+ const cancelAnimationFrame=id=>rafs.delete(id);
+ const setTimeoutVirtual=(fn,ms=0,...args)=>{timers.set(++timerId,{at:now+ms,fn:()=>fn(...args)});return timerId;};
+ const clearTimeoutVirtual=id=>timers.delete(id);
+ const navigator={userAgent:'Node functional harness',maxTouchPoints:0,hardwareConcurrency:4};
+ const bitmap=async blob=>loadImage(Buffer.from(await blob.arrayBuffer()));
+ global.createImageBitmap=bitmap;global.self={URL};Object.assign(threeScope,{createImageBitmap:bitmap,fetch,Blob,URL,self:{URL}});
+ THREE.FileLoader.prototype.load=function(url,onLoad,onProgress,onError){const filename=path.join(gameDir,String(url));fs.readFile(filename,(err,data)=>{if(err){onError?.(err);return;}const result=this.responseType==='arraybuffer'?data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength):data.toString();onLoad(result);});return null;};
+ // This adapter records scene/camera state but deliberately produces no GPU image.
+ class TestRenderer{
+  constructor(){this.domElement=document.createElement('canvas');this.shadowMap={};this.xr={enabled:false};this.capabilities={getMaxAnisotropy:()=>8,maxTextures:16};this._color=new THREE.Color();this._alpha=1;this._viewport=new THREE.Vector4(0,0,836,600);this._scissor=this._viewport.clone();this._target=null;this._scissorTest=false;this.autoClear=true;this.renderCount=0;this.info={render:{calls:0,triangles:0},memory:{geometries:0,textures:0}};}
+  setPixelRatio(r){this._pixelRatio=r;}getPixelRatio(){return this._pixelRatio||1;}
+  setSize(w,h){this.domElement.width=w;this.domElement.height=h;this._size=new THREE.Vector2(w,h);}
+  getSize(v){return v.copy(this._size||new THREE.Vector2(836,600));}
+  getDrawingBufferSize(v){return this.getSize(v).multiplyScalar(this.getPixelRatio());}
+  setClearColor(c,a=1){this._color.set(c);this._alpha=a;}getClearColor(c){return c.copy(this._color);}getClearAlpha(){return this._alpha;}
+  setViewport(x,y,w,h){typeof x==='object'?this._viewport.copy(x):this._viewport.set(x,y,w,h);}getViewport(v){return v.copy(this._viewport);}
+  setScissor(x,y,w,h){typeof x==='object'?this._scissor.copy(x):this._scissor.set(x,y,w,h);}getScissor(v){return v.copy(this._scissor);}
+  setScissorTest(v){this._scissorTest=v;}getScissorTest(){return this._scissorTest;}
+  setRenderTarget(t){this._target=t;}getRenderTarget(){return this._target;}
+  render(scene,camera){scene.updateMatrixWorld();camera.updateMatrixWorld();this.lastScene=scene;this.lastCamera=camera;this.renderCount++;}
+  clear(){}clearDepth(){}readRenderTargetPixels(target,x,y,w,h,pixels){pixels.fill(0);}dispose(){}
+ }
+ class TestPMREM{compileCubemapShader(){}compileEquirectangularShader(){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}fromCubemap(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
+ THREE.WebGLRenderer=TestRenderer;THREE.PMREMGenerator=TestPMREM;window.THREE=THREE;
+ const context={window,document,THREE,console:{log:console.log,warn:(...a)=>warnings.push(a.map(String).join(' ')),error:(...a)=>errors.push(a.map(String).join(' '))},performance:{now:()=>now},requestAnimationFrame,cancelAnimationFrame,setTimeout:setTimeoutVirtual,clearTimeout:clearTimeoutVirtual,localStorage,navigator,innerWidth:836,innerHeight:600,Image:window.Image,Blob,URL,TextDecoder,TextEncoder,fetch,createImageBitmap:bitmap,self:{URL},atob,btoa,Math,Date,ArrayBuffer,Uint8Array,Uint16Array,Uint32Array,Float32Array,Float64Array,Int8Array,Int16Array,Int32Array,CustomEvent:window.CustomEvent};
+ for(const name of ['NVCarFactory','NVImportedCars','NVWheels','NVGame','NVBiomes','NVCity','NVPolice'])Object.defineProperty(context,name,{get:()=>window[name]});
+ vm.createContext(context);
+ // Verify precisely the bundled scripts; Three's UMD factory is imported above to
+ // allow the renderer replacement. Everything else runs from the final HTML.
+ let sourceGame='';
+ for(const script of scripts){
+  if(script.includes('function startNewRace()')){sourceGame=script;continue;}
+  if(script.includes('Copyright')&&script.includes('REVISION'))continue;
+  if(script.includes('!function')&&script.includes('REVISION'))continue;
+  if(script.includes('THREE.REVISION')||script.includes('function WebGLRenderer'))continue;
+  vm.runInContext(script,context,{timeout:20000});
+ }
+ assert.ok(sourceGame,'Final HTML must contain its game script');
+ const hook=`\nwindow.__qa={get state(){return GameState},get player(){return playerCar},get racers(){return allRacers},get inputs(){return Input},get settings(){return settings},get garage(){return garageCar},get clock(){return gameClock},get ready(){return gameReady},get scene(){return scene},get garageScene(){return garageScene},get workshop(){return garageWorkshop},get online(){return onlineRender},get renderer(){return renderer},get camera(){return camera},get orbit(){return garageOrbit},get imported(){return window.NVImportedCars},get audio(){return audio},lapUpdate:updateLapProgress,resetGrid:resetGridPositions,advanceClock(ms){gameClock+=ms},get samples(){return CURVE_SAMPLES},get track(){return trackPoints}};\n`;
+ const end=sourceGame.lastIndexOf('})();');assert.ok(end>=0,'IIFE hook location');
+ sourceGame=sourceGame.slice(0,end)+hook+sourceGame.slice(end);
+ vm.runInContext(sourceGame,context,{timeout:20000});
+ const tick=ms=>{now+=ms;for(const[id,t]of [...timers])if(t.at<=now){timers.delete(id);t.fn();}const queue=[...rafs.values()];rafs.clear();for(const fn of queue)fn(now);};
+ const frames=(seconds,step=1/60)=>{for(let i=0;i<Math.ceil(seconds/step);i++)tick(step*1000);};
+ const $=id=>document.getElementById(id);
+ const emit=(node,type,props={})=>{const event=new window.Event(type,{bubbles:true,cancelable:true});for(const[key,value]of Object.entries(props))Object.defineProperty(event,key,{value,configurable:true});node.dispatchEvent(event);return event;};
+ const click=selector=>{const el=selector.startsWith('#')?$(selector.slice(1)):document.querySelector(selector);assert.ok(el,'Missing '+selector);emit(el,'click');};
+ const key=(code,type='keydown',target=window)=>emit(target,type,{code,key:{KeyW:'w',KeyS:'s',KeyC:'c',KeyP:'p',Escape:'Escape'}[code]||code,repeat:false});
+ const assertColor=(car,hex)=>{const wanted=new THREE.Color(hex).convertSRGBToLinear();for(const m of car.paintMaterials)assert.ok(m.color.toArray().every((v,i)=>Math.abs(v-wanted.toArray()[i])<1e-6),'Recolored paint material mismatch');};
+ await window.onload();
+ const q=window.__qa;
+
+ assert.equal(errors.length,0,errors.join('\n'));assert.ok(q.ready);await window.NVGame.ready;
+
+ const workshop=q.workshop;assert.ok(workshop);assert.equal(workshop.root.name,'UVelocity Workshop');assert.ok(workshop.stats.features.includes('tool cabinets'));let workshopCalls=0,workshopTriangles=0;
+ workshop.root.updateMatrixWorld(true);
+ workshop.root.traverse(n=>{if(!n.isMesh)return;workshopCalls++;workshopTriangles+=(n.geometry.index?.count||n.geometry.attributes.position.count)/3;for(const value of n.geometry.attributes.position.array)assert.ok(Number.isFinite(value),'Nonfinite workshop geometry');const bounds=new THREE.Box3().setFromObject(n);if(bounds.max.y>.04&&bounds.min.y<2.4)assert.ok(bounds.max.x<=-3.1||bounds.min.x>=3.1||bounds.max.z<=-4.1||bounds.min.z>=4.1,'Workshop obstruction in central car bay: '+n.name);for(const m of Array.isArray(n.material)?n.material:[n.material]){if('roughness'in m)assert.ok(m.roughness>=0&&m.roughness<=1);if('metalness'in m)assert.ok(m.metalness>=0&&m.metalness<=1);}});
+ assert.equal(workshopCalls,workshop.stats.drawCalls);assert.ok(workshopCalls<100);assert.ok(workshopTriangles<70000);
+ for(const distance of[5.8,11.5,20])for(let side=0;side<8;side++){const cam=new THREE.PerspectiveCamera(33,1,.05,100);cam.position.set(Math.sin(side*Math.PI/4)*distance,2.5,Math.cos(side*Math.PI/4)*distance);cam.lookAt(0,.55,0);workshop.update(cam);assert.ok(workshop.root.children.some(c=>c.visible));}
+ workshop.setQuality('low');workshop.setQuality('medium');results.push('3D workshop: '+workshopCalls+' merged draws / '+workshopTriangles+' triangles, finite PBR geometry, central 6.2 × 8.2 m bay clear, orbit visibility and quality contract.');
+ assert.equal(q.racers.length,0,'Preview must not simulate an offline AI field');
+ assert.ok(document.body.classList.contains('nv-embedded'));
+
+ await window.NVGame.setCamera('front');assert.ok(Math.abs(q.orbit.yaw-.82)<.01);await window.NVGame.setCamera('side');assert.ok(Math.abs(q.orbit.yaw-Math.PI/2)<.01);await window.NVGame.setCamera('rear');assert.ok(q.orbit.yaw>Math.PI);await window.NVGame.setCamera();assert.ok(Math.abs(q.orbit.yaw-.82)<.01);
+ await window.NVGame.configure({quality:'high'});await window.NVGame.configure({previewOnly:true});assert.equal(window.NVGame.getState().quality,'high');await window.NVGame.configure({quality:'medium',timeOfDay:'night'});assert.equal(window.NVGame.getState().timeOfDay,'night');await window.NVGame.configure({timeOfDay:'dusk'});
+ await window.NVGame.showCredits();assert.ok($('credits-dialog').hasAttribute('open'));$('credits-dialog').close();await window.NVGame.configure({showCredits:true});assert.ok($('credits-dialog').hasAttribute('open'));$('credits-dialog').close();
+ assert.equal((await window.NVGame.ensureModels(['brz','veyron77'])).length,2);await assert.rejects(window.NVGame.ensureModels(['missing-car']));
+ results.push('Showroom front/side/rear/cycle, explicit-only quality changes, dusk/night, credits and asset-ready API verified.');
+ const stats=[];
+ for(const id of ['veloce','apex','cinder','kaze','aventador','skyline','brz','veyron77']){
+  await window.NVGame.preview({carId:id,color:'#3366bb',finish:'metallic',rimId:'stock'});
+  assert.equal(q.garage.modelId,id);assert.equal(q.garage.wheels.length,4);assert.equal(q.garage.frontPivots.length,2);
+  const car=q.garage,stockNodes=[];car.wheels.forEach(w=>w.traverse(n=>{if(n.isMesh)stockNodes.push([n,n.geometry,n.visible]);}));
+  for(const rimId of ['six-spoke','multi-spoke','mesh']){
+   await window.NVGame.setLoadout({carId:id,color:'#3366bb',finish:'metallic',rimId,rimColor:'#ad8d55'});
+   assert.equal(q.garage,car);const info=window.NVWheels.inspect(car);assert.equal(info.rimId,rimId);assert.equal(info.fitments.length,4);
+   car.root.updateMatrixWorld(true);
+   for(const fit of info.fitments){
+    const wheel=car.wheels[fit.index],upgrade=wheel.children.find(c=>c.userData.nvUpgrade);assert.ok(upgrade);assert.equal(upgrade.levels.length,3);
+    const bounds=new THREE.Box3().setFromObject(upgrade);assert.ok([bounds.min.x,bounds.min.y,bounds.min.z,bounds.max.x,bounds.max.y,bounds.max.z].every(Number.isFinite));
+    // Compare every generated vertex against the original local tyre envelope.
+    const inv=wheel.matrixWorld.clone().invert(),p=new THREE.Vector3();let excess=0;
+    upgrade.traverse(n=>{if(!n.isMesh)return;const m=inv.clone().multiply(n.matrixWorld),a=n.geometry.attributes.position;for(let i=0;i<a.count;i++){p.fromBufferAttribute(a,i).applyMatrix4(m);for(let k=0;k<3;k++)excess=Math.max(excess,fit.stockBounds.min[k]-p.getComponent(k),p.getComponent(k)-fit.stockBounds.max[k]);}});
+    assert.ok(excess<.0015,id+' '+rimId+' wheel '+fit.index+' outside original envelope by '+excess);
+   }
+   for(const [node,geometry]of stockNodes)assert.equal(node.geometry,geometry,'Source geometry mutated');
+  }
+  stats.push({id,fit:window.NVWheels.inspect(car).fitments.map(f=>({radius:f.radius,width:f.width}))});
+  window.NVWheels.apply(car,{rimId:'stock'});for(const [node,geometry,visible]of stockNodes){assert.equal(node.geometry,geometry);assert.equal(node.visible,visible,'Stock visibility failed to restore');}
+  assert.equal(car.wheels.flatMap(w=>w.children).filter(n=>n.userData.nvUpgrade).length,0);
+ }
+ results.push('All eight cars: three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.');
+ const api=window.NVGame,inputs=[];api.on('input',value=>inputs.push(value));
+ await api.configure({circuit:'beach',quality:'medium',online:true});await api.setLocalPlayer('me');
+ await api.startRace({raceId:'test-race',config:{circuit:'beach',laps:3,bots:0},localRacerId:'me',loadouts:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh',stats:{topSpeed:255,zeroTo100:5.6,handling:1.18}}},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke'}}]});
+ const snapshot={raceId:'test-race',tick:1,serverTime:5000,elapsedMs:1000,startAt:4000,phase:'racing',racers:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh'},x:-200,z:130,heading:1,speed:30,steerAngle:.2,driftAngle:.1,bodyRoll:.04,bodyPitch:-.02,nitro:70,nitroActive:true,lap:2,completedLaps:1,progress:1.2,finished:false,lapTimeMs:500,bestLapMs:850,position:2},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke'},x:-210,z:140,heading:1,speed:32,steerAngle:.1,nitro:30,nitroActive:false,lap:2,progress:1.3,position:1}]};
+ assert.equal(api.applySnapshot(snapshot),true);const pos=q.player.pos.clone(),clock=q.clock,progress=q.player.progress;key('KeyW');frames(.1);assert.ok(q.player.pos.equals(pos),'Renderer must not integrate position');assert.equal(q.clock,clock);assert.equal(q.player.progress,progress);assert.ok(inputs.some(v=>v.throttle===1));assert.equal(q.player.visual.frontPivots[0].rotation.y,.2);assert.equal(q.player.visual.bodyTiltGroup.rotation.z,.04);assert.ok(q.player.visual.flames.every(f=>f.visible));
+ q.lapUpdate(q.player,0);assert.equal(q.player.progress,progress,'Offline lap update must be gated');
+ await api.setCamera('hood');frames(.03);assert.equal(q.player.visual.bodyTiltGroup.visible,false);await api.setCamera('chase');frames(.03);
+ key('KeyR');frames(.03);assert.ok(inputs.some(v=>v.reset));assert.ok(q.player.pos.equals(pos),'Reset is only an input request');
+ const renders=q.renderer.renderCount;await api.setVisible(false);frames(.5);assert.equal(q.renderer.renderCount,renders);assert.equal(api.getInput().throttle,0);await api.setVisible(true);frames(.05);assert.ok(q.renderer.renderCount>renders);
+
+ let muteEvent=null;const unmute=api.on('mute',event=>muteEvent=event);key('KeyM');assert.equal(muteEvent.muted,api.getState().muted);key('KeyM');unmute();
+ let exitRequested=false;const unexit=api.on('exit',()=>exitRequested=true);click('#btn-exit-garage');assert.ok(exitRequested);assert.equal(api.getState().active,true,'Exit request must wait for parent confirmation');assert.equal(api.getState().paused,true);await api.resume();unexit();
+ const stale={...snapshot,tick:0};assert.equal(api.applySnapshot(stale),false);
+ api.applySnapshot({...snapshot,tick:2,phase:'finished',elapsedMs:4000,racers:snapshot.racers.map(r=>({...r,finished:true,finishTimeMs:4000}))});frames(.05);assert.equal(q.state.mode,'FINISHED');assert.deepEqual(Object.keys(q.settings.records),[],'Renderer cannot store race rewards/results');
+ await api.stopRace();assert.equal(q.racers.length,0);assert.equal(api.getState().mode,'preview');
+ results.push('Online renderer: supplied state only, normalized input, no local physics/laps/results, stock cameras/effects, visibility suspension, stale snapshot guard, clean exit.');
+ await api.configure({circuit:'glacier',previewOnly:true});assert.equal(q.settings.circuit,'glacier');frames(.05);await api.configure({circuit:'city',previewOnly:true});assert.equal(q.settings.circuit,'city');frames(.05);
+ results.push('All three existing worlds switch through the public API.');
+ assert.equal(errors.length,0,errors.join('\n'));
+ results.unshift('SHA-256 identity of all eight original GLBs and unchanged city/biome/police/fallback modules.');
+ console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,fittedModels:stats.map(item=>item.id),warnings:warnings.slice(0,12),errors},null,2));api.dispose();
+}
+main().catch(error=>{console.error(error);process.exitCode=1;});

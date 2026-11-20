@@ -1,0 +1,18 @@
+{
+  "provenance": "Byte-identical copies of the last tested World Tour assets. Update only after an explicit reviewed asset change.",
+  "algorithm": "SHA-256",
+  "files": {
+    "public/game/assets/cars/aventador.glb": "def52aa321714ecf0c12afa742da2d5662045b5c7ad746acd282c0b9b599f040",
+    "public/game/assets/cars/veloce.glb": "4317132fb404d7a34a6116f46528645f8bd921b11347032ec754bcbdcc618cf0",
+    "public/game/assets/cars/veyron77.glb": "00ae5490572ddb085ba791df725584d5d4629ab72f14e76be267795eec0eb6a7",
+    "public/game/assets/cars/skyline.glb": "2325a76a5df70bd456bed9882b1bfab36b16a38b14a6c1d18008be754f3c7669",
+    "public/game/assets/cars/cinder.glb": "9ba7d0daadd78a2d897e4011ae00bd12b83f728d8259101a09160d455f1d535b",
+    "public/game/assets/cars/apex.glb": "9bec7404e2c0b4ab001244fb12dfd13c70b19f4975c51fc6c4bcf87512795193",
+    "public/game/assets/cars/kaze.glb": "696c5512253bf3734e722267e233168f63731cd14cb0b8b245db5a4fb7ede0e9",
+    "public/game/assets/cars/brz.glb": "3ae526e9cb9f80a225a6044855a561d75296a7e08fff93b9c18ae96ef161f942",
+    "public/game/assets/city.js": "106703bfab1d7426cafc97ccc450553ba1272643229c717850b278d1b35cefed",
+    "public/game/assets/biomes.js": "a64e963ceb86691632e97d8eff76f389f8ffb6aeec95bde3f5e2205d3eb1e9bf",
+    "public/game/assets/police.js": "657c1b346961e916804a0d281a931f239d640af1b5875c34ab6bb704cb49f813",
+    "public/game/assets/car-models.js": "3e59b39bcee77e1ceaf7b39cdc880328c5a85b8923dd5ea4f3e73e76ca679526"
+  }
+}
