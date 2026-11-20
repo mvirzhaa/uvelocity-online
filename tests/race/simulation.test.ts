@@ -13,7 +13,7 @@ test('Original three arc-length courses and physical15-car grids remain distinct
   const lengths=[1450.7607591860722,1924.2162173818447,1816.1935724392406];
   for(const [i,id]of CIRCUIT_IDS.entries()){
     const track=getTrack(id);assert.equal(track.samples.length,480);assert.ok(Math.abs(track.length-lengths[i]!)<1e-6);
-    const racers=Array.from({length:15},(_,i)=>createRacer('r'+i,'R'+i,loadout(CAR_IDS[i%8]!),String(i)));
+    const racers=Array.from({length:15},(_,i)=>createRacer('r'+i,'R'+i,loadout(CAR_IDS[i%CAR_IDS.length]!),String(i)));
     placeStartingGrid(racers,track);
     for(const racer of racers){assert.ok(racer.progress<0);assert.equal(racer.completedLaps,0);assert.ok(Number.isFinite(racer.x));}
     for(let a=0;a<racers.length;a++)for(let b=a+1;b<racers.length;b++)assert.ok(Math.hypot(racers[a]!.x-racers[b]!.x,racers[a]!.z-racers[b]!.z)>6,'Grid separation');
@@ -89,7 +89,7 @@ test('Solid contacts move both participants; ghosted cars do not block others',(
 
 test('All15 racers can complete each course using shared physics, including independently controlled humans', {timeout:120000},()=>{
   for(const circuit of CIRCUIT_IDS){
-    const racers=Array.from({length:15},(_,i)=>createRacer('r'+i,'R'+i,loadout(CAR_IDS[i%8]!),i<4?'u'+i:null,i>=4));
+    const racers=Array.from({length:15},(_,i)=>createRacer('r'+i,'R'+i,loadout(CAR_IDS[i%CAR_IDS.length]!),i<4?'u'+i:null,i>=4));
     const runtime=new RaceRuntime(validateRoomConfig({circuit,laps:1,maxHumans:4,bots:11,difficulty:'normal',collisionMode:'solid'}),racers);
     let ticks=0;
     while(!runtime.ended&&ticks++<90*300){

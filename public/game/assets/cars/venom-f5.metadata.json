@@ -1,0 +1,110 @@
+{
+  "id": "venom-f5",
+  "file": "/game/assets/cars/venom-f5.glb",
+  "bytes": 2997648,
+  "triangles": 100360,
+  "meshCount": 29,
+  "nodeCount": 38,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "metal",
+    "brake_caliper",
+    "paint_body",
+    "carbon",
+    "glass",
+    "interior_seat",
+    "light_front",
+    "paint_aero",
+    "light_rear"
+  ],
+  "bounds": {
+    "min": [
+      -1.149999976158142,
+      -9.536743172944284e-09,
+      -2.5899999141693115
+    ],
+    "max": [
+      1.149999976158142,
+      1.309999942779541,
+      2.5399999618530273
+    ]
+  },
+  "dimensions": [
+    2.299999952316284,
+    1.3099999523162842,
+    5.129999876022339
+  ],
+  "provenance": "Original UVelocity reference-based recreation; independently authored geometry, not a manufacturer mesh, scan, or extracted game asset.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-hypercar-expansion.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "wheelRadius": 0.365,
+  "wheelWidth": 0.325,
+  "wheelCenters": {
+    "FL": [
+      0.865,
+      0.365,
+      1.4049999999999998
+    ],
+    "FR": [
+      -0.865,
+      0.365,
+      1.4049999999999998
+    ],
+    "RL": [
+      0.865,
+      0.365,
+      -1.375
+    ],
+    "RR": [
+      -0.865,
+      0.365,
+      -1.375
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.74,
+      0.7346234446634239,
+      1.9509227879464135
+    ],
+    [
+      0.74,
+      0.7346234446634239,
+      1.9509227879464135
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      -0.12,
+      0.53,
+      -2.59
+    ],
+    [
+      0.12,
+      0.53,
+      -2.59
+    ]
+  ],
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "representation": "original-reference-recreation",
+  "length": 5.129999876022339,
+  "tail": -2.59,
+  "exhaustX": 0.12,
+  "exhaustY": 0.53,
+  "validation": {
+    "glbBuffers": "finite-and-index-valid",
+    "rig": "four-wheels-two-steering-pivots",
+    "visualReview": "Blender Cycles CPU 48 samples; front three-quarter views",
+    "isGameplayScreenshot": false
+  }
+}

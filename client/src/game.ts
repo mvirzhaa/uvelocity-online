@@ -8,6 +8,7 @@ export interface GameAPI {
  setLoadout(loadout:Loadout|FrozenLoadout):Promise<unknown>;
  setLocalPlayer(id:string):Promise<unknown>|void;
  startRace(options:Record<string,unknown>):Promise<unknown>;
+ waitForRaceFrame?(options:{raceId:string;startToken?:string;minimumTick?:number;timeoutMs?:number}):Promise<unknown>;
  applySnapshot(snapshot:RoomSnapshot):void;
  stopRace():Promise<unknown>|void;
  setVisible(visible:boolean):void;

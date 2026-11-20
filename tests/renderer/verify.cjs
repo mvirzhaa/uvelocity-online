@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
+const {verifyStripeSurface,verifyMaterialGroups}=require('./stripes.cjs');
 const {createCanvas,loadImage}=require('@napi-rs/canvas');
 const REPO=path.resolve(__dirname,'../..');
 const GAME_DIR=path.join(REPO,'public/game');
@@ -67,7 +68,7 @@ async function main(){
  class TestPMREM{compileCubemapShader(){}compileEquirectangularShader(){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}fromCubemap(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
  THREE.WebGLRenderer=TestRenderer;THREE.PMREMGenerator=TestPMREM;window.THREE=THREE;
  const context={window,document,THREE,console:{log:console.log,warn:(...a)=>warnings.push(a.map(String).join(' ')),error:(...a)=>errors.push(a.map(String).join(' '))},performance:{now:()=>now},requestAnimationFrame,cancelAnimationFrame,setTimeout:setTimeoutVirtual,clearTimeout:clearTimeoutVirtual,localStorage,navigator,innerWidth:836,innerHeight:600,Image:window.Image,Blob,URL,TextDecoder,TextEncoder,fetch,createImageBitmap:bitmap,self:{URL},atob,btoa,Math,Date,ArrayBuffer,Uint8Array,Uint16Array,Uint32Array,Float32Array,Float64Array,Int8Array,Int16Array,Int32Array,CustomEvent:window.CustomEvent};
- for(const name of ['NVCarFactory','NVImportedCars','NVWheels','NVGame','NVBiomes','NVCity','NVPolice'])Object.defineProperty(context,name,{get:()=>window[name]});
+ for(const name of ['NVCarFactory','NVImportedCars','NVWheels','NVGame','NVBiomes','NVCity','NVPolice','NVStripes'])Object.defineProperty(context,name,{get:()=>window[name]});
  vm.createContext(context);
  // Verify precisely the bundled scripts; Three's UMD factory is imported above to
  // allow the renderer replacement. Everything else runs from the final HTML.
@@ -80,7 +81,7 @@ async function main(){
   vm.runInContext(script,context,{timeout:20000});
  }
  assert.ok(sourceGame,'Final HTML must contain its game script');
- const hook=`\nwindow.__qa={get state(){return GameState},get player(){return playerCar},get racers(){return allRacers},get inputs(){return Input},get settings(){return settings},get garage(){return garageCar},get clock(){return gameClock},get ready(){return gameReady},get scene(){return scene},get garageScene(){return garageScene},get workshop(){return garageWorkshop},get online(){return onlineRender},get renderer(){return renderer},get camera(){return camera},get orbit(){return garageOrbit},get imported(){return window.NVImportedCars},get audio(){return audio},lapUpdate:updateLapProgress,resetGrid:resetGridPositions,advanceClock(ms){gameClock+=ms},get samples(){return CURVE_SAMPLES},get track(){return trackPoints}};\n`;
+ const hook=`\nwindow.__qa={get state(){return GameState},get player(){return playerCar},get racers(){return allRacers},get inputs(){return Input},get settings(){return settings},get garage(){return garageCar},get clock(){return gameClock},get worldTime(){return worldElapsed},get particles(){return particles},get ready(){return gameReady},get scene(){return scene},get garageScene(){return garageScene},get garageCamera(){return garageCamera},get workshop(){return garageWorkshop},get online(){return onlineRender},get renderer(){return renderer},get camera(){return camera},get orbit(){return garageOrbit},get imported(){return window.NVImportedCars},get audio(){return audio},lapUpdate:updateLapProgress,resetGrid:resetGridPositions,advanceClock(ms){gameClock+=ms},get samples(){return CURVE_SAMPLES},get track(){return trackPoints}};\n`;
  const end=sourceGame.lastIndexOf('})();');assert.ok(end>=0,'IIFE hook location');
  sourceGame=sourceGame.slice(0,end)+hook+sourceGame.slice(end);
  vm.runInContext(sourceGame,context,{timeout:20000});
@@ -110,11 +111,22 @@ async function main(){
  await window.NVGame.showCredits();assert.ok($('credits-dialog').hasAttribute('open'));$('credits-dialog').close();await window.NVGame.configure({showCredits:true});assert.ok($('credits-dialog').hasAttribute('open'));$('credits-dialog').close();
  assert.equal((await window.NVGame.ensureModels(['brz','veyron77'])).length,2);await assert.rejects(window.NVGame.ensureModels(['missing-car']));
  results.push('Showroom front/side/rear/cycle, explicit-only quality changes, dusk/night, credits and asset-ready API verified.');
- const stats=[];
- for(const id of ['veloce','apex','cinder','kaze','aventador','skyline','brz','veyron77']){
+ verifyMaterialGroups(THREE,window.NVStripes);
+ const stats=[],stripeStats=[];
+ const carIds=['veloce','apex','cinder','kaze','aventador','skyline','brz','veyron77','bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5'];
+ assert.equal(window.NVGame.getCatalog().cars.length,15);await window.NVGame.ensureModels(carIds);
+ assert.equal(window.NVGame.getCatalog().stripes.length,6);
+ for(const id of carIds){
   await window.NVGame.preview({carId:id,color:'#3366bb',finish:'metallic',rimId:'stock'});
   assert.equal(q.garage.modelId,id);assert.equal(q.garage.wheels.length,4);assert.equal(q.garage.frontPivots.length,2);
-  const car=q.garage,stockNodes=[];car.wheels.forEach(w=>w.traverse(n=>{if(n.isMesh)stockNodes.push([n,n.geometry,n.visible]);}));
+  const car=q.garage,stockNodes=[];
+  assert.ok(window.NVEngineAudio.profiles[id],'Missing engine synthesis profile: '+id);assert.equal(q.audio.vehicleId,id);
+  if(car.representation==='reference-recreation'){
+   await window.NVGame.setCamera('side');frames(.05);q.garageCamera.updateMatrixWorld(true);
+   const bb=new THREE.Box3().setFromObject(window.NVImportedCars.getTemplate(id));
+   for(const x of[bb.min.x,bb.max.x])for(const y of[bb.min.y,bb.max.y])for(const z of[bb.min.z,bb.max.z]){const projected=new THREE.Vector3(x,y+.035,z).project(q.garageCamera);assert.ok(Math.abs(projected.x)<.98&&Math.abs(projected.y)<.98,'New car clipped by showroom side camera: '+id);}
+   await window.NVGame.setCamera('front');frames(.05);
+  }car.wheels.forEach(w=>w.traverse(n=>{if(n.isMesh)stockNodes.push([n,n.geometry,n.visible]);}));
   for(const rimId of ['six-spoke','multi-spoke','mesh']){
    await window.NVGame.setLoadout({carId:id,color:'#3366bb',finish:'metallic',rimId,rimColor:'#ad8d55'});
    assert.equal(q.garage,car);const info=window.NVWheels.inspect(car);assert.equal(info.rimId,rimId);assert.equal(info.fitments.length,4);
@@ -129,16 +141,18 @@ async function main(){
    }
    for(const [node,geometry]of stockNodes)assert.equal(node.geometry,geometry,'Source geometry mutated');
   }
+  stripeStats.push({id,patterns:verifyStripeSurface(THREE,car,window.NVStripes)});
   stats.push({id,fit:window.NVWheels.inspect(car).fitments.map(f=>({radius:f.radius,width:f.width}))});
   window.NVWheels.apply(car,{rimId:'stock'});for(const [node,geometry,visible]of stockNodes){assert.equal(node.geometry,geometry);assert.equal(node.visible,visible,'Stock visibility failed to restore');}
   assert.equal(car.wheels.flatMap(w=>w.children).filter(n=>n.userData.nvUpgrade).length,0);
  }
- results.push('All eight cars: three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.');
+ results.push('All fifteen cars: dedicated sound profiles, extended-model camera framing, three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.');
+ results.push('Five vinyl patterns on every loaded car: paint-only clipping, every vertex within 1.52 mm of its source triangle, normals, one draw, material-group exclusion and clean removal.');
  const api=window.NVGame,inputs=[];api.on('input',value=>inputs.push(value));
  await api.configure({circuit:'beach',quality:'medium',online:true});await api.setLocalPlayer('me');
- await api.startRace({raceId:'test-race',config:{circuit:'beach',laps:3,bots:0},localRacerId:'me',loadouts:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh',stats:{topSpeed:255,zeroTo100:5.6,handling:1.18}}},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke'}}]});
- const snapshot={raceId:'test-race',tick:1,serverTime:5000,elapsedMs:1000,startAt:4000,phase:'racing',racers:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh'},x:-200,z:130,heading:1,speed:30,steerAngle:.2,driftAngle:.1,bodyRoll:.04,bodyPitch:-.02,nitro:70,nitroActive:true,lap:2,completedLaps:1,progress:1.2,finished:false,lapTimeMs:500,bestLapMs:850,position:2},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke'},x:-210,z:140,heading:1,speed:32,steerAngle:.1,nitro:30,nitroActive:false,lap:2,progress:1.3,position:1}]};
- assert.equal(api.applySnapshot(snapshot),true);const pos=q.player.pos.clone(),clock=q.clock,progress=q.player.progress;key('KeyW');frames(.1);assert.ok(q.player.pos.equals(pos),'Renderer must not integrate position');assert.equal(q.clock,clock);assert.equal(q.player.progress,progress);assert.ok(inputs.some(v=>v.throttle===1));assert.equal(q.player.visual.frontPivots[0].rotation.y,.2);assert.equal(q.player.visual.bodyTiltGroup.rotation.z,.04);assert.ok(q.player.visual.flames.every(f=>f.visible));
+ await api.startRace({raceId:'test-race',config:{circuit:'beach',laps:3,bots:0},localRacerId:'me',loadouts:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh',stripeId:'side-sweep',stripeColor:'#f4cb53',stats:{topSpeed:255,zeroTo100:5.6,handling:1.18}}},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke',stripeId:'heritage',stripeColor:'#235eac'}}]});
+ const snapshot={raceId:'test-race',tick:1,serverTime:5000,elapsedMs:1000,startAt:4000,phase:'racing',racers:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh',stripeId:'side-sweep',stripeColor:'#f4cb53'},x:-200,z:130,heading:1,speed:30,steerAngle:.2,driftAngle:.1,bodyRoll:.04,bodyPitch:-.02,nitro:70,nitroActive:true,lap:2,completedLaps:1,progress:1.2,finished:false,lapTimeMs:500,bestLapMs:850,position:2},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke',stripeId:'heritage',stripeColor:'#235eac'},x:-210,z:140,heading:1,speed:32,steerAngle:.1,nitro:30,nitroActive:false,lap:2,progress:1.3,position:1}]};
+ assert.equal(api.applySnapshot(snapshot),true);assert.equal(window.NVStripes.inspect(q.player.visual).stripeId,'side-sweep');assert.equal(window.NVStripes.inspect(q.racers.find(r=>r.id==='rival').visual).color,'#235eac');const pos=q.player.pos.clone(),clock=q.clock,progress=q.player.progress;key('KeyW');frames(.1);assert.ok(q.player.pos.equals(pos),'Renderer must not integrate position');assert.equal(q.clock,clock);assert.equal(q.player.progress,progress);assert.ok(inputs.some(v=>v.throttle===1));assert.equal(q.player.visual.frontPivots[0].rotation.y,.2);assert.equal(q.player.visual.bodyTiltGroup.rotation.z,.04);assert.ok(q.player.visual.flames.every(f=>f.visible));
  q.lapUpdate(q.player,0);assert.equal(q.player.progress,progress,'Offline lap update must be gated');
  await api.setCamera('hood');frames(.03);assert.equal(q.player.visual.bodyTiltGroup.visible,false);await api.setCamera('chase');frames(.03);
  key('KeyR');frames(.03);assert.ok(inputs.some(v=>v.reset));assert.ok(q.player.pos.equals(pos),'Reset is only an input request');
@@ -146,14 +160,48 @@ async function main(){
 
  let muteEvent=null;const unmute=api.on('mute',event=>muteEvent=event);key('KeyM');assert.equal(muteEvent.muted,api.getState().muted);key('KeyM');unmute();
  let exitRequested=false;const unexit=api.on('exit',()=>exitRequested=true);click('#btn-exit-garage');assert.ok(exitRequested);assert.equal(api.getState().active,true,'Exit request must wait for parent confirmation');assert.equal(api.getState().paused,true);await api.resume();unexit();
+ const oldRival=q.racers.find(r=>r.id==='rival').visual;const changed={...snapshot,tick:2,racers:snapshot.racers.map(r=>r.id==='rival'?{...r,loadout:{...r.loadout,stripeId:'offset',stripeColor:'#f3bb24'}}:r)};assert.equal(api.applySnapshot(changed),true);const newRival=q.racers.find(r=>r.id==='rival').visual;assert.notEqual(newRival,oldRival);assert.equal(window.NVStripes.inspect(newRival).stripeId,'offset');assert.equal(window.NVStripes.inspect(newRival).color,'#f3bb24');
  const stale={...snapshot,tick:0};assert.equal(api.applySnapshot(stale),false);
- api.applySnapshot({...snapshot,tick:2,phase:'finished',elapsedMs:4000,racers:snapshot.racers.map(r=>({...r,finished:true,finishTimeMs:4000}))});frames(.05);assert.equal(q.state.mode,'FINISHED');assert.deepEqual(Object.keys(q.settings.records),[],'Renderer cannot store race rewards/results');
+ api.applySnapshot({...snapshot,tick:3,phase:'finished',elapsedMs:4000,racers:snapshot.racers.map(r=>({...r,finished:true,finishTimeMs:4000}))});frames(.05);assert.equal(q.state.mode,'FINISHED');assert.deepEqual(Object.keys(q.settings.records),[],'Renderer cannot store race rewards/results');
  await api.stopRace();assert.equal(q.racers.length,0);assert.equal(api.getState().mode,'preview');
  results.push('Online renderer: supplied state only, normalized input, no local physics/laps/results, stock cameras/effects, visibility suspension, stale snapshot guard, clean exit.');
+ // Arena loading is separate from the server countdown. Acknowledgement requires
+ // an applied grid snapshot, actual scene draw, and a presentation opportunity.
+ await api.startRace({raceId:'loading-barrier',startToken:'token-42',phase:'loading',config:{circuit:'beach',laps:3},localRacerId:'me',loadouts:snapshot.racers});
+ assert.equal(api.getState().phase,'loading');assert.equal(api.getState().arenaFrameReady,false);
+ let frameResolved=false;const frameReady=api.waitForRaceFrame({raceId:'loading-barrier',startToken:'token-42',minimumTick:42,timeoutMs:3000}).then(frame=>{frameResolved=true;return frame;});await Promise.resolve();
+ frames(.08);await Promise.resolve();assert.equal(frameResolved,false,'Asset/scene creation without a snapshot cannot acknowledge the grid');
+ const loadingSnapshot={...snapshot,raceId:'loading-barrier',startToken:'token-42',tick:42,phase:'loading',startAt:null,elapsedMs:0};
+ await api.setVisible(false);api.applySnapshot(loadingSnapshot);const loadingWheel=q.player.visual.wheels[0].rotation.x;frames(.1);await Promise.resolve();assert.equal(frameResolved,false,'Hidden renderer cannot acknowledge an arena frame');
+ await api.setVisible(true);frames(.08);const presented=await frameReady;assert.equal(presented.raceId,'loading-barrier');assert.equal(presented.startToken,'token-42');assert.equal(presented.tick,42);assert.equal(api.getState().arenaFrameReady,true);assert.equal($('countdown-display').textContent,'MENUNGGU PEMAIN');assert.equal(q.player.visual.wheels[0].rotation.x,loadingWheel,'Loading must keep wheel motion stopped');assert.ok(q.player.visual.flames.every(f=>!f.visible));assert.equal(api.getInput().throttle,0);
+ api.applySnapshot({...loadingSnapshot,tick:43,phase:'countdown',serverTime:5000,startAt:10000});frames(.05);assert.equal($('countdown-display').textContent,'5','Countdown must use the server start time, not an independent timer');
+ // A room prayer pause preserves the existing scene while neutralizing every
+ // drive source. A reconnected client may acknowledge its rendered paused grid.
+ api.applySnapshot({...loadingSnapshot,tick:44,phase:'racing',serverTime:20000,elapsedMs:1000});key('KeyW');frames(.03);assert.equal(api.getInput().throttle,1);
+ api.playEvents([{type:'collision',racerId:'me',intensity:.5}]);assert.ok(q.particles.length>0);
+ const retainedCars=q.racers.map(r=>r.visual),retainedScene=q.scene,pausedPos=q.player.pos.clone(),pausedWheel=q.player.visual.wheels[0].rotation.x,pausedWorldTime=q.worldTime,pausedParticle=q.particles[0],particlePosition=pausedParticle.mesh.position.clone(),particleLife=pausedParticle.life;
+ const prayerPause={pauseToken:'room-prayer-1',startedAt:20000,resumeEligibleAt:920000,resumeAt:null,previousPhase:'racing',triggers:[],requiredIds:['me','rival'],readyIds:[]};
+ api.applySnapshot({...loadingSnapshot,tick:45,phase:'prayer_pause',serverTime:20000,elapsedMs:1000,prayerPause});
+ assert.equal(q.inputs.up,false,'Entering prayer clears held keys');assert.equal(api.getInput().throttle,0);assert.equal(q.audio.state.active,false);
+ key('KeyW');key('KeyR');key('KeyP');api.setInput({throttle:1,nitro:true,reset:true});api.playEvents([{type:'collision',racerId:'me',intensity:1}]);
+ const pausedFrame=api.waitForRaceFrame({raceId:'loading-barrier',startToken:'token-42',minimumTick:45,timeoutMs:3000});await Promise.resolve();frames(1);const pausedPresented=await pausedFrame;
+ assert.equal(pausedPresented.tick,45);assert.equal($('countdown-display').textContent,'JEDA SALAT');assert.equal(q.player.visual.wheels[0].rotation.x,pausedWheel);assert.equal(q.worldTime,pausedWorldTime);assert.equal(pausedParticle.life,particleLife);assert.ok(pausedParticle.mesh.position.equals(particlePosition));assert.equal(q.audio.state.active,false);assert.ok(q.player.visual.flames.every(f=>!f.visible));assert.ok(q.player.pos.equals(pausedPos));assert.equal(q.clock,1000);assert.equal(q.inputs.up,false);assert.equal(q.online.resetRequested,false);assert.equal(q.online.paused,false);assert.equal(q.online.externalInput,null);
+ assert.strictEqual(q.scene,retainedScene);q.racers.forEach((r,i)=>assert.strictEqual(r.visual,retainedCars[i],'Prayer cannot rebuild/dispose the car roster'));
+ api.applySnapshot({...loadingSnapshot,tick:46,phase:'resume_countdown',serverTime:920000,elapsedMs:1000,prayerPause:{...prayerPause,resumeAt:923000,readyIds:['me','rival']}});
+ const resumeFrame=api.waitForRaceFrame({raceId:'loading-barrier',startToken:'token-42',minimumTick:46,timeoutMs:3000});await Promise.resolve();frames(.08);assert.equal((await resumeFrame).tick,46);assert.equal($('countdown-display').textContent,'3');assert.equal(api.getInput().throttle,0);assert.equal(q.player.visual.wheels[0].rotation.x,pausedWheel);
+ api.applySnapshot({...loadingSnapshot,tick:47,phase:'racing',serverTime:923000,elapsedMs:1000,prayerPause:null});assert.equal(api.getInput().throttle,0,'Held inputs from prayer cannot reappear on resume');key('KeyW');frames(.03);assert.equal(api.getInput().throttle,1);assert.ok(q.player.visual.wheels[0].rotation.x!==pausedWheel);assert.ok(q.worldTime>pausedWorldTime);assert.equal(q.audio.state.active,true);assert.strictEqual(q.player.visual,retainedCars[0]);key('KeyW','keyup');
+ results.push('Room prayer pause: held/external/reset inputs cleared and blocked, wheels/particles/world animation and driving audio frozen, scene/model identity retained, paused and resume-countdown frame barriers valid, server-only resume and fresh-input restart.');
+ const cancelledFrame=api.waitForRaceFrame({raceId:'loading-barrier',minimumTick:99,timeoutMs:3000});const cancelledFrameCheck=assert.rejects(cancelledFrame,{name:'AbortError'});await Promise.resolve();await api.stopRace();await cancelledFrameCheck;
+ // A cancelled slow GLB await must never reopen the old race after leaving.
+ const realLoad=window.NVImportedCars.load;let finishSlowAsset;
+ window.NVImportedCars.load=id=>id==='brz'?new Promise(resolve=>{finishSlowAsset=()=>resolve(window.NVImportedCars.getTemplate(id));}):realLoad(id);
+ const slowStart=api.startRace({raceId:'cancelled-slow-start',startToken:'old-token',config:{circuit:'beach'},localRacerId:'me',loadouts:[{id:'me',loadout:{carId:'brz'}}]});const slowStartCheck=assert.rejects(slowStart,{name:'AbortError'});await Promise.resolve();assert.equal(typeof finishSlowAsset,'function');assert.equal(api.getState().preparing,true);await api.stopRace();finishSlowAsset();await slowStartCheck;window.NVImportedCars.load=realLoad;assert.equal(api.getState().active,false);assert.equal(q.racers.length,0);
+ results.push('Loading barrier: no ack without applied snapshot or visible scene frame, server-only countdown, motion stopped while loading, frame wait aborted on exit, stale slow model completion cannot reopen arena.');
+
  await api.configure({circuit:'glacier',previewOnly:true});assert.equal(q.settings.circuit,'glacier');frames(.05);await api.configure({circuit:'city',previewOnly:true});assert.equal(q.settings.circuit,'city');frames(.05);
  results.push('All three existing worlds switch through the public API.');
  assert.equal(errors.length,0,errors.join('\n'));
  results.unshift('SHA-256 identity of all eight original GLBs and unchanged city/biome/police/fallback modules.');
- console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,fittedModels:stats.map(item=>item.id),warnings:warnings.slice(0,12),errors},null,2));api.dispose();
+ console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,fittedModels:stats.map(item=>item.id),stripes:stripeStats,warnings:warnings.slice(0,12),errors},null,2));api.dispose();
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

@@ -12,7 +12,7 @@ const databaseUrl=process.env.TEST_DATABASE_URL;
 assert(databaseUrl&&/test/i.test(new URL(databaseUrl).pathname),'Use the isolated PostgreSQL test wrapper.');
 const delay=(ms:number)=>new Promise<void>(resolve=>setTimeout(resolve,ms));
 async function waitFor(check:()=>boolean,label:string){const deadline=Date.now()+6000;while(!check()){if(Date.now()>deadline)throw new Error('Timeout: '+label);await delay(15);}}
-const application=await createApplication({databaseUrl,development:true,serveClient:true,secureCookies:false});
+const application=await createApplication({databaseUrl,development:true,serveClient:true,secureCookies:false,prayerNow:()=>new Date('2026-11-20T03:00:00.000Z')});
 const rooms:Room[]=[];let hmr:WebSocket|undefined,ping:WebSocket|undefined;let closed=false;
 try{
  await application.listen(0,'127.0.0.1');const address=application.httpServer.address();assert(address&&typeof address==='object');const origin='http://127.0.0.1:'+address.port;
@@ -34,7 +34,7 @@ try{
  const host=await entrant(1),peer=await entrant(2);
  const room=await host.client.create('race',{ticket:host.ticket,maxHumans:2,bots:0,laps:1,loadout:{carId:'brz',color:'#2866b8',finish:'metallic',rimId:'stock'}});rooms.push(room);
  let latest:RoomSnapshot|undefined;room.onMessage('snapshot',(snapshot:RoomSnapshot)=>{latest=snapshot;});room.onMessage('room_error',()=>{});room.onMessage('result',()=>{});room.onMessage('pong',()=>{});room.send('sync');
- const other=await peer.client.joinById(room.roomId,{ticket:peer.ticket,loadout:{carId:'brz',color:'#a92d3b',finish:'gloss',rimId:'stock'}});rooms.push(other);
+ const other=await peer.client.joinById(room.roomId,{ticket:peer.ticket,loadout:{carId:'brz',color:'#2866b8',finish:'metallic',rimId:'stock'}});rooms.push(other);
  other.onMessage('snapshot',()=>{});other.onMessage('room_error',()=>{});other.onMessage('result',()=>{});other.onMessage('pong',()=>{});other.send('sync');
  await waitFor(()=>latest?.members.length===2,'two real Colyseus clients');
  await delay(1200);assert.equal(hmr.readyState,WebSocket.OPEN,'HMR is not routed into Colyseus ping utility');assert.equal(rooms.every(room=>room.connection.isOpen),true);

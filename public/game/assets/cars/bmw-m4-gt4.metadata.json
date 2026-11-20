@@ -1,0 +1,109 @@
+{
+  "id": "bmw-m4-gt4",
+  "file": "/game/assets/cars/bmw-m4-gt4.glb",
+  "bytes": 2717464,
+  "triangles": 78303,
+  "meshCount": 29,
+  "nodeCount": 38,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "metal",
+    "brake_caliper",
+    "paint_body",
+    "carbon",
+    "glass",
+    "interior_seat",
+    "light_front",
+    "light_rear"
+  ],
+  "bounds": {
+    "min": [
+      -1.1349999904632568,
+      -2.8610229740877458e-09,
+      -2.4559872150421143
+    ],
+    "max": [
+      1.1349999904632568,
+      1.524999976158142,
+      2.5399999618530273
+    ]
+  },
+  "dimensions": [
+    2.2699999809265137,
+    1.524999979019165,
+    4.995987176895142
+  ],
+  "provenance": "Original UVelocity reference-based recreation; independently generated sculpted surfaces and details; not a manufacturer mesh, scan, or copied game asset.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-racecar-expansion.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "wheelRadius": 0.347,
+  "wheelWidth": 0.295,
+  "wheelCenters": {
+    "FL": [
+      0.83,
+      0.347,
+      1.405
+    ],
+    "FR": [
+      -0.83,
+      0.347,
+      1.405
+    ],
+    "RL": [
+      0.83,
+      0.347,
+      -1.405
+    ],
+    "RR": [
+      -0.83,
+      0.347,
+      -1.405
+    ]
+  },
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "tail": -2.435,
+  "exhaustX": 0.63,
+  "exhaustY": 0.28,
+  "headlightPositions": [
+    [
+      -0.63,
+      0.687,
+      2.4
+    ],
+    [
+      0.63,
+      0.687,
+      2.4
+    ]
+  ],
+  "length": 4.995987176895142,
+  "exhaustPositions": [
+    [
+      -0.63,
+      0.28,
+      -2.435
+    ],
+    [
+      0.63,
+      0.28,
+      -2.435
+    ]
+  ],
+  "validation": {
+    "glbBuffers": "finite-and-index-valid",
+    "rig": "four-wheels-two-steering-pivots",
+    "visualReview": "Blender Cycles CPU 48 samples; front three-quarter views",
+    "isGameplayScreenshot": false
+  }
+}

@@ -1,4 +1,4 @@
-import { CAR_IDS, CIRCUIT_IDS, type FrozenLoadout, type PhysicsConfig, type RoomConfig, type VehicleInput, type VehicleStats } from './types.js';
+import { CAR_IDS, CIRCUIT_IDS, STRIPE_IDS, type FrozenLoadout, type PhysicsConfig, type RoomConfig, type VehicleInput, type VehicleStats } from './types.js';
 
 export const MAX_RACERS = 15;
 export const DEFAULT_PHYSICS: Readonly<PhysicsConfig> = Object.freeze({
@@ -31,8 +31,11 @@ export function validateStats(stats:VehicleStats):VehicleStats {
 export function freezeLoadout(loadout:FrozenLoadout):FrozenLoadout {
   if(!CAR_IDS.includes(loadout.carId)||!/^#[\da-f]{6}$/i.test(loadout.color)||!['gloss','metallic','matte'].includes(loadout.finish))throw new Error('Invalid validated loadout');
   const rimColor=loadout.rimColor??'#c7cdd4';if(!/^#[\da-f]{6}$/i.test(rimColor))throw new Error('Invalid rim color');
+  const stripeId=loadout.stripeId??'none',stripeColor=loadout.stripeColor??'#ffffff';
+  if(!STRIPE_IDS.includes(stripeId)||!/^#[\da-f]{6}$/i.test(stripeColor))throw new Error('Invalid stripe appearance');
+  if(loadout.appearanceVersion!==undefined&&!/^(0|[1-9][0-9]{0,18})$/.test(loadout.appearanceVersion))throw new Error('Invalid appearance version');
   if(typeof loadout.tuningVersion!=='string'||!loadout.tuningVersion)throw new Error('A ruleset version is required');
-  return Object.freeze({...loadout,rimColor,stats:validateStats(loadout.stats)});
+  return Object.freeze({...loadout,rimColor,stripeId,stripeColor,stats:validateStats(loadout.stats)});
 }
 export function resolvePhysics(overrides:Partial<PhysicsConfig>={}):PhysicsConfig {
   const value={...DEFAULT_PHYSICS,...overrides};

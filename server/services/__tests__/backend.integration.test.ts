@@ -29,8 +29,8 @@ before(async()=>{
   await control.query(`CREATE SCHEMA ${schema}`);
   pool=new pg.Pool({connectionString,options:`-c search_path=${schema}`,max:12});
   const files=await migrate(pool);
-  assert.equal(files.length,5);
-  services=createServices(pool);
+  assert.equal(files.length,8);
+  services=createServices(pool,{prayerNow:()=>new Date('2026-11-20T03:00:00.000Z')});
   alice=await services.accounts.register({email:'alice@example.test',displayName:'Alice Racer',password});
   bob=await services.accounts.register({email:'bob@example.test',displayName:'Bob Racer',password});
   admin=await services.accounts.createAdmin({email:'admin@example.test',displayName:'Test Operator',password});
@@ -76,8 +76,8 @@ test('migrations are repeatable; seed is actual PostgreSQL and starter grant is 
   const count=await pool.query("SELECT count(*)::int n FROM wallet_entries WHERE user_id=$1 AND kind='starter'",[alice.user.id]);assert.equal(count.rows[0].n,1);
 });
 
-test('all8 cars match canonical arcade tuning and wheels stay cosmetic',async()=>{
-  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,8);assert.equal(catalog.wheels.length,4);
+test('all15 cars match canonical arcade tuning and wheels stay cosmetic',async()=>{
+  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,15);assert.equal(catalog.wheels.length,4);
   const rules=await services.economy.getActiveRuleset();
   assert.equal(rules.cars.brz.topSpeed,255);assert.equal(rules.cars.veyron77.zeroTo100,2.7);assert.equal(rules.cars.kaze.handling,1.16);
   assert(catalog.wheels.every((wheel:any)=>wheel.cosmeticOnly));
@@ -163,32 +163,34 @@ test('later SQL failure rolls back debit, inventory, ledger and idempotency reco
 test('catalog version conflicts and unowned loadouts are rejected; owned rims do not affect tuning',async()=>{
   await assert.rejects(services.economy.purchase(alice.user.id,{itemId:'multi-spoke',catalogVersion:1},'stale-price-request'),isService('CATALOG_CHANGED'));
   await assert.rejects(services.admin.updateCatalog(admin.id,'multi-spoke',{price:'1',expectedVersion:1,reason:'Stale admin price'}),isService('CATALOG_CHANGED'));
-  await assert.rejects(services.economy.resolveLoadout(alice.user.id,{carId:'aventador',color:'#ff0000',finish:'gloss',rimId:'stock'}),isService('CAR_NOT_OWNED'));
-  const stock=await services.economy.resolveLoadout(alice.user.id,{carId:'brz',color:'#ff0000',finish:'gloss',rimId:'stock'});
-  const six=await services.economy.resolveLoadout(alice.user.id,{carId:'brz',color:'#ff0000',finish:'gloss',rimId:'six-spoke'});assert.deepEqual(stock.stats,six.stats);
+  await assert.rejects(services.economy.resolveLoadout(alice.user.id,{carId:'aventador',color:'#ff0000',finish:'gloss',rimId:'stock'}),isService('CAR_LOCKED'));
+  const stock=await services.economy.resolveLoadout(alice.user.id,{carId:'brz',color:'#2866b8',finish:'metallic',rimId:'stock'});
+  const six=await services.economy.resolveLoadout(alice.user.id,{carId:'brz',color:'#2866b8',finish:'metallic',rimId:'six-spoke'});assert.deepEqual(stock.stats,six.stats);
 });
 
 test('rim paint persists across sessions and snapshots without bypassing wheel ownership',async()=>{
   const painted={carId:'brz' as const,rimId:'six-spoke',color:'#2866b8',rimColor:'#DDAA66',finish:'metallic' as const};
-  await services.economy.saveLoadout(alice.user.id,painted);
+  const quote=await services.economy.quoteAppearance(alice.user.id,painted);assert.equal(quote.total,'5000');
+  await services.economy.applyAppearance(alice.user.id,{quoteId:quote.quoteId},'paid-rim-repaint-test');
   const logged=await services.accounts.login({email:alice.user.email,password});
   const session=await services.accounts.authenticateSession({cookie:`uv_session=${logged.sessionToken}`});assert(session);
   assert.equal((await services.economy.getProfile(session.id)).loadout.rimColor,'#ddaa66');
   assert.equal((await services.economy.resolveLoadout(session.id)).rimColor,'#ddaa66');
-  await services.economy.saveLoadout(alice.user.id,{carId:'brz',rimId:'six-spoke',color:'#335577',finish:'gloss'});
+  const bodyQuote=await services.economy.quoteAppearance(alice.user.id,{carId:'brz',rimId:'six-spoke',color:'#335577',finish:'gloss'});
+  await services.economy.applyAppearance(alice.user.id,{quoteId:bodyQuote.quoteId},'paid-body-repaint-test');
   assert.equal((await services.economy.resolveLoadout(alice.user.id,{carId:'brz',rimId:'six-spoke',color:'#335577',finish:'gloss'})).rimColor,'#ddaa66');
-  await assert.rejects(services.economy.saveLoadout(alice.user.id,{...painted,rimId:'mesh',rimColor:'#123456'}),isService('WHEEL_NOT_OWNED'));
-  await assert.rejects(services.economy.saveLoadout(alice.user.id,{...painted,rimColor:'rgb(1,2,3)'}),isService('INVALID_COLOR'));
+  await assert.rejects(services.economy.quoteAppearance(alice.user.id,{...painted,rimId:'mesh',rimColor:'#123456'}),isService('WHEEL_NOT_OWNED'));
+  await assert.rejects(services.economy.quoteAppearance(alice.user.id,{...painted,rimColor:'rgb(1,2,3)'}),isService('INVALID_COLOR'));
   const profile=await services.economy.getProfile(alice.user.id);assert.equal(profile.loadout.rimId,'six-spoke');assert.equal(profile.loadout.rimColor,'#ddaa66');
 });
 
 test('published tuning is immutable, compare-and-swap protected and old versions remain usable',async()=>{
-  const old=await services.economy.getActiveRuleset();assert.equal(old.version,'1');
-  const published=await services.admin.publishTuning(admin.id,{expectedVersion:'1',carId:'brz',topSpeed:260,zeroTo100:5.5,handling:1.2,reason:'Test next-race balance update'});assert.equal(published.version,'2');
+  const old=await services.economy.getActiveRuleset();assert.equal(old.version,'2');
+  const published=await services.admin.publishTuning(admin.id,{expectedVersion:'2',carId:'brz',topSpeed:260,zeroTo100:5.5,handling:1.2,reason:'Test next-race balance update'});assert.equal(published.version,'3');
   const next=await services.economy.getActiveRuleset();assert.equal(next.cars.brz.topSpeed,260);
   const frozen=await services.economy.resolveLoadout(alice.user.id,undefined,'1');assert.equal(frozen.stats.topSpeed,255);assert.equal(frozen.tuningVersion,'1');
-  await assert.rejects(services.admin.publishTuning(admin.id,{expectedVersion:'1',carId:'brz',topSpeed:270,zeroTo100:5,handling:1.2,reason:'Stale racing update'}),isService('RULESET_CHANGED'));
-  await assert.rejects(services.admin.publishTuning(admin.id,{expectedVersion:'2',carId:'brz',topSpeed:9999,zeroTo100:0,handling:100,reason:'Invalid racing update'}),isService('INVALID_TUNING'));
+  await assert.rejects(services.admin.publishTuning(admin.id,{expectedVersion:'2',carId:'brz',topSpeed:270,zeroTo100:5,handling:1.2,reason:'Stale racing update'}),isService('RULESET_CHANGED'));
+  await assert.rejects(services.admin.publishTuning(admin.id,{expectedVersion:'3',carId:'brz',topSpeed:9999,zeroTo100:0,handling:100,reason:'Invalid racing update'}),isService('INVALID_TUNING'));
   await assert.rejects(pool.query('UPDATE ruleset_cars SET top_speed=300 WHERE car_id=$1',['brz']),isService('55000'));
   await assert.rejects(pool.query("UPDATE wallet_entries SET reason='tampered' WHERE user_id=$1",[alice.user.id]),isService('55000'));
 });

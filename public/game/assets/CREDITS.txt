@@ -89,3 +89,23 @@ manufacturer specifications.
 Offline conversion utility: meshoptimizer 0.24 by Arseny Kapoulkine and
 contributors, MIT license (LICENSE.md in this conversion folder).
 https://github.com/zeux/meshoptimizer
+
+
+ORIGINAL REFERENCE-BASED EXPANSION VEHICLES
+
+BMW M Hybrid V8; BMW M4 GT4 F82; Mercedes-AMG GT4;
+Mercedes-Benz SLS AMG GT3; Batmobile 1989; Koenigsegg Jesko Absolut;
+Hennessey Venom F5.
+
+These seven meshes are original UVelocity geometry authored from the supplied
+visual references using scripts/modeling-kit.cjs and the vehicle build scripts.
+They are reference-based game recreations, not manufacturer meshes, scans,
+or geometry copied from another game. Brand/vehicle names identify the visual
+reference; appearance details and performance values are game interpretations.
+The original eight source GLBs and their attributions above remain unchanged.
+
+Fitted wheel packages and paint-surface vinyl patterns are original UVelocity
+geometric artwork. The five stripe patterns clip actual paint-surface triangles;
+no outside livery textures or manufacturer racing artwork are distributed.
+Additional engine profiles are game synthesis, not manufacturer recordings.
+The Batmobile profile is a fictional cinematic turbine interpretation.

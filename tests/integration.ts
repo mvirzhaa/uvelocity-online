@@ -26,6 +26,7 @@ const port=await new Promise<number>((resolve,reject)=>{
 });
 const origin=`http://127.0.0.1:${port}`;
 const application=await createApplication({databaseUrl:connectionString,allowedOrigins:[origin],secureCookies:false,serveClient:staticArtifacts,development:false,
+  prayerNow:()=>new Date('2026-11-20T03:00:00.000Z'),
   realtime:{countdownMs:100,snapshotRateMs:25,reconnectSeconds:1,sessionCheckMs:100,maxRaceDurationMs:3500,finishRetentionMs:4000}});
 let steps=0;
 const opened:Room[]=[];
@@ -36,7 +37,7 @@ const suffix=randomUUID().slice(0,10);
 const alice:Actor={email:`adapter-a-${suffix}@example.test`,password:randomBytes(24).toString('base64url')};
 const bob:Actor={email:`adapter-b-${suffix}@example.test`,password:randomBytes(24).toString('base64url')};
 const operator:Actor={email:`operator-${suffix}@example.test`,password:randomBytes(24).toString('base64url')};
-let catalog:Catalog,aliceProfile:Profile,bobProfile:Profile,initialRoom:Observer,peerRoom:Observer,frozenVersion:string,raceId:string;
+let catalog:Catalog,aliceProfile:Profile,bobProfile:Profile,initialRoom:Observer,peerRoom:Observer,frozenVersion:string,raceId:string,pendingAppearanceQuote:string;
 
 async function http<T=any>(path:string,options:{actor?:Actor;method?:string;body?:unknown;expected?:number;key?:string;cookie?:string}={}):Promise<HttpResult<T>> {
   const method=options.method??'GET',headers:Record<string,string>={Accept:'application/json',Origin:origin};
@@ -66,7 +67,12 @@ async function waitFor(check:()=>boolean|Promise<boolean>,label:string,timeout=8
 function observe(room:Room):Observer {
   opened.push(room);room.reconnection.enabled=false;
   const observer:Observer={room,snapshot:null,errors:[],results:[],left:false};
-  room.onMessage('snapshot',(snapshot:RoomSnapshot)=>{observer.snapshot=snapshot;});
+  const acknowledged=new Set<string>();
+  room.onMessage('snapshot',(snapshot:RoomSnapshot)=>{observer.snapshot=snapshot;
+    // Explicit headless arena participant; it must receive the frozen loading
+    // scene/token before acknowledging. It cannot bypass with lobby ready alone.
+    if(snapshot.phase==='loading'&&snapshot.startToken&&snapshot.racers.length&&!acknowledged.has(snapshot.startToken)){acknowledged.add(snapshot.startToken);room.send('arena_ready',{raceId:snapshot.raceId,startToken:snapshot.startToken});}
+  });
   room.onMessage('room_error',error=>observer.errors.push(error));
   room.onMessage('result',result=>observer.results.push(result));
   room.onMessage('pong',()=>{});room.onError(()=>{});room.onLeave(()=>{observer.left=true;});room.send('sync');
@@ -81,7 +87,7 @@ try {
     const health=await http('/health');assert.equal(health.data.application,'UVelocity');assert.equal(health.data.database,'postgresql');assert.equal(health.data.ok,true);
     assert.equal(health.response.headers.get('x-powered-by'),null);
     assert.match(health.response.headers.get('content-security-policy')??'',/frame-ancestors 'self'/);
-    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,5);
+    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,8);
     const db=await application.pool.query('SELECT version()');assert.match(db.rows[0].version,/PostgreSQL/);
   });
 
@@ -102,15 +108,18 @@ try {
   });
 
   await step('HTTP purchase headers and workshop loadout preserve owned rim paint',async()=>{
-    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,8);assert.equal(catalog.wheels.length,4);
+    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,15);assert.equal(catalog.wheels.length,4);
     const wheel=catalog.wheels.find(item=>item.id==='six-spoke')!;assert(wheel);
     const payload={itemId:wheel.itemId,catalogVersion:wheel.catalogVersion},key=randomUUID();
     const purchase=await http('/shop/purchase',{actor:alice,method:'POST',body:payload,key});
     const replay=await http('/shop/purchase',{actor:alice,method:'POST',body:payload,key});assert.equal(replay.data.purchaseId,purchase.data.purchaseId);
     assert.equal(purchase.data.wallet.balance,'5000');
-    const loadout:Loadout={carId:'brz',rimId:'six-spoke',color:'#8B5A2B',rimColor:'#DDAA66',finish:'matte'};
-    const saved=await http('/loadout',{actor:alice,method:'PUT',body:loadout});assert.equal(saved.data.loadout.rimColor,'#ddaa66');
-    aliceProfile=(await http<Profile>('/profile',{actor:alice})).data;assert(aliceProfile.inventory.wheels.includes('six-spoke'));assert.equal(aliceProfile.loadout.rimColor,'#ddaa66');assert.equal(aliceProfile.loadout.color,'#8b5a2b');
+    const loadout:Loadout={carId:'brz',rimId:'six-spoke',color:'#8B5A2B',rimColor:'#DDAA66',finish:'matte',stripeId:'twin-racing',stripeColor:'#ffffff'};
+    const saved=await http('/loadout',{actor:alice,method:'PUT',body:{carId:'brz',rimId:'six-spoke'}});assert.equal(saved.data.loadout.rimColor,'#c7cdd4');
+    await http('/loadout',{actor:alice,method:'PUT',body:loadout,expected:403});
+    const quoted=await http('/garage/appearance/quote',{actor:alice,method:'POST',body:loadout});pendingAppearanceQuote=quoted.data.quoteId;assert.equal(quoted.data.total,'30000');assert.equal(quoted.data.affordable,false);
+    const unfunded=await http('/garage/appearance/apply',{actor:alice,method:'POST',key:'adapter-paint-'+suffix,body:{quoteId:pendingAppearanceQuote},expected:409});assert.equal(unfunded.data.error.code,'INSUFFICIENT_BALANCE');
+    aliceProfile=(await http<Profile>('/profile',{actor:alice})).data;assert(aliceProfile.inventory.wheels.includes('six-spoke'));assert.equal(aliceProfile.wallet.balance,'5000');assert.equal(aliceProfile.loadout.color,'#2866b8');
     const history=await http('/wallet/transactions?limit=10',{actor:alice});assert(history.data.entries.some((entry:any)=>entry.kind==='purchase'&&entry.delta==='-20000'));
   });
 
@@ -119,6 +128,9 @@ try {
     await http('/auth/login',{actor:operator,method:'POST',body:{email:operator.email,password:operator.password}});
     const searched=await http('/admin/users?q='+encodeURIComponent(alice.email),{actor:operator});assert.equal(searched.data.users.length,1);assert.equal(searched.data.users[0].userId,alice.id);
     const grant=await http('/admin/topups',{actor:operator,method:'POST',key:randomUUID(),body:{userId:alice.id,amount:'75000',reference:'adapter-grant-'+suffix,reason:'HTTP integration virtual-credit grant'}});assert.equal(grant.data.wallet.balance,'80000');
+    const applied=await http('/garage/appearance/apply',{actor:alice,method:'POST',key:'adapter-paint-'+suffix,body:{quoteId:pendingAppearanceQuote}});
+    const repeated=await http('/garage/appearance/apply',{actor:alice,method:'POST',key:'adapter-paint-'+suffix,body:{quoteId:pendingAppearanceQuote}});assert.equal(repeated.data.applicationId,applied.data.applicationId);assert.equal(applied.data.wallet.balance,'50000');
+    aliceProfile=(await http<Profile>('/profile',{actor:alice})).data;assert.equal(aliceProfile.loadout.rimColor,'#ddaa66');assert.equal(aliceProfile.loadout.color,'#8b5a2b');assert.equal(aliceProfile.loadout.stripeId,'twin-racing');
     const before=await http('/admin/tuning',{actor:operator});
     const published=await http('/admin/tuning/publish',{actor:operator,method:'POST',body:{expectedVersion:before.data.version,carId:'brz',topSpeed:260,zeroTo100:5.5,handling:1.2,reason:'HTTP integration tuning publication'}});
     const rewards=await http('/admin/rewards/publish',{actor:operator,method:'POST',body:{expectedVersion:published.data.version,reason:'HTTP integration reward publication',rewardPolicy:{finish:'12000',perLap:'1500',podium:['15000','8000','4000'],minimumDurationMs:15000,maximum:'50000'}}});frozenVersion=rewards.data.version;
@@ -139,7 +151,7 @@ try {
     peerRoom=observe(await sdk(bob).joinById(lookup.data.roomId,{ticket:await ticket(bob),loadout:bobProfile.loadout}));
     await waitFor(()=>initialRoom.snapshot?.members.length===2&&peerRoom.snapshot?.members.length===2,'both participants');
     const remote=peerRoom.snapshot!.members.find(member=>member.userId===alice.id)!;
-    assert.equal(remote.name,'Adapter Pilot A');assert.equal(remote.loadout.rimId,'six-spoke');assert.equal(remote.loadout.rimColor,'#ddaa66');assert.equal(remote.loadout.color,'#8b5a2b');
+    assert.equal(remote.name,'Adapter Pilot A');assert.equal(remote.loadout.rimId,'six-spoke');assert.equal(remote.loadout.rimColor,'#ddaa66');assert.equal(remote.loadout.color,'#8b5a2b');assert.equal(remote.loadout.stripeId,'twin-racing');assert.equal(remote.loadout.stripeColor,'#ffffff');
     assert.equal(remote.loadout.stats.topSpeed,260);
     const serialized=JSON.stringify(peerRoom.snapshot);assert(!serialized.includes(alice.cookie!),'Session cookie must stay out of snapshots');assert(!serialized.includes(alice.csrf!),'CSRF token must stay out of snapshots');
     initialRoom.room.send('start');await waitFor(()=>initialRoom.errors.some(error=>error.code==='NOT_READY'),'asset readiness barrier');
@@ -165,12 +177,12 @@ try {
     try{await waitFor(()=>initialRoom.results.length>=1&&peerRoom.results.length>=1,'real room settlement',10000);}
     catch(error){throw new Error(`${messageOf(error)}; diagnostics=${JSON.stringify({host:{phase:initialRoom.snapshot?.phase,tick:initialRoom.snapshot?.tick,elapsed:initialRoom.snapshot?.elapsedMs,results:initialRoom.results.length,error:initialRoom.snapshot?.settlementError,codes:initialRoom.errors.map(e=>e.code)},peer:{phase:peerRoom.snapshot?.phase,tick:peerRoom.snapshot?.tick,elapsed:peerRoom.snapshot?.elapsedMs,results:peerRoom.results.length,error:peerRoom.snapshot?.settlementError,codes:peerRoom.errors.map(e=>e.code)}})}`);}
     assert.equal(initialRoom.results[0]!.result.raceId,raceId);assert.equal(initialRoom.results[0]!.reward?.userId,alice.id);assert.equal(peerRoom.results[0]!.reward?.userId,bob.id);
-    assert.equal(initialRoom.results[0]!.reward?.amount,'0');assert.equal(initialRoom.results[0]!.reward?.balance,'80000');
+    assert.equal(initialRoom.results[0]!.reward?.amount,'0');assert.equal(initialRoom.results[0]!.reward?.balance,'50000');
     assert(initialRoom.results[0]!.result.participants.every(participant=>participant.status==='dnf'));
     assert(!('rewards' in initialRoom.results[0]!),'A client must not receive other account balances');
     const stored=await application.pool.query('SELECT r.status,s.version,(SELECT count(*)::int FROM race_results rr WHERE rr.race_id=r.id) AS results FROM races r JOIN rulesets s ON s.id=r.ruleset_id WHERE r.id=$1',[raceId]);
     assert.equal(stored.rows[0].status,'finished');assert.equal(String(stored.rows[0].version),frozenVersion);assert.equal(stored.rows[0].results,2);
-    const profile=await http<Profile>('/profile',{actor:alice});assert.equal(profile.data.statistics.races,1);assert.equal(profile.data.statistics.rewards,'0');assert.equal(profile.data.wallet.balance,'80000');
+    const profile=await http<Profile>('/profile',{actor:alice});assert.equal(profile.data.statistics.races,1);assert.equal(profile.data.statistics.rewards,'0');assert.equal(profile.data.wallet.balance,'50000');
     await initialRoom.room.leave();await peerRoom.room.leave();
   });
 
@@ -189,7 +201,7 @@ try {
     await waitFor(async()=>{const row=await application.pool.query('SELECT status FROM races WHERE id=$1',[observer.snapshot!.raceId]);return row.rows[0]?.status==='finished';},'revoked player DNF persistence');
   });
 
-  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all8 GLB assets',async()=>{
+  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all15 GLB assets',async()=>{
     const shell=await fetch(origin+'/');assert.equal(shell.status,200);assert.match(shell.headers.get('content-type')??'',/text\/html/);assert.match(await shell.text(),/UVelocity/);
     const frame=await fetch(origin+'/game/game.html');assert.equal(frame.status,200);const frameHtml=await frame.text();assert.match(frameHtml,/game-api\.js/);
     assert(!/\son[a-z]+\s*=/i.test(frameHtml),'Production game HTML must bind events in external scripts; inline handlers are blocked by its CSP');

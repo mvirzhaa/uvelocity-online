@@ -11,6 +11,7 @@ import type { BeginRaceInput, LoadoutSelection, RaceResult, RaceSettlement, Room
 import { registerRaceRooms } from '../../server/realtime/RaceRoom.js';
 import type { RealtimeServices } from '../../server/realtime/contracts.js';
 import type { RaceRuntime } from '../../server/realtime/RaceRuntime.js';
+import {allowedPrayerStatus} from './prayer-fixture.js';
 
 const delay=(ms:number)=>new Promise<void>(resolve=>setTimeout(resolve,ms));
 async function waitFor(check:()=>boolean,label:string,timeout=5000){const start=Date.now();while(!check()){if(Date.now()-start>timeout)throw new Error('Timeout: '+label);await delay(10);}}
@@ -18,7 +19,12 @@ const selected:LoadoutSelection={carId:'brz',color:'#2866b8',finish:'metallic',r
 interface Observer { room:ClientRoom; snapshot:RoomSnapshot|null; errors:Array<{code:string;message:string}>; results:any[] }
 function observe(room:ClientRoom):Observer {
   const observer:Observer={room,snapshot:null,errors:[],results:[]};
-  room.onMessage('snapshot',(snapshot:RoomSnapshot)=>{observer.snapshot=snapshot;});room.onMessage('room_error',error=>observer.errors.push(error));room.onMessage('result',result=>observer.results.push(result));room.onMessage('pong',()=>{});
+  const acknowledged=new Set<string>();
+  room.onMessage('snapshot',(snapshot:RoomSnapshot)=>{observer.snapshot=snapshot;
+    // Headless protocol participant explicitly completes the frozen-scene barrier.
+    // Actual renderer/frame ordering is covered by client and renderer tests.
+    if(snapshot.phase==='loading'&&snapshot.startToken&&snapshot.racers.length&&!acknowledged.has(snapshot.startToken)){acknowledged.add(snapshot.startToken);room.send('arena_ready',{raceId:snapshot.raceId,startToken:snapshot.startToken});}
+  });room.onMessage('room_error',error=>observer.errors.push(error));room.onMessage('result',result=>observer.results.push(result));room.onMessage('pong',()=>{});
   room.onError(()=>{});room.send('sync');return observer;
 }
 
@@ -28,6 +34,7 @@ test('Actual Colyseus clients: auth,2/4/8/15humans, readiness, inputs, latency, 
   const services:RealtimeServices={
     async consumeRaceTicket({ticket,headers}){const userId=tickets.get(ticket);if(!userId||headers.cookie!=='sid='+userId)return null;tickets.delete(ticket);return{id:userId,displayName:'Driver '+userId};},
     async authenticate(headers){const userId=headers.cookie?.replace('sid=','');return userId&&!revoked.has(userId)?{id:userId,displayName:'Driver '+userId}:null;},
+    async gameplayAccess(){return allowedPrayerStatus();},
     async resolveLoadout(_userId,selection,rulesetId='v1'){if(selection.rimId==='unowned')throw new Error('Not owned');return{...selection,rimId:selection.rimId??'stock',stats:DEFAULT_VEHICLE_STATS[selection.carId],tuningVersion:rulesetId};},
     async getActiveRuleset(){return{version:'v1',cars:DEFAULT_VEHICLE_STATS,physics:{...DEFAULT_PHYSICS,tickRate:simulationRate}};},
     async beginRace(input){begun.set(input.raceId,input);},

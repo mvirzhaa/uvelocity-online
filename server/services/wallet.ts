@@ -4,7 +4,7 @@ import { assert } from './errors.js';
 import { MAX_BALANCE } from './validation.js';
 
 export interface Wallet { balance: string; version: string; currency: 'RP_GAME' }
-export interface WalletChange { userId: string; delta: bigint; kind: 'starter'|'purchase'|'admin_topup'|'race_reward'|'correction'; eventKey: string; actorId?: string; reason: string }
+export interface WalletChange { userId: string; delta: bigint; kind: 'starter'|'purchase'|'admin_topup'|'race_reward'|'correction'|'customization'; eventKey: string; actorId?: string; reason: string }
 export async function mutateWallet(client: PoolClient, change: WalletChange): Promise<Wallet & {entryId: string}> {
   assert(change.delta !== 0n, 400, 'INVALID_AMOUNT', 'Perubahan saldo tidak boleh nol.');
   const found = await client.query('SELECT balance,version FROM wallets WHERE user_id=$1 FOR UPDATE', [change.userId]);

@@ -1,27 +1,20 @@
 import { randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import { CAR_IDS, CIRCUIT_IDS } from '../../shared/types.js';
+import {RECONSTRUCTED_CAR_IDS} from '../../shared/catalog.js';
 import type { BeginRaceInput, CarId, FrozenLoadout, LoadoutSelection, RaceResult, RaceRuleset, RaceSettlement, VehicleStats } from '../../shared/types.js';
 import { transaction } from '../db/pool.js';
 import { assert } from './errors.js';
 import { idempotent } from './idempotency.js';
 import { mutateWallet } from './wallet.js';
+import {AppearanceService} from './appearance.js';
+export {WHEEL_IDS} from './appearance.js';
 import * as v from './validation.js';
 
 type Queryable = Pool | PoolClient;
 interface RulesetRecord extends RaceRuleset { databaseId: string; rewardPolicy: RewardPolicy }
 interface RewardPolicy { version:number; finish:string; perLap:string; podium:string[]; minimumDurationMs:number; maximum:string }
 export const TUNING_BOUNDS = Object.freeze({topSpeed:{min:120,max:450},zeroTo100:{min:1.8,max:15},handling:{min:.6,max:1.6}});
-export const WHEEL_IDS = ['stock','six-spoke','multi-spoke','mesh'] as const;
-
-function carId(value: unknown): CarId {
-  assert(typeof value==='string' && (CAR_IDS as readonly string[]).includes(value),400,'INVALID_CAR','Mobil tidak tersedia.');
-  return value as CarId;
-}
-function wheelId(value: unknown): string {
-  assert(typeof value==='string' && (WHEEL_IDS as readonly string[]).includes(value),400,'INVALID_WHEEL','Roda tidak tersedia.');
-  return value;
-}
 function versionNumber(value: unknown): number {
   assert(typeof value==='string' && /^[1-9][0-9]{0,8}$/.test(value),400,'INVALID_VERSION','Versi aturan tidak valid.');
   return Number(value);
@@ -33,12 +26,13 @@ async function readRuleset(db: Queryable, version?: string): Promise<RulesetReco
   assert(result.rowCount,404,'RULESET_NOT_FOUND','Versi aturan tidak ditemukan.');
   const row=result.rows[0],carRows=await db.query('SELECT car_id,top_speed,zero_to_100,handling FROM ruleset_cars WHERE ruleset_id=$1',[row.id]);
   const cars=Object.fromEntries(carRows.rows.map(c=>[c.car_id,{topSpeed:Number(c.top_speed),zeroTo100:Number(c.zero_to_100),handling:Number(c.handling)}])) as Record<CarId,VehicleStats>;
-  assert(CAR_IDS.every(id=>cars[id]),503,'INCOMPLETE_RULESET','Katalog performa belum lengkap.');
+  if(version===undefined)assert(CAR_IDS.every(id=>cars[id]),503,'INCOMPLETE_RULESET','Katalog performa belum lengkap.');
   return {databaseId:row.id,version:String(row.version),cars,physics:row.physics,rewardPolicy:row.reward_policy};
 }
 
 export class EconomyService {
-  constructor(public readonly pool: Pool) {}
+  readonly appearances:AppearanceService;
+  constructor(public readonly pool: Pool) {this.appearances=new AppearanceService(pool);}
 
   async getActiveRuleset(): Promise<RaceRuleset> {
     const {databaseId:_,...ruleset}=await readRuleset(this.pool);
@@ -47,24 +41,26 @@ export class EconomyService {
 
   async getCatalog() {
     const ruleset=await this.getActiveRuleset(),result=await this.pool.query('SELECT * FROM catalog_items ORDER BY kind,price,id');
-    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,
-      ...(row.kind==='car'?{stats:ruleset.cars[row.id as CarId],...ruleset.cars[row.id as CarId],tuningVersion:ruleset.version}:{cosmeticOnly:true})}));
-    return {currency:'RP_GAME',currencyLabel:'Rp · kredit game',rulesetVersion:ruleset.version,tuningBounds:TUNING_BOUNDS,cars:items.filter(x=>x.kind==='car'),wheels:items.filter(x=>x.kind==='wheel')};
+    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,...(row.kind==='car'?{locked:row.locked}:{}),
+      ...(row.kind==='car'?{stats:ruleset.cars[row.id as CarId],...ruleset.cars[row.id as CarId],tuningVersion:ruleset.version}:{cosmeticOnly:true}),
+      ...(RECONSTRUCTED_CAR_IDS.includes(row.id)?{modelOrigin:'reference-reconstruction',modelNote:'Rekonstruksi 3D berdasarkan referensi'}:{})}));
+    return {currency:'RP_GAME',currencyLabel:'Rp · kredit game',rulesetVersion:ruleset.version,tuningBounds:TUNING_BOUNDS,cars:items.filter(x=>x.kind==='car'),wheels:items.filter(x=>x.kind==='wheel'),services:items.filter(x=>x.kind==='service'),stripes:items.filter(x=>x.kind==='service'&&x.service==='stripe-install')};
   }
 
   async getProfile(userId: string) {
-    const [user,wallet,items,loadout,stats]=await Promise.all([
+    const loadout=await this.appearances.activeLoadout(userId);
+    const [user,wallet,items,stats,appearances]=await Promise.all([
       this.pool.query('SELECT id,email,display_name,avatar_id,role,created_at FROM users WHERE id=$1 AND NOT disabled',[userId]),
       this.pool.query('SELECT balance,version FROM wallets WHERE user_id=$1',[userId]),
       this.pool.query('SELECT i.item_id,c.kind,i.acquired_at FROM user_items i JOIN catalog_items c ON c.id=i.item_id WHERE user_id=$1 ORDER BY c.kind,i.item_id',[userId]),
-      this.pool.query('SELECT * FROM loadouts WHERE user_id=$1',[userId]),
-      this.pool.query("SELECT count(*)::int AS races,count(*) FILTER(WHERE status='finished' AND position=1)::int AS wins,COALESCE(sum(reward),0)::text AS rewards FROM race_results WHERE user_id=$1",[userId])
+      this.pool.query("SELECT count(*)::int AS races,count(*) FILTER(WHERE status='finished' AND position=1)::int AS wins,COALESCE(sum(reward),0)::text AS rewards FROM race_results WHERE user_id=$1",[userId]),
+      this.appearances.list(userId)
     ]);
-    assert(user.rowCount && wallet.rowCount && loadout.rowCount,404,'USER_NOT_FOUND','Profil tidak ditemukan.');
-    const u=user.rows[0],l=loadout.rows[0];
+    assert(user.rowCount && wallet.rowCount,404,'USER_NOT_FOUND','Profil tidak ditemukan.');
+    const u=user.rows[0];
     return {user:{id:u.id,email:u.email,displayName:u.display_name,avatarId:u.avatar_id,role:u.role,createdAt:new Date(u.created_at).toISOString()},wallet:{...wallet.rows[0],currency:'RP_GAME'},
       inventory:{cars:items.rows.filter(i=>i.kind==='car').map(i=>i.item_id),wheels:items.rows.filter(i=>i.kind==='wheel').map(i=>i.item_id)},
-      loadout:{carId:l.car_item_id,rimId:l.wheel_item_id,wheelId:l.wheel_item_id,color:l.color,rimColor:l.rim_color,finish:l.finish,version:l.version},
+      accessibleCars:appearances.map(a=>a.carId),appearances,loadout,
       statistics:{races:stats.rows[0].races,wins:stats.rows[0].wins,rewards:stats.rows[0].rewards}};
   }
 
@@ -82,6 +78,7 @@ export class EconomyService {
       const item=await client.query('SELECT * FROM catalog_items WHERE id=$1 AND active FOR SHARE',[itemId]);
       assert(item.rowCount,404,'ITEM_NOT_FOUND','Item tidak tersedia.');
       const row=item.rows[0];
+      assert(row.kind==='car'||row.kind==='wheel',400,'SERVICE_REQUIRES_QUOTE','Layanan bengkel harus dibeli melalui penawaran kustomisasi.');
       assert(row.version===catalogVersion,409,'CATALOG_CHANGED','Harga item berubah. Muat ulang toko sebelum membeli.');
       await client.query('SELECT user_id FROM wallets WHERE user_id=$1 FOR UPDATE',[userId]);
       const owned=await client.query('SELECT 1 FROM user_items WHERE user_id=$1 AND item_id=$2',[userId,itemId]);
@@ -99,41 +96,14 @@ export class EconomyService {
     }));
   }
 
-  async saveLoadout(userId: string, input: unknown) {
-    const body=v.object(input);
-    return transaction(this.pool,async client=>{
-      const previous=await client.query('SELECT rim_color FROM loadouts WHERE user_id=$1 FOR UPDATE',[userId]);
-      assert(previous.rowCount,404,'USER_NOT_FOUND','Profil tidak ditemukan.');
-      const selection=this.validateSelection(body,previous.rows[0].rim_color);
-      await this.assertOwnership(client,userId,selection.carId,selection.rimId);
-      const updated=await client.query('UPDATE loadouts SET car_item_id=$2,wheel_item_id=$3,color=$4,finish=$5,rim_color=$6,version=version+1,updated_at=now() WHERE user_id=$1 RETURNING version',[userId,selection.carId,selection.rimId,selection.color,selection.finish,selection.rimColor]);
-      assert(updated.rowCount,404,'USER_NOT_FOUND','Profil tidak ditemukan.');
-      return {loadout:{...selection,wheelId:selection.rimId,version:updated.rows[0].version}};
-    });
-  }
-
-  private validateSelection(body: Record<string,unknown>,defaultRimColor='#c7cdd4'): LoadoutSelection & {rimId:string;rimColor:string} {
-    if (body.rimId!==undefined && body.wheelId!==undefined) assert(body.rimId===body.wheelId,400,'INVALID_WHEEL','Pilihan roda tidak konsisten.');
-    return {carId:carId(body.carId),rimId:wheelId(body.rimId??body.wheelId??'stock'),color:v.color(body.color),rimColor:v.color(body.rimColor??defaultRimColor),finish:v.finish(body.finish)};
-  }
-
-  private async assertOwnership(db: Queryable,userId:string,car:string,wheel:string): Promise<void> {
-    const result=await db.query('SELECT item_id FROM user_items WHERE user_id=$1 AND item_id=ANY($2::text[])',[userId,[car,wheel]]);
-    const owned=new Set(result.rows.map(r=>r.item_id));
-    assert(owned.has(car),403,'CAR_NOT_OWNED','Mobil belum dimiliki.');
-    assert(owned.has(wheel),403,'WHEEL_NOT_OWNED','Roda belum dimiliki.');
-  }
+  async saveLoadout(userId:string,input:unknown){return this.appearances.saveLoadout(userId,input);}
+  async quoteAppearance(userId:string,input:unknown){return this.appearances.quote(userId,input);}
+  async applyAppearance(userId:string,input:unknown,key:unknown){return this.appearances.apply(userId,input,key);}
 
   async resolveLoadout(userId: string, input?: LoadoutSelection, rulesetVersion?: string): Promise<FrozenLoadout> {
-    let selection:LoadoutSelection&{rimId:string;rimColor:string};
-    const stored=await this.pool.query('SELECT * FROM loadouts WHERE user_id=$1',[userId]);
-    assert(stored.rowCount,404,'USER_NOT_FOUND','Profil tidak ditemukan.');
-    if (input) selection=this.validateSelection(input as unknown as Record<string,unknown>,stored.rows[0].rim_color);
-    else {
-      const row=stored.rows[0];selection={carId:carId(row.car_item_id),rimId:wheelId(row.wheel_item_id),color:row.color,rimColor:row.rim_color,finish:row.finish};
-    }
-    await this.assertOwnership(this.pool,userId,selection.carId,selection.rimId);
+    const selection=await this.appearances.resolve(this.pool,userId,input as unknown as Record<string,unknown>|undefined);
     const ruleset=await readRuleset(this.pool,rulesetVersion),wheel=await this.pool.query('SELECT version FROM catalog_items WHERE id=$1',[selection.rimId]);
+    assert(ruleset.cars[selection.carId],409,'CAR_NOT_IN_RULESET','Mobil belum tersedia dalam versi aturan balapan ini.');
     return {...selection,stats:{...ruleset.cars[selection.carId]},tuningVersion:ruleset.version,partVersion:String(wheel.rows[0].version)};
   }
 
@@ -157,8 +127,8 @@ export class EconomyService {
         return;
       }
       for (const participant of humans) {
-        const userId=v.uuid(participant.userId,'Pemain'),selection=this.validateSelection(participant.loadout as unknown as Record<string,unknown>);
-        await this.assertOwnership(client,userId,selection.carId,selection.rimId);
+        const userId=v.uuid(participant.userId,'Pemain'),selection=await this.appearances.resolve(client,userId,participant.loadout as unknown as Record<string,unknown>,true);
+        assert(ruleset.cars[selection.carId],409,'CAR_NOT_IN_RULESET','Mobil belum tersedia dalam versi aturan balapan ini.');
         assert(participant.carId===selection.carId && participant.loadout.tuningVersion===ruleset.version && v.fingerprint(participant.loadout.stats)===v.fingerprint(ruleset.cars[selection.carId]),409,'LOADOUT_VERSION_MISMATCH','Performa peserta tidak cocok dengan aturan pertandingan.');
         await client.query('INSERT INTO race_participants(race_id,user_id,car_id,loadout) VALUES($1,$2,$3,$4::jsonb)',[raceId,userId,selection.carId,JSON.stringify(participant.loadout)]);
       }

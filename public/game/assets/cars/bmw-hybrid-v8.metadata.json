@@ -1,0 +1,110 @@
+{
+  "id": "bmw-hybrid-v8",
+  "file": "/game/assets/cars/bmw-hybrid-v8.glb",
+  "bytes": 2798172,
+  "triangles": 83264,
+  "meshCount": 29,
+  "nodeCount": 38,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "metal",
+    "brake_caliper",
+    "paint_body",
+    "carbon",
+    "glass",
+    "interior_seat",
+    "light_front",
+    "paint_aero",
+    "light_rear"
+  ],
+  "bounds": {
+    "min": [
+      -1.0557640045881271,
+      1.0728836041806744e-08,
+      -2.7555036544799805
+    ],
+    "max": [
+      1.0557640045881271,
+      1.2300000190734863,
+      2.690000057220459
+    ]
+  },
+  "dimensions": [
+    2.1115280091762543,
+    1.2300000083446503,
+    5.4455037117004395
+  ],
+  "provenance": "Original UVelocity reference-based recreation; independently generated sculpted surfaces and details; not a manufacturer mesh, scan, or copied game asset.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-racecar-expansion.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "wheelRadius": 0.355,
+  "wheelWidth": 0.335,
+  "wheelCenters": {
+    "FL": [
+      0.875,
+      0.355,
+      1.575
+    ],
+    "FR": [
+      -0.875,
+      0.355,
+      1.575
+    ],
+    "RL": [
+      0.875,
+      0.355,
+      -1.575
+    ],
+    "RR": [
+      -0.875,
+      0.355,
+      -1.575
+    ]
+  },
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "tail": -2.625,
+  "exhaustX": 0.3,
+  "exhaustY": 0.42,
+  "headlightPositions": [
+    [
+      -0.76,
+      0.55,
+      2.54
+    ],
+    [
+      0.76,
+      0.55,
+      2.54
+    ]
+  ],
+  "length": 5.4455037117004395,
+  "exhaustPositions": [
+    [
+      -0.3,
+      0.42,
+      -2.625
+    ],
+    [
+      0.3,
+      0.42,
+      -2.625
+    ]
+  ],
+  "validation": {
+    "glbBuffers": "finite-and-index-valid",
+    "rig": "four-wheels-two-steering-pivots",
+    "visualReview": "Blender Cycles CPU 48 samples; front three-quarter views",
+    "isGameplayScreenshot": false
+  }
+}

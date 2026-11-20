@@ -33,6 +33,7 @@
     setLoadout(loadout){return call('setLoadout',loadout||{});},
     setLocalPlayer(id){return call('setLocalPlayer',String(id||''));},
     startRace(options){return call('startRace',options||{});},
+    waitForRaceFrame(options){return call('waitForRaceFrame',options||{});},
     stopRace(){return call('stopRace');},
     applySnapshot(snapshot){
       if(!snapshot||isDisposed)return false;
@@ -42,7 +43,7 @@
     setInput(input){if(isReady)runtime.setInput?.(input||{});},
     getInput(){return isReady?runtime.getInput():{throttle:0,brake:0,steer:0,nitro:false};},
     getState(){return isReady?runtime.getState():{ready:false,mode:'loading'};},
-    getCatalog(){return isReady?runtime.getCatalog():{cars:[],circuits:[],wheels:global.NVWheels?.catalog||[]};},
+    getCatalog(){return isReady?runtime.getCatalog():{cars:[],circuits:[],wheels:global.NVWheels?.catalog||[],stripes:global.NVStripes?.catalog||[]};},
     ensureModels(ids){return call('ensureModels',ids);},
     setQuality(quality){return call('configure',{quality});},
     setMuted(muted){return call('configure',{muted:!!muted});},

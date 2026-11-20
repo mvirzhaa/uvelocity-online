@@ -5,6 +5,8 @@
  * both CC-BY-4.0. Attribution and modification details are included in credits.
  * Subaru BRZ 2022 by mixmamo.studio (via the attributed Ridgeline conversion)
  * and Bugatti Veyron Super Sport 2011 by Galaxy Car Showroom, CC-BY-4.0.
+ * Seven expansion GLBs are original reference-based UVelocity recreations.
+ * They are not manufacturer meshes, scans or replacements for the eight sources.
  * Assets decoded and texture resolutions optimized for this browser game.
  */
 (function () {
@@ -21,6 +23,7 @@
     brz: {source:'Subaru BRZ 2022 — mixmamo.studio',length:4.27,wheelRadius:.300,tail:-2.10,exhaustX:.63,exhaustY:.27},
     veyron77: {source:'Bugatti Veyron Super Sport 2011 — Galaxy Car Showroom',length:4.50,wheelRadius:.353,tail:-2.20,exhaustX:.20,exhaustY:.32,police:true}
   };
+  Object.assign(metadata,window.NV_MODEL_METADATA||{});
   let shadowTexture;
 
   function bytesFromBase64(base64) {
@@ -131,7 +134,13 @@
     }
     for(const side of ['RL','RR']) {
       const wheel=model.getObjectByName('wheel_'+side);
-      if(wheel){root.attach(wheel);wheels.push(wheel);}
+      if(wheel){
+        // The authored expansion rigs keep fixed rear calipers on their axle.
+        // Preserve that assembly independently from visual body roll.
+        if(meta.representation==='reference-recreation'&&wheel.parent?.name==='axle_'+side)root.attach(wheel.parent);
+        else root.attach(wheel);
+        wheels.push(wheel);
+      }
     }
     const shadowGeo=new THREE.PlaneGeometry(2.7,meta.length+1.0);
     const shadowMat=new THREE.MeshBasicMaterial({map:getShadowTexture(),transparent:true,opacity:.67,depthWrite:false,toneMapped:false});
@@ -140,12 +149,13 @@
     const flameGeo=new THREE.ConeGeometry(.115,1.2,12);flameGeo.rotateX(-Math.PI/2);
     const flameMat=new THREE.MeshBasicMaterial({color:0x49caff,transparent:true,opacity:.82,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
     ownGeometries.push(flameGeo);ownMaterials.push(flameMat);
-    const flames=[-1,1].map(sign=>{
+    const exhausts=meta.exhaustPositions||[-1,1].map(sign=>[sign*meta.exhaustX,meta.exhaustY,meta.tail]);
+    const flames=exhausts.map(position=>{
       const flame=new THREE.Mesh(flameGeo,flameMat);
-      flame.position.set(sign*meta.exhaustX,meta.exhaustY,meta.tail-.48);flame.visible=false;
+      flame.position.set(position[0],position[1],position[2]-.48);flame.visible=false;
       bodyTiltGroup.add(flame);return flame;
     });
-    const car={root,bodyTiltGroup,wheels,frontPivots,brakeMat,flames,flameMat,paintMaterials,rimMaterials,glassMaterials,modelId:id,wheelRadius:meta.wheelRadius,imported:true,ownMaterials,ownGeometries,ownTextures,source:meta.source,dimensions:templates[id].userData.dimensions.slice()};
+    const car={root,bodyTiltGroup,wheels,frontPivots,brakeMat,flames,flameMat,paintMaterials,rimMaterials,glassMaterials,modelId:id,wheelRadius:meta.wheelRadius,imported:true,ownMaterials,ownGeometries,ownTextures,source:meta.source,representation:meta.representation||'imported-model',headlightPositions:meta.headlightPositions||null,dimensions:templates[id].userData.dimensions.slice()};
     recolor(car,colorHex,opts.finish||'gloss');
     if(opts.rimColor)rimMaterials.forEach(m=>m.color.set(opts.rimColor).convertSRGBToLinear());
     if(meta.police&&window.NVPolice&&typeof window.NVPolice.decorate==='function')window.NVPolice.decorate(car,opts);

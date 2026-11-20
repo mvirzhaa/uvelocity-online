@@ -85,17 +85,19 @@ export class AdminService {
 
   async updateCatalog(actorId:string,itemId:string,input:unknown) {
     const body=v.object(input),version=expectedVersion(body.expectedVersion),reason=v.text(body.reason,'Alasan',4,500);
-    assert(body.price!==undefined||body.enabled!==undefined,400,'NO_CHANGES','Pilih harga atau status item yang ingin diubah.');
+    assert(body.price!==undefined||body.enabled!==undefined||body.locked!==undefined,400,'NO_CHANGES','Pilih harga, status penjualan, atau akses mobil yang ingin diubah.');
     const price=body.price===undefined?null:moneyAllowZero(body.price);
     assert(body.enabled===undefined||typeof body.enabled==='boolean',400,'INVALID_ENABLED','Status harus berupa boolean.');
+    assert(body.locked===undefined||typeof body.locked==='boolean',400,'INVALID_LOCKED','Status kunci harus berupa boolean.');
     return transaction(this.pool,async client=>{
       await requireAdmin(client,actorId);
       const found=await client.query('SELECT * FROM catalog_items WHERE id=$1 FOR UPDATE',[itemId]);
       assert(found.rowCount,404,'ITEM_NOT_FOUND','Item tidak ditemukan.');
+      assert(body.locked===undefined||found.rows[0].kind==='car',400,'INVALID_LOCKED','Penguncian global hanya berlaku untuk mobil.');
       assert(found.rows[0].version===version,409,'CATALOG_CHANGED','Item telah diubah admin lain. Muat ulang sebelum menyimpan.');
-      const result=await client.query('UPDATE catalog_items SET price=COALESCE($2,price),active=COALESCE($3,active),version=version+1 WHERE id=$1 RETURNING id,kind,name,price,active AS enabled,version AS "catalogVersion"',[itemId,price,body.enabled??null]);
+      const result=await client.query('UPDATE catalog_items SET price=COALESCE($2,price),active=COALESCE($3,active),locked=COALESCE($4,locked),version=version+1 WHERE id=$1 RETURNING id,kind,name,price,active AS enabled,locked,version AS "catalogVersion"',[itemId,price,body.enabled??null,body.locked??null]);
       const updated=result.rows[0];
-      await audit(client,actorId,'catalog.updated',itemId,reason,{price:found.rows[0].price,enabled:found.rows[0].active,catalogVersion:version},updated);
+      await audit(client,actorId,'catalog.updated',itemId,reason,{price:found.rows[0].price,enabled:found.rows[0].active,locked:found.rows[0].locked,catalogVersion:version},updated);
       return {item:updated};
     });
   }

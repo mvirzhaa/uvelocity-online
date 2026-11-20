@@ -1,12 +1,35 @@
 /** Wire and simulation contracts. This module has no browser or server imports. */
-export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze'] as const;
+export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze', 'bmw-hybrid-v8', 'bmw-m4-gt4', 'amg-gt4', 'sls-amg-gt3', 'batmobile-1989', 'jesko-absolut', 'venom-f5'] as const;
 export type CarId = typeof CAR_IDS[number];
 export const CIRCUIT_IDS = ['city', 'beach', 'glacier'] as const;
 export type CircuitId = typeof CIRCUIT_IDS[number];
 export type Finish = 'gloss' | 'metallic' | 'matte';
+export const STRIPE_IDS = ['none','twin-racing','offset','side-sweep','circuit','heritage'] as const;
+export type StripeId = typeof STRIPE_IDS[number];
 export type Difficulty = 'easy' | 'normal' | 'hard';
 export type CollisionMode = 'solid' | 'ghost';
-export type RacePhase = 'lobby' | 'loading' | 'countdown' | 'racing' | 'settling' | 'finished' | 'aborted';
+export type RacePhase = 'lobby' | 'loading' | 'countdown' | 'racing' | 'prayer_pause' | 'resume_countdown' | 'settling' | 'finished' | 'aborted';
+
+export interface RoomPrayerTrigger {
+  eventId:string;
+  userId:string;
+  displayName:string;
+  prayer:import('./prayer.js').PrayerName;
+  name:string;
+  startedAt:number;
+  resumesAt:number;
+}
+export interface RoomPrayerPause {
+  pauseToken:string;
+  startedAt:number;
+  resumeEligibleAt:number;
+  resumeAt:number|null;
+  previousPhase:'lobby'|'loading'|'countdown'|'racing';
+  triggers:RoomPrayerTrigger[];
+  /** Colyseus session/racer IDs, not account IDs. */
+  requiredIds:string[];
+  readyIds:string[];
+}
 
 export interface VehicleStats {
   /** Kilometers/hour; used by the original arcade speed limit. */
@@ -22,6 +45,28 @@ export interface LoadoutSelection {
   finish: Finish;
   rimId?: string | null;
   rimColor?: string;
+  stripeId?: StripeId;
+  stripeColor?: string;
+  appearanceVersion?: string;
+}
+export interface VehicleAppearance {
+  carId:CarId; rimId:string; color:string; finish:Finish; rimColor:string;
+  stripeId:StripeId; stripeColor:string; version:string; owned:boolean; canCustomize:boolean;
+}
+export interface AppearanceSelection {
+  carId:CarId; rimId:string; color:string; finish:Finish; rimColor:string; stripeId:StripeId; stripeColor:string;
+}
+export interface AppearanceLineItem {itemId:string;name:string;price:string;catalogVersion:number}
+export interface GameWallet {balance:string;version:string;currency:'RP_GAME'}
+export interface AppearanceQuote {
+  quoteId:string;carId:CarId;appearanceVersion:string;selection:AppearanceSelection;
+  currentAppearance:VehicleAppearance;lineItems:AppearanceLineItem[];total:string;
+  wallet:GameWallet;affordable:boolean;noOp:boolean;expiresAt:string;
+}
+export interface SavedLoadout extends AppearanceSelection {wheelId:string;version:string;appearanceVersion:string}
+export interface AppearanceApplication {
+  applicationId:string;appearance:VehicleAppearance;loadout:SavedLoadout;wallet:GameWallet;
+  pricePaid:string;lineItems:AppearanceLineItem[];noOp:boolean;
 }
 export interface FrozenLoadout extends LoadoutSelection {
   rimId: string | null;
@@ -135,6 +180,8 @@ export interface RoomMember {
   host: boolean;
   ready: boolean;
   assetsLoaded: boolean;
+  /** The frozen race arena has rendered on this participant's client. */
+  arenaReady: boolean;
   connected: boolean;
   loadout: FrozenLoadout;
 }
@@ -148,6 +195,11 @@ export interface RoomSnapshot {
   serverTime: number;
   elapsedMs: number;
   startAt: number | null;
+  /** Unique to this loading attempt; never reused after cancellation. */
+  startToken: string | null;
+  /** Absolute server time; null outside the arena loading barrier. */
+  loadingDeadline: number | null;
+  prayerPause:RoomPrayerPause|null;
   config: RoomConfig;
   rulesetVersion: string | null;
   trackVersion: string;

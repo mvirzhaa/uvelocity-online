@@ -45,6 +45,15 @@ export class RaceRuntime {
     racer.dnf=true;racer.connected=false;racer.ghost=true;racer.nitroActive=false;racer.speed=0;racer.input=neutralInput(racer.input.seq);
     this.commands.delete(id);this.applied.delete(id);
   }
+  /** A room pause retains every position/speed/lap but retires held and queued
+   * controls. Resuming requires fresh input; no pre-pause nitro/reset replays. */
+  clearControls():void {
+    this.commands.clear();this.applied.clear();
+    for(const racer of this.racers){
+      racer.lastProcessedSeq=Math.max(racer.lastProcessedSeq,racer.input.seq);
+      racer.input=neutralInput(racer.lastProcessedSeq,0);racer.inputReceivedMs=-Infinity;racer.nitroActive=false;
+    }
+  }
   step():GameplayEvent[]{
     if(this.ended)return[];
     const dt=1/this.physics.tickRate;this.tick++;this.elapsedMs=this.tick*1000/this.physics.tickRate;

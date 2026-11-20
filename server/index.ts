@@ -13,9 +13,9 @@ import {createApiRouter} from './routes/index.js';
 import {registerRaceRooms} from './realtime/index.js';
 import type {RealtimeOptions} from './realtime/index.js';
 
-export interface ApplicationOptions {databaseUrl?:string;allowedOrigins?:string[];secureCookies?:boolean;serveClient?:boolean;development?:boolean;realtime?:RealtimeOptions;abortInterrupted?:boolean}
+export interface ApplicationOptions {databaseUrl?:string;allowedOrigins?:string[];secureCookies?:boolean;serveClient?:boolean;development?:boolean;realtime?:RealtimeOptions;abortInterrupted?:boolean;prayerNow?:()=>Date}
 export async function createApplication(options:ApplicationOptions={}){
- const pool=createPool(options.databaseUrl),services=createServices(pool);
+ const pool=createPool(options.databaseUrl),services=createServices(pool,{prayerNow:options.prayerNow});
  await migrate(pool);
  if(options.abortInterrupted!==false)await services.economy.abortInterruptedRaces();
  const app=express(),httpServer=http.createServer(app);
@@ -37,6 +37,7 @@ export async function createApplication(options:ApplicationOptions={}){
  const rooms=registerRaceRooms(realtimeServer,{
   consumeRaceTicket:input=>services.accounts.consumeRaceTicket(input),
   authenticate:headers=>services.accounts.authenticateSession(headers),
+  gameplayAccess:userId=>services.prayer.status(userId),
   resolveLoadout:(userId,selection,version)=>services.economy.resolveLoadout(userId,selection,version),
   getActiveRuleset:()=>services.economy.getActiveRuleset(),
   beginRace:input=>services.economy.beginRace(input),

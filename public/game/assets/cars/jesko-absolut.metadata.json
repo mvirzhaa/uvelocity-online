@@ -1,0 +1,106 @@
+{
+  "id": "jesko-absolut",
+  "file": "/game/assets/cars/jesko-absolut.glb",
+  "bytes": 2938788,
+  "triangles": 100994,
+  "meshCount": 30,
+  "nodeCount": 39,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "metal",
+    "brake_caliper",
+    "paint_body",
+    "carbon",
+    "glass",
+    "interior_seat",
+    "light_front",
+    "accent_lime",
+    "paint_aero",
+    "light_rear"
+  ],
+  "bounds": {
+    "min": [
+      -1.149999976158142,
+      -9.536743172944284e-09,
+      -2.7899999618530273
+    ],
+    "max": [
+      1.149999976158142,
+      1.2387874126434326,
+      2.549999952316284
+    ]
+  },
+  "dimensions": [
+    2.299999952316284,
+    1.2387874221801758,
+    5.3399999141693115
+  ],
+  "provenance": "Original UVelocity reference-based recreation; independently authored geometry, not a manufacturer mesh, scan, or extracted game asset.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-hypercar-expansion.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "wheelRadius": 0.365,
+  "wheelWidth": 0.32,
+  "wheelCenters": {
+    "FL": [
+      0.86,
+      0.365,
+      1.455
+    ],
+    "FR": [
+      -0.86,
+      0.365,
+      1.455
+    ],
+    "RL": [
+      0.86,
+      0.365,
+      -1.295
+    ],
+    "RR": [
+      -0.86,
+      0.365,
+      -1.295
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.73,
+      0.7278090905626053,
+      1.9683045971909425
+    ],
+    [
+      0.73,
+      0.7278090905626053,
+      1.9683045971909425
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      0,
+      0.39,
+      -2.78
+    ]
+  ],
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "representation": "original-reference-recreation",
+  "length": 5.3399999141693115,
+  "tail": -2.78,
+  "exhaustX": 0,
+  "exhaustY": 0.39,
+  "validation": {
+    "glbBuffers": "finite-and-index-valid",
+    "rig": "four-wheels-two-steering-pivots",
+    "visualReview": "Blender Cycles CPU 48 samples; front three-quarter views",
+    "isGameplayScreenshot": false
+  }
+}

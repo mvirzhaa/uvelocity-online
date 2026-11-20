@@ -1,9 +1,9 @@
 {
   "name": "uvelocity",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "UVelocity \u2014 multiplayer 3D racing with PostgreSQL accounts, virtual Rupiah, garage and administration.",
+  "description": "UVelocity — multiplayer 3D racing with PostgreSQL accounts, virtual Rupiah, garage and administration.",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -17,16 +17,20 @@
     "setup": "node scripts/setup.mjs",
     "test": "node --import tsx --test tests/race/*.test.ts",
     "test:integration": "node tests/with-postgres.mjs tests/integration.ts",
-    "test:backend": "node tests/with-postgres.mjs --test server/services/__tests__/backend.integration.test.ts",
+    "test:backend": "node tests/with-postgres.mjs --test server/services/__tests__/*.integration.test.ts",
     "test:renderer": "node tests/renderer/verify.cjs",
-    "test:dev": "node tests/with-postgres.mjs tests/dev-runtime.ts"
+    "test:dev": "node tests/with-postgres.mjs tests/dev-runtime.ts",
+    "test:ui": "node tests/workshop-ui.mjs",
+    "test:prayer-ui": "node tests/prayer-ui.mjs"
   },
   "dependencies": {
     "@colyseus/core": "0.18.29",
     "@colyseus/sdk": "0.18.10",
     "@colyseus/ws-transport": "0.18.5",
+    "adhan": "4.4.6",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
+    "geo-tz": "8.1.11",
     "helmet": "^8.1.0",
     "pg": "8.23.1",
     "react": "^19.1.0",
@@ -42,6 +46,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
     "embedded-postgres": "18.7.0-beta.19",
+    "esbuild": "0.28.2",
     "linkedom": "^0.18.15",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",

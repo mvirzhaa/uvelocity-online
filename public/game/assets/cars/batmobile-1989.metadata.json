@@ -1,0 +1,104 @@
+{
+  "id": "batmobile-1989",
+  "file": "/game/assets/cars/batmobile-1989.glb",
+  "bytes": 3470200,
+  "triangles": 123720,
+  "meshCount": 28,
+  "nodeCount": 37,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "metal",
+    "brake_caliper",
+    "paint_body",
+    "carbon",
+    "paint_aero",
+    "light_front",
+    "light_rear",
+    "glass"
+  ],
+  "bounds": {
+    "min": [
+      -1.1105698782205582,
+      1.4305114759416426e-08,
+      -3.287118911743164
+    ],
+    "max": [
+      1.1111639279127121,
+      1.599997878074646,
+      3.4830000400543213
+    ]
+  },
+  "dimensions": [
+    2.2217338061332703,
+    1.5999978637695311,
+    6.770118951797485
+  ],
+  "provenance": "Original UVelocity reference-based recreation; independently authored geometry, not a manufacturer mesh, scan, or extracted game asset.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-hypercar-expansion.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "wheelRadius": 0.39,
+  "wheelWidth": 0.365,
+  "wheelCenters": {
+    "FL": [
+      0.905,
+      0.39,
+      1.6749999999999998
+    ],
+    "FR": [
+      -0.905,
+      0.39,
+      1.6749999999999998
+    ],
+    "RL": [
+      0.905,
+      0.39,
+      -1.875
+    ],
+    "RR": [
+      -0.905,
+      0.39,
+      -1.875
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.79,
+      0.61,
+      2.93
+    ],
+    [
+      0.79,
+      0.61,
+      2.93
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      0,
+      0.57,
+      -3.28
+    ]
+  ],
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "representation": "original-reference-recreation",
+  "length": 6.770118951797485,
+  "tail": -3.28,
+  "exhaustX": 0,
+  "exhaustY": 0.57,
+  "validation": {
+    "glbBuffers": "finite-and-index-valid",
+    "rig": "four-wheels-two-steering-pivots",
+    "visualReview": "Blender Cycles CPU 48 samples; front three-quarter views",
+    "isGameplayScreenshot": false
+  }
+}

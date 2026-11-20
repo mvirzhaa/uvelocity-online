@@ -36,8 +36,8 @@ export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>
   const pendingGrant=useRef<{payload:string;key:string}|null>(null),busyRef=useRef(false);busyRef.current=grantBusy;
   const modalRef=useRef<HTMLDivElement>(null),modalTitle=useRef<HTMLHeadingElement>(null);
   const [carId,setCarId]=useState(catalog.cars[0]?.id??'brz'),[carDraft,setCarDraft]=useState({topSpeed:'',zeroTo100:'',handling:'',reason:''});
-  const offers=useMemo(()=>[...catalog.cars,...catalog.wheels],[catalog]);
-  const [offerId,setOfferId]=useState(catalog.cars[0]?.id??'brz'),[offerDraft,setOfferDraft]=useState({price:'',enabled:true,reason:''});
+  const offers=useMemo(()=>[...catalog.cars,...catalog.wheels,...(catalog.services??[])],[catalog]);
+  const [offerId,setOfferId]=useState(catalog.cars[0]?.id??'brz'),[offerDraft,setOfferDraft]=useState({price:'',enabled:true,locked:true,reason:''});
   const offer=offers.find(item=>item.id===offerId);
   const [rewardDraft,setRewardDraft]=useState({finish:'',perLap:'',first:'',second:'',third:'',minimumSeconds:'',maximum:'',reason:''});
 
@@ -62,7 +62,7 @@ export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>
   }
   useEffect(()=>{mounted.current=true;void Promise.all([loadUsers(''),loadAudit(),loadTuning()]);return()=>{mounted.current=false;};},[]);
   useEffect(()=>{const car=tuning?.cars.find(item=>item.carId===carId);if(car)setCarDraft({topSpeed:String(car.topSpeed),zeroTo100:String(car.zeroTo100),handling:String(car.handling),reason:''});},[carId,tuning?.version]);
-  useEffect(()=>{if(offer)setOfferDraft({price:offer.price,enabled:offer.enabled,reason:''});},[offer?.id,offer?.catalogVersion]);
+  useEffect(()=>{if(offer)setOfferDraft({price:offer.price,enabled:offer.enabled,locked:offer.locked!==false,reason:''});},[offer?.id,offer?.catalogVersion]);
   useEffect(()=>{const policy=tuning?.rewardPolicy;if(policy)setRewardDraft({finish:policy.finish,perLap:policy.perLap,first:policy.podium[0]??'0',second:policy.podium[1]??'0',third:policy.podium[2]??'0',minimumSeconds:String(policy.minimumDurationMs/1000),maximum:policy.maximum,reason:''});},[tuning?.version]);
   useEffect(()=>{setFormError('');},[tab]);
   useEffect(()=>{
@@ -122,7 +122,7 @@ export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>
     if(!validMoney(offerDraft.price,1_000_000_000_000n)){setFormError('Harga harus berupa angka bulat tanpa titik, maksimal Rp1.000.000.000.000.');return;}
     if(offerDraft.reason.trim().length<4){setFormError('Tulis alasan perubahan harga atau ketersediaan.');return;}
     setSaving('offers');
-    try{await api('/admin/catalog/'+encodeURIComponent(offer.id),'PATCH',{price:offerDraft.price,enabled:offerDraft.enabled,expectedVersion:offer.catalogVersion,reason:offerDraft.reason.trim()});callbacks.current.onNotice(`Penawaran ${offer.name} diperbarui.`);await refreshAfterMutation();}
+    try{await api('/admin/catalog/'+encodeURIComponent(offer.id),'PATCH',{price:offerDraft.price,enabled:offerDraft.enabled,...(offer.kind==='car'?{locked:offerDraft.locked}:{}),expectedVersion:offer.catalogVersion,reason:offerDraft.reason.trim()});callbacks.current.onNotice(`Penawaran ${offer.name} diperbarui.`);await refreshAfterMutation();}
     catch(error){if(mounted.current)setFormError(message(error));}
     finally{if(mounted.current)setSaving(null);}
   }
@@ -190,10 +190,11 @@ export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>
     </section>}
 
     {tab==='offers'&&<section className="panel">
-      <div className="section-heading"><div><h2>Harga & ketersediaan toko</h2><p>Pemain yang sudah memiliki item tetap dapat menggunakannya ketika penawaran dinonaktifkan.</p></div><button type="button" className="text-button" style={control} disabled={!!saving} onClick={()=>void callbacks.current.onChange().catch(error=>setFormError(message(error)))}><Icon name="refresh" size={18}/> Muat katalog</button></div>
+      <div className="section-heading"><div><h2>Akses kendaraan & harga toko</h2><p>Pembelian memberikan akses permanen. Kendaraan yang dibuka gratis oleh admin hanya dapat dipakai tanpa pembelian selama aksesnya tetap terbuka.</p></div><button type="button" className="text-button" style={control} disabled={!!saving} onClick={()=>void callbacks.current.onChange().catch(error=>setFormError(message(error)))}><Icon name="refresh" size={18}/> Muat katalog</button></div>
       {offer&&<form onSubmit={saveOffer} style={sections}>
-        <label>Item<select style={control} value={offerId} onChange={event=>setOfferId(event.target.value)} disabled={!!saving}><optgroup label="Mobil">{catalog.cars.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup><optgroup label="Velg">{catalog.wheels.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup></select></label>
+        <label>Item<select style={control} value={offerId} onChange={event=>setOfferId(event.target.value)} disabled={!!saving}><optgroup label="Mobil">{catalog.cars.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup><optgroup label="Pelek">{catalog.wheels.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup><optgroup label="Jasa cat & striping">{(catalog.services??[]).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup></select></label>
         <div className="field-grid"><label>Harga dalam kredit game<input style={control} value={offerDraft.price} onChange={event=>setOfferDraft({...offerDraft,price:event.target.value})} inputMode="numeric" maxLength={16} required/><span>{validMoney(offerDraft.price,1_000_000_000_000n)?rupiah(offerDraft.price):'Gunakan angka bulat tanpa titik.'}</span></label><div><span className="pill">PENAWARAN V{offer.catalogVersion}</span><label style={{display:'flex',alignItems:'center',gap:10,marginTop:18}}><input style={{...control,width:'auto'}} type="checkbox" checked={offerDraft.enabled} onChange={event=>setOfferDraft({...offerDraft,enabled:event.target.checked})}/>Tersedia di toko</label></div></div>
+        {offer.kind==='car'&&<fieldset className="vehicle-access-field"><legend>Akses untuk pemain yang belum membeli</legend><label className={'access-option '+(offerDraft.locked?'selected':'')}><input type="radio" name="car-access" checked={offerDraft.locked} onChange={()=>setOfferDraft({...offerDraft,locked:true})}/><span><b>Terkunci · harus membeli</b><small>Pemain tanpa kepemilikan permanen tidak bisa memakai mobil ini.</small></span><Icon name="lock" size={19}/></label><label className={'access-option '+(!offerDraft.locked?'selected':'')}><input type="radio" name="car-access" checked={!offerDraft.locked} onChange={()=>setOfferDraft({...offerDraft,locked:false})}/><span><b>Dibuka gratis oleh admin</b><small>Semua pemain dapat memakainya selama akses gratis masih dibuka.</small></span><Icon name="car" size={19}/></label><p>Pemain yang sudah membeli tetap memiliki akses ketika kendaraan dikunci kembali. Balapan yang sedang berjalan mempertahankan kendaraan hingga selesai.</p>{offerDraft.locked&&offer.locked===false&&<div className="access-change-note">Setelah disimpan, akses gratis pemain yang belum membeli akan ditutup untuk pemilihan dan balapan berikutnya.</div>}</fieldset>}
         <label>Alasan perubahan<textarea style={control} rows={3} value={offerDraft.reason} onChange={event=>setOfferDraft({...offerDraft,reason:event.target.value})} minLength={4} maxLength={500} required/></label>
         {formError&&<p className="form-error" role="alert">{formError}</p>}
         <div style={actions}><button className="primary" style={control} disabled={!!saving}>{saving==='offers'?'Menyimpan…':'Simpan penawaran'}</button></div>
