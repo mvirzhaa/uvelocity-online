@@ -12,23 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Mengirim source code terbaru ke server via SCP
-      - name: Sync repository files to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          source: "./*"
-          target: "/var/www/uvelocity"
-          rm: false
-
-      # Menjalankan build & restart container di server
-      - name: Execute deployment commands
+      - name: Execute deployment commands via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -37,21 +21,35 @@ jobs:
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
             set -e
-            cd /var/www/uvelocity
+            APP_DIR="/var/www/uvelocity"
+            REPO_URL="https://github.com/mvirzhaa/uvelocity-online.git"
 
-            # Buat file .env jika belum ada
+            echo "==> Memeriksa direktori $APP_DIR..."
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "==> Cloning repository publik..."
+              mkdir -p "$APP_DIR"
+              git clone "$REPO_URL" "$APP_DIR"
+              cd "$APP_DIR"
+            else
+              echo "==> Menarik pembaruan terbaru dari GitHub..."
+              cd "$APP_DIR"
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+
+            # Inisialisasi .env jika belum ada
             if [ ! -f ".env" ]; then
-              echo "==> Inisialisasi .env file dari template..."
+              echo "==> Membuat konfigurasi .env dari template..."
               cp .env.example .env
               RANDOM_SECRET=$(openssl rand -hex 16)
               sed -i "s/REPLACE_WITH_A_UNIQUE_RANDOM_PASSWORD/$RANDOM_SECRET/g" .env
-              echo "==> File .env berhasil dibuat dengan password unik."
+              echo "==> File .env berhasil disiapkan dengan secret unik."
             fi
 
-            echo "==> Menjalankan build dan restart container UVelocity..."
+            echo "==> Menjalankan build & restart container UVelocity..."
             docker compose down || true
             docker compose up -d --build
 
-            echo "==> Status service saat ini:"
+            echo "==> Status container saat ini:"
             docker compose ps
-            echo "==> UVelocity berhasil dideploy dan berjalan di port 5050 (http://127.0.0.1:5050)!"
+            echo "==> Deployment berhasil! UVelocity berjalan di port 5050."
