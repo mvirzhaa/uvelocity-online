@@ -87,7 +87,7 @@ test('Solid contacts move both participants; ghosted cars do not block others',(
   a.z=0;b.z=1;b.ghost=true;assert.equal(resolveCarCollisions([a,b],track).length,0);assert.equal(a.z,0);
 });
 
-test('All15 racers can complete each course using shared physics, including independently controlled humans', {timeout:120000},()=>{
+test('All15 racers run each course under shared physics and every human finishes before results', {timeout:120000},()=>{
   for(const circuit of CIRCUIT_IDS){
     const racers=Array.from({length:15},(_,i)=>createRacer('r'+i,'R'+i,loadout(CAR_IDS[i%CAR_IDS.length]!),i<4?'u'+i:null,i>=4));
     const runtime=new RaceRuntime(validateRoomConfig({circuit,laps:1,maxHumans:4,bots:11,difficulty:'normal',collisionMode:'solid'}),racers);
@@ -98,7 +98,8 @@ test('All15 racers can complete each course using shared physics, including inde
     }
     assert.ok(runtime.ended,'Race completes: '+circuit);
     assert.ok(racers.filter(r=>!r.isBot).every(r=>r.finished),'Every human controller finishes: '+circuit);
-    assert.ok(racers.filter(r=>r.isBot).every(r=>r.finished),'Every bot participates and finishes: '+circuit);
+    assert.ok(racers.filter(r=>r.isBot).every(r=>r.finished||r.dnf),'Bots finish or are classified DNF when all humans finish: '+circuit);
+    assert.ok(racers.filter(r=>r.isBot).every(r=>r.distanceMeters>0),'Every bot participates before the final human: '+circuit);
     assert.ok(racers.every(r=>Number.isFinite(r.x)&&Number.isFinite(r.speed)));
   }
 });

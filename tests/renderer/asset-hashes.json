@@ -1,5 +1,5 @@
 {
-  "provenance": "Byte-identical copies of the last tested World Tour assets. Update only after an explicit reviewed asset change.",
+  "provenance": "Thirteen original source GLBs and four environment/fallback modules preserved byte-for-byte against the recovered UVelocity v1.1.0 package. Reviewed v1.3.0 reference remeshes replace only the Koenigsegg (legacy jesko-absolut key, now Regera) and Venom F5 assets; Panther Grand Touring is a newly reviewed model. Change asset hashes only after explicit review.",
   "algorithm": "SHA-256",
   "files": {
     "public/game/assets/cars/aventador.glb": "def52aa321714ecf0c12afa742da2d5662045b5c7ad746acd282c0b9b599f040",
@@ -13,6 +13,14 @@
     "public/game/assets/city.js": "106703bfab1d7426cafc97ccc450553ba1272643229c717850b278d1b35cefed",
     "public/game/assets/biomes.js": "a64e963ceb86691632e97d8eff76f389f8ffb6aeec95bde3f5e2205d3eb1e9bf",
     "public/game/assets/police.js": "657c1b346961e916804a0d281a931f239d640af1b5875c34ab6bb704cb49f813",
-    "public/game/assets/car-models.js": "3e59b39bcee77e1ceaf7b39cdc880328c5a85b8923dd5ea4f3e73e76ca679526"
+    "public/game/assets/car-models.js": "3e59b39bcee77e1ceaf7b39cdc880328c5a85b8923dd5ea4f3e73e76ca679526",
+    "public/game/assets/cars/amg-gt4.glb": "b8c59d2d61ec8f6927a8aa17a946157cf56678ff6a79a652e699888038f437cb",
+    "public/game/assets/cars/batmobile-1989.glb": "8b85a1eb3694d5e6982e9912f51147428229c51b1ed057dffb2227abf6676b96",
+    "public/game/assets/cars/bmw-hybrid-v8.glb": "fd53b55c76e245f01273ffa1537959e1fc6dfb2e53464e4f333e49a9a0d22191",
+    "public/game/assets/cars/bmw-m4-gt4.glb": "c24056dbc1cef4bb329d0d45368f68619bf9e89039f055efc378c731fc4da377",
+    "public/game/assets/cars/jesko-absolut.glb": "26abbff38c7d00284b2329cf4b3d7526927413d7f3d6a98329717891b8819b2c",
+    "public/game/assets/cars/sls-amg-gt3.glb": "566e4527619475836e7714e8caf1aeffbae3eb31dca9884a73ab1c0068e26dde",
+    "public/game/assets/cars/venom-f5.glb": "740d181a6835fd2ed3e7ff45a5b0d90e6751290b3f25b2bd15a468571b642449",
+    "public/game/assets/cars/panther-grand-touring.glb": "e079ead361d2bb0ed6d0d437b5f7291416a1921e13e62ede2d3530f95e2fa0d9"
   }
 }

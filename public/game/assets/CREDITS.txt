@@ -94,10 +94,10 @@ https://github.com/zeux/meshoptimizer
 ORIGINAL REFERENCE-BASED EXPANSION VEHICLES
 
 BMW M Hybrid V8; BMW M4 GT4 F82; Mercedes-AMG GT4;
-Mercedes-Benz SLS AMG GT3; Batmobile 1989; Koenigsegg Jesko Absolut;
-Hennessey Venom F5.
+Mercedes-Benz SLS AMG GT3; Batmobile 1989; Koenigsegg Regera;
+Hennessey Venom F5; Isuzu Panther Grand Touring.
 
-These seven meshes are original UVelocity geometry authored from the supplied
+These eight meshes are original UVelocity geometry authored from the supplied
 visual references using scripts/modeling-kit.cjs and the vehicle build scripts.
 They are reference-based game recreations, not manufacturer meshes, scans,
 or geometry copied from another game. Brand/vehicle names identify the visual

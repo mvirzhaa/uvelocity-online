@@ -9,15 +9,16 @@ import * as v from './validation.js';
 
 type Queryable=Pool|PoolClient;
 export const WHEEL_IDS=['stock','six-spoke','multi-spoke','mesh'] as const;
-const COSMETICS=['color','finish','rimColor','stripeId','stripeColor'] as const;
+const COSMETICS=['color','finish','rimColor','stockRimPainted','stripeId','stripeColor'] as const;
 export function requireCarId(value:unknown):CarId{assert(typeof value==='string'&&(CAR_IDS as readonly string[]).includes(value),400,'INVALID_CAR','Mobil tidak tersedia.');return value as CarId;}
 export function requireWheelId(value:unknown):string{assert(typeof value==='string'&&(WHEEL_IDS as readonly string[]).includes(value),400,'INVALID_WHEEL','Pelek tidak tersedia.');return value;}
 export function requireStripeId(value:unknown):StripeId{assert(typeof value==='string'&&(STRIPE_IDS as readonly string[]).includes(value),400,'INVALID_STRIPE','Desain striping tidak tersedia.');return value as StripeId;}
 export function appearanceSelection(appearance:VehicleAppearance):AppearanceSelection{
- const {carId,rimId,color,finish,rimColor,stripeId,stripeColor}=appearance;return{carId,rimId,color,finish,rimColor,stripeId,stripeColor};
+ const {carId,rimId,color,finish,rimColor,stripeId,stripeColor}=appearance;return{carId,rimId,color,finish,rimColor,stockRimPainted:appearance.stockRimPainted??false,stripeId,stripeColor};
 }
-function ownedAppearance(row:Record<string,any>):VehicleAppearance{return{carId:requireCarId(row.car_id),rimId:row.rim_id,color:row.color.toLowerCase(),finish:row.finish,rimColor:row.rim_color.toLowerCase(),stripeId:row.stripe_id,stripeColor:row.stripe_color.toLowerCase(),version:String(row.version),owned:true,canCustomize:true};}
-function factoryAppearance(row:Record<string,any>):VehicleAppearance{return{carId:requireCarId(row.id),rimId:'stock',color:v.color(row.metadata?.color??'#2866b8'),finish:'metallic',rimColor:'#c7cdd4',stripeId:'none',stripeColor:'#ffffff',version:'0',owned:false,canCustomize:false};}
+function ownedAppearance(row:Record<string,any>):VehicleAppearance{return{carId:requireCarId(row.car_id),rimId:row.rim_id,color:row.color.toLowerCase(),finish:row.finish,rimColor:row.rim_color.toLowerCase(),stockRimPainted:row.stock_rim_painted===true,stripeId:row.stripe_id,stripeColor:row.stripe_color.toLowerCase(),version:String(row.version),owned:true,canCustomize:true};}
+function factoryAppearance(row:Record<string,any>):VehicleAppearance{return{carId:requireCarId(row.id),rimId:'stock',color:v.color(row.metadata?.color??'#2866b8'),finish:'metallic',rimColor:'#c7cdd4',stockRimPainted:false,stripeId:'none',stripeColor:'#ffffff',version:'0',owned:false,canCustomize:false};}
+function stockPaint(value:unknown):boolean {assert(typeof value==='boolean',400,'INVALID_STOCK_RIM_PAINT','Status cat pelek standar harus berupa boolean.');return value;}
 
 /** Per-car appearance is the authority. Loadouts are a projection of the selected
  * saved car, never a free write path for body paint, wheel paint or stripes. */
@@ -52,8 +53,8 @@ export class AppearanceService {
  private compareSuppliedCosmetics(body:Record<string,unknown>,current:VehicleAppearance){
   for(const field of COSMETICS){
    if(body[field]===undefined)continue;
-   const value=field==='finish'?v.finish(body[field]):field==='stripeId'?requireStripeId(body[field]):v.color(body[field]);
-   assert(value===current[field],403,'PAID_CUSTOMIZATION_REQUIRED','Perubahan cat atau striping harus dikonfirmasi melalui penawaran bengkel.');
+   const value=field==='finish'?v.finish(body[field]):field==='stripeId'?requireStripeId(body[field]):field==='stockRimPainted'?stockPaint(body[field]):v.color(body[field]);
+   assert(value===(field==='stockRimPainted'?(current.stockRimPainted??false):current[field]),403,'PAID_CUSTOMIZATION_REQUIRED','Perubahan cat atau striping harus dikonfirmasi melalui penawaran bengkel.');
   }
   const expected=body.appearanceVersion??body.expectedAppearanceVersion;
   if(expected!==undefined)assert(typeof expected==='string'&&expected===current.version,409,'APPEARANCE_CHANGED','Konfigurasi mobil telah berubah. Muat ulang garasi.');
@@ -70,9 +71,9 @@ export class AppearanceService {
   const result=await client.query('SELECT balance,version FROM wallets WHERE user_id=$1 FOR UPDATE',[userId]);assert(result.rowCount,404,'USER_NOT_FOUND','Profil tidak ditemukan.');return{...result.rows[0],currency:'RP_GAME'};
  }
  private async writeLoadout(client:PoolClient,userId:string,selection:AppearanceSelection,appearanceVersion:string):Promise<SavedLoadout>{
-  const values=[userId,selection.carId,selection.rimId,selection.color,selection.finish,selection.rimColor,selection.stripeId,selection.stripeColor];
-  await client.query(`UPDATE loadouts SET car_item_id=$2,wheel_item_id=$3,color=$4,finish=$5,rim_color=$6,stripe_id=$7,stripe_color=$8,version=version+1,updated_at=now()
-   WHERE user_id=$1 AND (car_item_id,wheel_item_id,color,finish,rim_color,stripe_id,stripe_color) IS DISTINCT FROM ($2,$3,$4,$5,$6,$7,$8)`,values);
+  const values=[userId,selection.carId,selection.rimId,selection.color,selection.finish,selection.rimColor,selection.stripeId,selection.stripeColor,selection.stockRimPainted??false];
+  await client.query(`UPDATE loadouts SET car_item_id=$2,wheel_item_id=$3,color=$4,finish=$5,rim_color=$6,stripe_id=$7,stripe_color=$8,stock_rim_painted=$9,version=version+1,updated_at=now()
+   WHERE user_id=$1 AND (car_item_id,wheel_item_id,color,finish,rim_color,stripe_id,stripe_color,stock_rim_painted) IS DISTINCT FROM ($2,$3,$4,$5,$6,$7,$8,$9)`,values);
   const result=await client.query('SELECT version FROM loadouts WHERE user_id=$1',[userId]);assert(result.rowCount,404,'USER_NOT_FOUND','Profil tidak ditemukan.');
   return{...selection,wheelId:selection.rimId,version:String(result.rows[0].version),appearanceVersion};
  }
@@ -105,16 +106,25 @@ export class AppearanceService {
  private async desired(db:Queryable,userId:string,body:Record<string,unknown>,current:VehicleAppearance):Promise<AppearanceSelection>{
   const rimId=this.chosenWheel(body,current);await this.assertWheel(db,userId,rimId);
   const stripeId=body.stripeId===undefined?current.stripeId:requireStripeId(body.stripeId);
-  const selection:AppearanceSelection={carId:current.carId,rimId,color:v.color(body.color??current.color),finish:v.finish(body.finish??current.finish),rimColor:v.color(body.rimColor??current.rimColor),stripeId,stripeColor:v.color(body.stripeColor??current.stripeColor)};
+  const priorStockPaint=current.stockRimPainted??false,requestedStockPaint=body.stockRimPainted===undefined?undefined:stockPaint(body.stockRimPainted);
+  const selection:AppearanceSelection={carId:current.carId,rimId,color:v.color(body.color??current.color),finish:v.finish(body.finish??current.finish),rimColor:v.color(body.rimColor??current.rimColor),stockRimPainted:priorStockPaint,stripeId,stripeColor:v.color(body.stripeColor??current.stripeColor)};
+  if(rimId==='stock'){
+   selection.stockRimPainted=requestedStockPaint??(selection.rimColor!==current.rimColor?true:priorStockPaint);
+   // Factory restoration retains the remembered paint color; changing a hidden
+   // RGB while factory materials are active is neither a charge nor a free edit.
+   if(!selection.stockRimPainted)selection.rimColor=current.rimColor;
+  }
+  // A quote selecting a custom rim cannot silently toggle stock material state.
+  // Its existing rim-color path stays independently usable and paid.
   if(stripeId==='none')selection.stripeColor=current.stripeColor;
-  assert(selection.rimColor===current.rimColor||rimId!=='stock',400,'RIM_PAINT_UNSUPPORTED','Pilih pelek kustom untuk mengganti warna pelek.');
   return selection;
  }
  private serviceIds(current:VehicleAppearance,desired:AppearanceSelection):string[]{
   const ids:string[]=[];
   if(current.color!==desired.color||current.finish!==desired.finish)ids.push('paint-body');
-  if(current.rimColor!==desired.rimColor)ids.push('paint-rims');
-  if(current.stripeId!==desired.stripeId||(desired.stripeId!=='none'&&current.stripeColor!==desired.stripeColor))ids.push(desired.stripeId==='none'?'stripe-remove':'stripe-'+desired.stripeId);
+  if(current.rimColor!==desired.rimColor||(current.stockRimPainted??false)!==(desired.stockRimPainted??false))ids.push('paint-rims');
+  if(current.stripeId!==desired.stripeId)ids.push(desired.stripeId==='none'?'stripe-remove':'stripe-'+desired.stripeId);
+  else if(desired.stripeId!=='none'&&current.stripeColor!==desired.stripeColor)ids.push('stripe-paint');
   return ids;
  }
  private async lineItems(db:Queryable,ids:string[],stale=false):Promise<AppearanceLineItem[]>{
@@ -151,7 +161,7 @@ export class AppearanceService {
    const applicationId=randomUUID();let ledgerEntryId:string|null=null;
    if(total>0n){const mutation=await mutateWallet(client,{userId,delta:-total,kind:'customization',eventKey:'appearance:'+applicationId,reason:'Bengkel: '+lineItems.map(line=>line.name).join(', ')});ledgerEntryId=mutation.entryId;wallet={balance:mutation.balance,version:mutation.version,currency:'RP_GAME'};}
    const noOp=v.fingerprint(appearanceSelection(current))===v.fingerprint(selected);let appearance=current;
-   if(!noOp){const updated=await client.query(`UPDATE car_appearances SET rim_id=$3,color=$4,finish=$5,rim_color=$6,stripe_id=$7,stripe_color=$8,version=version+1,updated_at=now() WHERE user_id=$1 AND car_id=$2 RETURNING *`,[userId,selected.carId,selected.rimId,selected.color,selected.finish,selected.rimColor,selected.stripeId,selected.stripeColor]);appearance=ownedAppearance(updated.rows[0]);}
+   if(!noOp){const updated=await client.query(`UPDATE car_appearances SET rim_id=$3,color=$4,finish=$5,rim_color=$6,stripe_id=$7,stripe_color=$8,stock_rim_painted=$9,version=version+1,updated_at=now() WHERE user_id=$1 AND car_id=$2 RETURNING *`,[userId,selected.carId,selected.rimId,selected.color,selected.finish,selected.rimColor,selected.stripeId,selected.stripeColor,selected.stockRimPainted??false]);appearance=ownedAppearance(updated.rows[0]);}
    const loadout=await this.writeLoadout(client,userId,selected,appearance.version),response:AppearanceApplication={applicationId,appearance,loadout,wallet,pricePaid:total.toString(),lineItems,noOp};
    await client.query('INSERT INTO appearance_applications(id,quote_id,user_id,car_id,price_paid,line_items,before_appearance,after_appearance,ledger_entry_id) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9)',[applicationId,quoteId,userId,selected.carId,total.toString(),JSON.stringify(lineItems),JSON.stringify(current),JSON.stringify(appearance),ledgerEntryId]);
    await client.query('UPDATE appearance_quotes SET applied_response=$2::jsonb WHERE id=$1',[quoteId,JSON.stringify(response)]);return response;

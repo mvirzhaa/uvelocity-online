@@ -12,6 +12,26 @@ const NEUTRAL:Controls={throttle:0,brake:0,steer:0,nitro:false};
 const TOKEN_KEY='uvelocity:reconnect';
 const MAX_PENDING=180;
 
+/** Only post-finish samples may move a finisher visually. The first finished
+ * sample anchors the transition, so the interpolation delay cannot rewind a
+ * newly finished car behind the line. Official score fields always stay latest. */
+function interpolateFinisher(racer:RacerSnapshot,snapshots:readonly RoomSnapshot[],targetTime:number):RacerSnapshot {
+ let a:{racer:RacerSnapshot;time:number}|undefined,b:typeof a;
+ for(const snapshot of snapshots){
+  if(snapshot.phase!=='racing')continue;
+  const sampled=snapshot.racers.find(value=>value.id===racer.id);
+  if(!sampled?.finished||sampled.dnf||sampled.finishTimeMs!==racer.finishTimeMs)continue;
+  const sample={racer:sampled,time:snapshot.serverTime};
+  if(!a||snapshot.serverTime<=targetTime)a=sample;
+  b=sample;if(snapshot.serverTime>=targetTime)break;
+ }
+ if(!a||!b)return racer;
+ const alpha=Math.min(1,Math.max(0,(targetTime-a.time)/Math.max(1,b.time-a.time))),from=a.racer,to=b.racer;
+ return{...racer,x:from.x+(to.x-from.x)*alpha,z:from.z+(to.z-from.z)*alpha,
+  heading:from.heading+shortestAngle(to.heading-from.heading)*alpha,speed:from.speed+(to.speed-from.speed)*alpha,
+  steerAngle:from.steerAngle+(to.steerAngle-from.steerAngle)*alpha};
+}
+
 /** Release the renderer queue when an attempt is cancelled even if a network
  * asset promise never settles. Late promise outcomes are consumed safely. */
 function abortable<T>(operation:Promise<T>|T,signal:AbortSignal):Promise<T>{
@@ -78,7 +98,7 @@ export class OnlineRace {
   if(old&&old!==game)void this.enqueueRenderer(async()=>{await old.stopRace();}).catch(()=>{});
   this.game=game;this.startedRace=null;this.preparing=null;this.failedRace=null;
   this.unsubInput=game.on('input',(input:Controls)=>{
-   if(this.disconnected||document.hidden||this.latest?.phase!=='racing'){this.controls={...NEUTRAL};return;}
+   if(this.disconnected||document.hidden||this.latest?.phase!=='racing'||this.prediction?.finished||this.prediction?.dnf){this.controls={...NEUTRAL};return;}
    this.controls={throttle:input.throttle,brake:input.brake,steer:input.steer,nitro:input.nitro,reset:this.controls.reset===true||input.reset===true};
   });
   if(this.latest)void this.prepareRenderer(this.latest);
@@ -154,6 +174,9 @@ export class OnlineRace {
   const oldPhase=this.latest?.phase,newRace=this.latest?.raceId!==snapshot.raceId,hadScene=!!(this.startedRace||this.preparing||this.arenaWaiting);
   if(snapshot.phase==='aborted'&&oldPhase!=='aborted')this.handlers.error(snapshot.settlementError??'Balapan dibatalkan oleh server.');
   if(newRace){this.preparing?.abort.abort();this.arenaWaiting?.abort.abort();this.snapshots=[];this.pending=[];this.prediction=this.visual=null;this.accumulator=0;this.failedRace=null;this.arenaAckedToken=null;}
+  // A pause, resume, or final phase starts a fresh visual timeline. Reusing a
+  // pre-pause interpolation window could pull resumed cars backward for100ms.
+  if(oldPhase!==snapshot.phase)this.snapshots=[];
   this.latest=snapshot;this.awaitingSync=false;this.snapshots.push(snapshot);if(this.snapshots.length>12)this.snapshots.shift();
   if(snapshot.phase!=='lobby')this.readinessAbort?.abort();
   if(this.resumePreparing&&(snapshot.phase!=='prayer_pause'||snapshot.prayerPause?.pauseToken!==this.resumePreparing.token)){this.resumePreparing.abort.abort();this.resumePreparing=null;}
@@ -253,7 +276,8 @@ export class OnlineRace {
    else for(let i=1;i<this.snapshots.length;i++)if(this.snapshots[i]!.serverTime>=targetTime){a=this.snapshots[i-1]!;b=this.snapshots[i]!;break;}
    const alpha=Math.min(1,Math.max(0,(targetTime-a.serverTime)/Math.max(1,b.serverTime-a.serverTime)));
    const racers=snapshot.racers.map(racer=>{
-    if(snapshot.phase==='prayer_pause'||snapshot.phase==='resume_countdown')return racer;
+    if(snapshot.phase!=='racing'||racer.dnf)return racer;
+    if(racer.finished)return interpolateFinisher(racer,this.snapshots,targetTime);
     if(racer.id===this.sessionId){
      if(this.prediction&&this.visual&&snapshot.phase==='racing'&&!racer.finished&&!racer.dnf&&racer.connected&&!this.disconnected&&!this.awaitingSync){
       const p=this.prediction,v=this.visual,blend=1-Math.exp(-dt*24);
@@ -263,7 +287,7 @@ export class OnlineRace {
      }
      return racer;
     }
-    const ar=a.racers.find(p=>p.id===racer.id),br=b.racers.find(p=>p.id===racer.id);if(!ar||!br||racer.finished||racer.dnf)return racer;
+    const ar=a.racers.find(p=>p.id===racer.id),br=b.racers.find(p=>p.id===racer.id);if(!ar||!br)return racer;
     return{...racer,x:ar.x+(br.x-ar.x)*alpha,z:ar.z+(br.z-ar.z)*alpha,heading:ar.heading+shortestAngle(br.heading-ar.heading)*alpha,steerAngle:ar.steerAngle+(br.steerAngle-ar.steerAngle)*alpha};
    });
    const extrapolation=snapshot.phase==='racing'?Math.min(250,Math.max(0,serverNow-snapshot.serverTime)):0;

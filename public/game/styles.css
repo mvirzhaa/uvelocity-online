@@ -58,3 +58,120 @@ body.nv-embedded #pause-overlay h2::after { content: ' · online'; font-size: .5
 @media(max-width: 600px) { body.nv-embedded .drag-hint { display: none; } body.nv-embedded .stage-footer { justify-content: center; left: 12px; right: 12px; bottom: 12px; } }
 
 body.nv-embedded .stage-footer { display: none !important; }
+
+/* Phone HUD: keep a clear driving view and a separate two-thumb control rail.
+   These dimensions are relative to the iframe; the account shell reserves its
+   own header/room strip before this viewport begins. Canvas pixel resolution
+   remains unchanged when the minimap is displayed at a smaller size. */
+@media (max-width:650px), (pointer:coarse) and (max-width:1200px) {
+  .race-hud {
+    padding:8px;
+    padding-left:max(8px,env(safe-area-inset-left,0px));
+    padding-right:max(8px,env(safe-area-inset-right,0px));
+    overscroll-behavior:none;
+  }
+  .hud-top { gap:8px; align-items:flex-start; }
+  .race-stats { min-width:0; flex:0 1 auto; border-radius:6px; }
+  .hud-stat { min-width:46px; padding:8px 6px; }
+  .hud-stat>span,.hud-time>span { font-size:6px; letter-spacing:.7px; }
+  .hud-stat strong { white-space:nowrap; line-height:1; margin-top:5px; }
+  .hud-stat b { font-size:20px; }
+  .hud-stat em { font-size:8px; margin-left:2px; }
+  .hud-time { min-width:88px; padding:8px; }
+  .hud-time>strong { font-size:14px; line-height:1.2; margin-top:4px; letter-spacing:0; white-space:nowrap; }
+  .hud-time small { font-size:5px; letter-spacing:.15px; margin-top:3px; white-space:nowrap; }
+  .hud-time small b { font-size:6px; margin-left:3px; }
+  .race-tools { display:grid; grid-template-columns:repeat(2,44px); gap:6px; flex:0 0 auto; }
+  .race-tools button { width:44px; height:44px; min-width:44px; min-height:44px; justify-content:center; padding:0; border-radius:8px; }
+  .race-tools span { font-size:17px; line-height:1; }
+  .race-tools b { display:none; }
+  .hud-bottom {
+    position:absolute;
+    left:max(8px,env(safe-area-inset-left,0px));
+    right:max(8px,env(safe-area-inset-right,0px));
+    bottom:calc(88px + env(safe-area-inset-bottom,0px));
+    padding:0;
+    gap:12px;
+    align-items:flex-end;
+  }
+  .controls-hint { display:none; }
+  .map-column { flex:0 0 auto; }
+  .map-box { width:80px; padding:4px 4px 13px; border-radius:7px; background:#10181fba; }
+  .map-box canvas { width:70px; height:70px; }
+  .map-box span { left:5px; right:5px; bottom:3px; font-size:5.5px; line-height:8px; letter-spacing:.65px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .speedo { flex:0 0 120px; width:120px; padding:8px; border-radius:8px; background:#10181fe0; }
+  .speedo-name,.rpm-label,.gear small { display:none; }
+  .speed-row { margin:0 0 5px; gap:4px; }
+  .speed-row>div { flex-direction:column; align-items:flex-start; gap:0; }
+  .speed-row strong { font-size:38px; line-height:1; letter-spacing:-1.8px; }
+  .speed-row small { display:block; font-size:6px; line-height:8px; margin-top:1px; }
+  .gear { padding-left:7px; gap:0; }
+  .gear b { font-size:23px; line-height:1; }
+  .rpm-track { height:2px; margin-top:0; }
+  .nitro-label { font-size:6px; line-height:8px; letter-spacing:.65px; margin-top:6px; }
+  .nitro-label b { font-size:6px; }
+  .nitro-track { height:3px; margin-top:4px; }
+  .touch-left,.touch-right { bottom:calc(12px + env(safe-area-inset-bottom,0px)); gap:8px; touch-action:none; -webkit-user-select:none; }
+  .touch-left { left:max(8px,env(safe-area-inset-left,0px)); }
+  .touch-right { right:max(8px,env(safe-area-inset-right,0px)); }
+  .touch-left button,.touch-right button {
+    width:56px; height:64px; min-width:44px; min-height:44px;
+    padding:0; border-radius:13px; display:grid; place-items:center;
+    line-height:1; background:#101b26dc; border:1px solid #b0c5d36b;
+    box-shadow:0 3px 10px #0003; -webkit-touch-callout:none;
+  }
+  .touch-left button { font-size:22px; }
+  .touch-right button { width:54px; font-size:10px; letter-spacing:.6px; }
+  .touch-right .touch-gas { height:64px; background:#cf6b38dc; border-color:#ffb481b8; }
+  .touch-right .touch-nitro { width:48px; height:48px; font-size:11px; color:#bcebf4; background:#163a4cde; border-color:#86c9dd7d; }
+  .touch-left button.active,.touch-right button.active { background:#f48a4ce8; border-color:#ffe2b8; color:#fff; box-shadow:0 0 0 2px #ffd1a366,0 3px 12px #0005; transform:translateY(2px) scale(.97); }
+  .touch-right .touch-nitro.active { background:#297f99e8; border-color:#d6faff; box-shadow:0 0 0 2px #b4f0ff66; }
+  .race-center { top:34%; gap:10px; }
+  #countdown-display { font-size:84px; letter-spacing:-5px; }
+  #status-banner { max-width:calc(100% - 32px); padding:9px 13px; font-size:9px; letter-spacing:1.5px; }
+}
+
+/* A phone rotated sideways has less vertical space. Move the action icons into
+   one row and trim secondary readouts, without shrinking the driving pedals. */
+@media (max-height:510px) and (orientation:landscape) {
+  .race-hud { padding:8px; padding-left:max(8px,env(safe-area-inset-left,0px)); padding-right:max(8px,env(safe-area-inset-right,0px)); }
+  .hud-top { gap:12px; }
+  .race-stats { border-radius:6px; }
+  .hud-stat { min-width:50px; padding:7px 8px; }
+  .hud-stat>span,.hud-time>span { font-size:6px; letter-spacing:.7px; }
+  .hud-stat strong { margin-top:4px; line-height:1; white-space:nowrap; }
+  .hud-stat b { font-size:20px; }
+  .hud-stat em { font-size:8px; margin-left:3px; }
+  .hud-time { min-width:94px; padding:7px 9px; }
+  .hud-time>strong { font-size:14px; line-height:1.2; letter-spacing:0; margin-top:4px; }
+  .hud-time small { display:none; }
+  .race-tools { display:grid; grid-template-columns:repeat(4,44px); gap:6px; }
+  .race-tools button { width:44px; height:44px; min-width:44px; min-height:44px; padding:0; justify-content:center; border-radius:8px; }
+  .race-tools span { font-size:17px; }
+  .race-tools b { display:none; }
+  .hud-bottom { position:absolute; left:max(8px,env(safe-area-inset-left,0px)); right:max(8px,env(safe-area-inset-right,0px)); bottom:calc(88px + env(safe-area-inset-bottom,0px)); padding:0; align-items:flex-end; gap:12px; }
+  .map-box { width:64px; padding:3px 3px 11px; background:#10181fba; }
+  .map-box canvas { width:56px; height:56px; }
+  .map-box span { left:4px; right:4px; bottom:2px; font-size:5px; line-height:7px; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .speedo { flex:0 0 110px; width:110px; padding:6px 8px; background:#10181fe0; }
+  .speedo-name,.rpm-label,.rpm-track,.gear small { display:none; }
+  .speed-row { margin:0 0 4px; gap:4px; }
+  .speed-row>div { flex-direction:column; align-items:flex-start; gap:0; }
+  .speed-row strong { font-size:30px; line-height:1; letter-spacing:-1.2px; }
+  .speed-row small { font-size:5.5px; line-height:7px; margin-top:1px; }
+  .gear { padding-left:7px; gap:0; }
+  .gear b { font-size:21px; line-height:1; }
+  .nitro-label { font-size:6px; line-height:7px; letter-spacing:.5px; margin-top:0; }
+  .nitro-label b { font-size:6px; }
+  .nitro-track { height:3px; margin-top:3px; }
+  .touch-left,.touch-right { bottom:calc(12px + env(safe-area-inset-bottom,0px)); gap:8px; touch-action:none; }
+  .touch-left { left:max(8px,env(safe-area-inset-left,0px)); }
+  .touch-right { right:max(8px,env(safe-area-inset-right,0px)); }
+  .touch-left button,.touch-right button { width:56px; height:64px; min-width:44px; min-height:44px; padding:0; display:grid; place-items:center; border-radius:13px; }
+  .touch-right button { width:54px; font-size:10px; }
+  .touch-right .touch-gas { height:64px; }
+  .touch-right .touch-nitro { width:48px; height:48px; font-size:11px; }
+  .race-center { top:27%; gap:8px; }
+  #countdown-display { font-size:62px; letter-spacing:-4px; }
+  #status-banner { padding:7px 12px; font-size:8px; letter-spacing:1px; }
+}

@@ -3,18 +3,22 @@ import type { CSSProperties, FormEvent } from 'react';
 import { api, rupiah, dateLabel } from './api.js';
 import type { Catalog } from './api.js';
 import { Icon } from './icons.js';
+import { AdminMedia } from './AdminMedia.js';
+import { VehicleImageEditor } from './VehicleImages.js';
+import type { PresentationSettings } from '../../shared/media.js';
 
 type AdminUser={id:string;userId:string;email:string;displayName:string;avatarId:string;role:string;status:string;balance:string;walletVersion:string;createdAt:string};
 type AuditEntry={id:string;actorId:string|null;actorName:string|null;action:string;targetId:string;reason:string;before:unknown;after:unknown;createdAt:string};
 type RewardPolicy={version?:number;finish:string;perLap:string;podium:string[];minimumDurationMs:number;maximum:string};
 type Tuning={version:string;bounds:Record<'topSpeed'|'zeroTo100'|'handling',{min:number;max:number}>;cars:Array<{carId:string;topSpeed:number;zeroTo100:number;handling:number}>;rewardPolicy:RewardPolicy;physics:unknown};
 type GrantReview={user:AdminUser;amount:string;reference:string;reason:string;key:string};
-type Tab='accounts'|'tuning'|'offers'|'rewards'|'audit';
+type Tab='accounts'|'tuning'|'offers'|'rewards'|'media'|'vehicle-images'|'audit';
 const control:CSSProperties={fontSize:14};
 const actions:CSSProperties={display:'flex',flexWrap:'wrap',alignItems:'center',gap:10};
 const sections:CSSProperties={display:'grid',gap:20};
-const actionNames:Record<string,string>={'admin.created':'Admin dibuat','wallet.topup':'Kredit ditambahkan','catalog.updated':'Penawaran diubah','ruleset.published':'Aturan diterbitkan'};
-const tabs:Array<{id:Tab;label:string;icon:string}>=[{id:'accounts',label:'Pemain & kredit',icon:'user'},{id:'tuning',label:'Performa mobil',icon:'settings'},{id:'offers',label:'Harga & toko',icon:'wallet'},{id:'rewards',label:'Hadiah balapan',icon:'trophy'},{id:'audit',label:'Riwayat admin',icon:'shield'}];
+const actionNames:Record<string,string>={'admin.created':'Admin dibuat','wallet.topup':'Kredit ditambahkan','catalog.updated':'Penawaran diubah','ruleset.published':'Aturan diterbitkan','media.uploaded':'Media diunggah','media.deleted':'Media dihapus','presentation.updated':'Musik & loading diubah','vehicle.thumbnail.updated':'Foto kendaraan diperbarui','vehicle.thumbnail.deleted':'Foto kendaraan dihapus'};
+const tabs:Array<{id:Tab;label:string;icon:string}>=[{id:'accounts',label:'Pemain & kredit',icon:'user'},{id:'tuning',label:'Performa mobil',icon:'settings'},{id:'offers',label:'Harga & toko',icon:'wallet'},{id:'rewards',label:'Hadiah balapan',icon:'trophy'},{id:'media',label:'Musik & loading',icon:'sound'},{id:'vehicle-images',label:'Foto kendaraan',icon:'car'},{id:'audit',label:'Riwayat admin',icon:'shield'}];
+const colorServices=[{id:'paint-body',label:'Warna bodi',description:'Warna dan lapisan cat bodi.'},{id:'paint-rims',label:'Warna pelek',description:'Pelek standar, paket pelek, dan pengembalian finishing pabrik.'},{id:'stripe-paint',label:'Warna striping',description:'Mengganti warna pada desain striping yang sudah terpasang.'}];
 function message(error:unknown):string{return error instanceof Error?error.message:'Permintaan belum berhasil. Coba lagi.';}
 function nonce(prefix:string):string {
   const random=typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
@@ -22,7 +26,7 @@ function nonce(prefix:string):string {
 }
 function validMoney(value:string,max:bigint,allowZero=true):boolean{return /^(0|[1-9][0-9]{0,15})$/.test(value)&&BigInt(value)<=max&&(allowZero||BigInt(value)>0n);}
 
-export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>Promise<void>;onNotice:(message:string,error?:boolean)=>void}) {
+export function Admin({catalog,onChange,onNotice,onMediaChange,mediaMuted=false,mediaSuspended=false}:{catalog:Catalog;onChange:()=>Promise<void>;onNotice:(message:string,error?:boolean)=>void;onMediaChange?:(settings:PresentationSettings)=>void;mediaMuted?:boolean;mediaSuspended?:boolean}) {
   const callbacks=useRef({onChange,onNotice});callbacks.current={onChange,onNotice};
   const mounted=useRef(true),userRequest=useRef(0),auditRequest=useRef(0),tuningRequest=useRef(0);
   const [tab,setTab]=useState<Tab>('accounts');
@@ -155,7 +159,7 @@ export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>
         {usersError&&<p className="form-error" role="alert">{usersError}</p>}
         {usersLoading&&<p role="status">Memuat akun dari server…</p>}
         {!usersLoading&&!usersError&&users.length===0&&<p>Tidak ada pemain yang cocok dengan pencarian ini.</p>}
-        {users.length>0&&<div style={{overflowX:'auto'}}><table className="data-table" style={{fontSize:14,width:'100%'}}><thead><tr><th>Pemain</th><th>Kredit game</th><th>Status</th><th><span>Pilih akun</span></th></tr></thead><tbody>
+        {users.length>0&&<div className="table-scroll compact-table-scroll" role="region" aria-label="Daftar akun pemain" tabIndex={0}><table className="data-table" style={{fontSize:14,width:'100%'}}><thead><tr><th>Pemain</th><th>Kredit game</th><th>Status</th><th><span>Pilih akun</span></th></tr></thead><tbody>
           {users.map(user=><tr key={user.id} style={selectedUser?.id===user.id?{background:'rgba(99,185,255,.08)'}:undefined}><td><strong>{user.displayName}</strong><br/><span>{user.email}</span></td><td>{rupiah(user.balance)}</td><td><span className="pill">{user.role==='admin'?'ADMIN':user.status==='active'?'Aktif':'Nonaktif'}</span></td><td><button type="button" className="secondary" style={control} aria-pressed={selectedUser?.id===user.id} onClick={()=>{setSelectedUser(user);setFormError('');}}>{selectedUser?.id===user.id?'Terpilih':'Pilih'}</button></td></tr>)}
         </tbody></table></div>}
       </section>
@@ -191,9 +195,10 @@ export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>
 
     {tab==='offers'&&<section className="panel">
       <div className="section-heading"><div><h2>Akses kendaraan & harga toko</h2><p>Pembelian memberikan akses permanen. Kendaraan yang dibuka gratis oleh admin hanya dapat dipakai tanpa pembelian selama aksesnya tetap terbuka.</p></div><button type="button" className="text-button" style={control} disabled={!!saving} onClick={()=>void callbacks.current.onChange().catch(error=>setFormError(message(error)))}><Icon name="refresh" size={18}/> Muat katalog</button></div>
+      <section className="admin-color-fees" aria-labelledby="color-fees-heading"><div><h3 id="color-fees-heading">Tarif perubahan warna</h3><p>Pilih layanan untuk mengubah tarif atau mengaktifkannya. Harga Rp0 membuat perubahan tersebut gratis; layanan nonaktif tidak menerima perubahan baru.</p></div><div className="admin-color-fee-grid">{colorServices.map(entry=>{const service=catalog.services.find(item=>item.id===entry.id);return <button key={entry.id} type="button" data-color-service={entry.id} aria-pressed={offerId===entry.id} aria-label={'Atur tarif '+entry.label.toLowerCase()} disabled={!!saving||!service} onClick={()=>{setOfferId(entry.id);setFormError('');}}><span>{entry.label}</span><b>{service?rupiah(service.price):'Belum tersedia'}</b><small>{service?(service.enabled?'Layanan aktif':'Layanan dinonaktifkan'):'Muat katalog terbaru'}</small><p>{entry.description}</p></button>;})}</div><p className="hint">Harga pemasangan desain striping sudah termasuk warna pilihan. Penggantian warna pada desain yang sama memakai tarif warna striping. Semua transaksi pemain tetap melalui tinjauan biaya.</p></section>
       {offer&&<form onSubmit={saveOffer} style={sections}>
         <label>Item<select style={control} value={offerId} onChange={event=>setOfferId(event.target.value)} disabled={!!saving}><optgroup label="Mobil">{catalog.cars.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup><optgroup label="Pelek">{catalog.wheels.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup><optgroup label="Jasa cat & striping">{(catalog.services??[]).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</optgroup></select></label>
-        <div className="field-grid"><label>Harga dalam kredit game<input style={control} value={offerDraft.price} onChange={event=>setOfferDraft({...offerDraft,price:event.target.value})} inputMode="numeric" maxLength={16} required/><span>{validMoney(offerDraft.price,1_000_000_000_000n)?rupiah(offerDraft.price):'Gunakan angka bulat tanpa titik.'}</span></label><div><span className="pill">PENAWARAN V{offer.catalogVersion}</span><label style={{display:'flex',alignItems:'center',gap:10,marginTop:18}}><input style={{...control,width:'auto'}} type="checkbox" checked={offerDraft.enabled} onChange={event=>setOfferDraft({...offerDraft,enabled:event.target.checked})}/>Tersedia di toko</label></div></div>
+        <div className="field-grid"><label>Harga dalam kredit game<input style={control} type="text" value={offerDraft.price} onChange={event=>setOfferDraft({...offerDraft,price:event.target.value})} inputMode="numeric" maxLength={16} required/><span>{validMoney(offerDraft.price,1_000_000_000_000n)?rupiah(offerDraft.price):'Gunakan angka bulat tanpa titik.'}</span></label><div><span className="pill">PENAWARAN V{offer.catalogVersion}</span><label style={{display:'flex',alignItems:'center',gap:10,marginTop:18}}><input style={{...control,width:'auto'}} type="checkbox" checked={offerDraft.enabled} onChange={event=>setOfferDraft({...offerDraft,enabled:event.target.checked})}/>{offer.kind==='service'?'Layanan aktif':'Tersedia di toko'}</label></div></div>
         {offer.kind==='car'&&<fieldset className="vehicle-access-field"><legend>Akses untuk pemain yang belum membeli</legend><label className={'access-option '+(offerDraft.locked?'selected':'')}><input type="radio" name="car-access" checked={offerDraft.locked} onChange={()=>setOfferDraft({...offerDraft,locked:true})}/><span><b>Terkunci · harus membeli</b><small>Pemain tanpa kepemilikan permanen tidak bisa memakai mobil ini.</small></span><Icon name="lock" size={19}/></label><label className={'access-option '+(!offerDraft.locked?'selected':'')}><input type="radio" name="car-access" checked={!offerDraft.locked} onChange={()=>setOfferDraft({...offerDraft,locked:false})}/><span><b>Dibuka gratis oleh admin</b><small>Semua pemain dapat memakainya selama akses gratis masih dibuka.</small></span><Icon name="car" size={19}/></label><p>Pemain yang sudah membeli tetap memiliki akses ketika kendaraan dikunci kembali. Balapan yang sedang berjalan mempertahankan kendaraan hingga selesai.</p>{offerDraft.locked&&offer.locked===false&&<div className="access-change-note">Setelah disimpan, akses gratis pemain yang belum membeli akan ditutup untuk pemilihan dan balapan berikutnya.</div>}</fieldset>}
         <label>Alasan perubahan<textarea style={control} rows={3} value={offerDraft.reason} onChange={event=>setOfferDraft({...offerDraft,reason:event.target.value})} minLength={4} maxLength={500} required/></label>
         {formError&&<p className="form-error" role="alert">{formError}</p>}
@@ -216,11 +221,14 @@ export function Admin({catalog,onChange,onNotice}:{catalog:Catalog;onChange:()=>
       </form>}
     </section>}
 
+    {tab==='media'&&<AdminMedia onChange={settings=>{onMediaChange?.(settings);void loadAudit();}} onNotice={onNotice} muted={mediaMuted} suspended={mediaSuspended}/>}
+    {tab==='vehicle-images'&&<VehicleImageEditor cars={catalog.cars} onSaved={async()=>{await callbacks.current.onChange();await loadAudit();}} onNotice={onNotice}/>}
+
     {tab==='audit'&&<section className="panel">
       <div className="section-heading"><div><h2>Riwayat administrator</h2><p>50 tindakan terbaru, termasuk kredit, katalog, dan aturan balapan.</p></div><button type="button" className="text-button" style={control} disabled={auditLoading} onClick={()=>void loadAudit()}><Icon name="refresh" size={18}/> Muat ulang</button></div>
       {auditError&&<p className="form-error" role="alert">{auditError}</p>}{auditLoading&&<p role="status">Memuat riwayat…</p>}
       {!auditLoading&&!auditError&&audit.length===0&&<p>Belum ada tindakan administrator.</p>}
-      {audit.length>0&&<div style={{overflowX:'auto'}}><table className="data-table" style={{fontSize:14,width:'100%'}}><thead><tr><th>Waktu & operator</th><th>Tindakan</th><th>Alasan & perubahan</th></tr></thead><tbody>{audit.map(entry=><tr key={entry.id}>
+      {audit.length>0&&<div className="table-scroll compact-table-scroll" role="region" aria-label="Riwayat administrator" tabIndex={0}><table className="data-table" style={{fontSize:14,width:'100%'}}><thead><tr><th>Waktu & operator</th><th>Tindakan</th><th>Alasan & perubahan</th></tr></thead><tbody>{audit.map(entry=><tr key={entry.id}>
         <td>{dateLabel(entry.createdAt)}<br/><strong>{entry.actorName??'Operator sistem'}</strong></td>
         <td>{actionNames[entry.action]??entry.action}<br/><span>{offers.find(item=>item.id===entry.targetId)?.name??entry.targetId}</span></td>
         <td><p>{entry.reason}</p><details><summary style={{fontSize:14,cursor:'pointer'}}>Lihat perubahan</summary><pre style={{fontSize:14,whiteSpace:'pre-wrap',overflowWrap:'anywhere',maxWidth:520}}>{JSON.stringify({sebelum:entry.before,sesudah:entry.after},null,2)}</pre></details></td>

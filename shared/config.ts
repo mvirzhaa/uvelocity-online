@@ -31,11 +31,13 @@ export function validateStats(stats:VehicleStats):VehicleStats {
 export function freezeLoadout(loadout:FrozenLoadout):FrozenLoadout {
   if(!CAR_IDS.includes(loadout.carId)||!/^#[\da-f]{6}$/i.test(loadout.color)||!['gloss','metallic','matte'].includes(loadout.finish))throw new Error('Invalid validated loadout');
   const rimColor=loadout.rimColor??'#c7cdd4';if(!/^#[\da-f]{6}$/i.test(rimColor))throw new Error('Invalid rim color');
+  if(loadout.stockRimPainted!==undefined&&typeof loadout.stockRimPainted!=='boolean')throw new Error('Invalid stock rim paint state');
+  const stockRimPainted=loadout.stockRimPainted??false;
   const stripeId=loadout.stripeId??'none',stripeColor=loadout.stripeColor??'#ffffff';
   if(!STRIPE_IDS.includes(stripeId)||!/^#[\da-f]{6}$/i.test(stripeColor))throw new Error('Invalid stripe appearance');
   if(loadout.appearanceVersion!==undefined&&!/^(0|[1-9][0-9]{0,18})$/.test(loadout.appearanceVersion))throw new Error('Invalid appearance version');
   if(typeof loadout.tuningVersion!=='string'||!loadout.tuningVersion)throw new Error('A ruleset version is required');
-  return Object.freeze({...loadout,rimColor,stripeId,stripeColor,stats:validateStats(loadout.stats)});
+  return Object.freeze({...loadout,rimColor,stockRimPainted,stripeId,stripeColor,stats:validateStats(loadout.stats)});
 }
 export function resolvePhysics(overrides:Partial<PhysicsConfig>={}):PhysicsConfig {
   const value={...DEFAULT_PHYSICS,...overrides};

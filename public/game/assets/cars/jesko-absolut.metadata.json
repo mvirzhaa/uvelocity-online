@@ -1,10 +1,10 @@
 {
   "id": "jesko-absolut",
   "file": "/game/assets/cars/jesko-absolut.glb",
-  "bytes": 2938788,
-  "triangles": 100994,
-  "meshCount": 30,
-  "nodeCount": 39,
+  "bytes": 4077504,
+  "triangles": 140104,
+  "meshCount": 28,
+  "nodeCount": 37,
   "materials": [
     "tire_rubber",
     "rim_paint",
@@ -16,28 +16,40 @@
     "glass",
     "interior_seat",
     "light_front",
-    "accent_lime",
-    "paint_aero",
     "light_rear"
   ],
   "bounds": {
     "min": [
-      -1.149999976158142,
+      -1.1449999809265137,
       -9.536743172944284e-09,
-      -2.7899999618530273
+      -2.678919792175293
     ],
     "max": [
-      1.149999976158142,
-      1.2387874126434326,
-      2.549999952316284
+      1.1449999809265137,
+      1.218999981880188,
+      2.5287742614746094
     ]
   },
   "dimensions": [
-    2.299999952316284,
-    1.2387874221801758,
-    5.3399999141693115
+    2.2899999618530273,
+    1.2189999914169312,
+    5.207694053649902
   ],
   "provenance": "Original UVelocity reference-based recreation; independently authored geometry, not a manufacturer mesh, scan, or extracted game asset.",
+  "displayName": "Koenigsegg Regera",
+  "modelRevision": "1.3.0-reference-remesh",
+  "reference": "Latest user Regera reference images 20261120-152733, 152654, 152610, 152709. Legacy jesko-absolut ID retained for existing ownership.",
+  "designFeatures": [
+    "rounded wraparound glazed canopy with closed roof",
+    "long smooth low clamshell nose",
+    "tear-shaped triple-projector headlamps",
+    "long scalloped lower door intake",
+    "deployed low horizontal active rear wing",
+    "five paired-spoke wheels"
+  ],
+  "roof": "closed",
+  "bodyStyle": "regera-reference-coupe",
+  "representation": "original-reference-recreation",
   "author": "UVelocity original mesh authoring",
   "source": "scripts/build-hypercar-expansion.cjs",
   "referenceBased": true,
@@ -68,21 +80,21 @@
   },
   "headlightPositions": [
     [
-      -0.73,
-      0.7278090905626053,
-      1.9683045971909425
+      -0.746,
+      0.7489870571978285,
+      1.964362544011016
     ],
     [
-      0.73,
-      0.7278090905626053,
-      1.9683045971909425
+      0.746,
+      0.7489870571978285,
+      1.964362544011016
     ]
   ],
   "exhaustPositions": [
     [
       0,
-      0.39,
-      -2.78
+      0.47,
+      -2.73
     ]
   ],
   "up": "+Y",
@@ -92,15 +104,29 @@
     "paint_body",
     "paint_aero"
   ],
-  "representation": "original-reference-recreation",
-  "length": 5.3399999141693115,
-  "tail": -2.78,
+  "length": 5.207694053649902,
+  "tail": -2.73,
   "exhaustX": 0,
-  "exhaustY": 0.39,
+  "exhaustY": 0.47,
   "validation": {
     "glbBuffers": "finite-and-index-valid",
     "rig": "four-wheels-two-steering-pivots",
-    "visualReview": "Blender Cycles CPU 48 samples; front three-quarter views",
-    "isGameplayScreenshot": false
+    "visualReview": "Blender Cycles CPU, 32 samples, 1080x680; matching silver paint and camera positions, front and rear three-quarter views",
+    "isGameplayScreenshot": false,
+    "roofRaycast": {
+      "sampleCount": 9,
+      "hits": 9,
+      "region": {
+        "x": [
+          -0.2,
+          0.2
+        ],
+        "z": [
+          -0.55,
+          0
+        ]
+      },
+      "interpretation": "closed roof and glass"
+    }
   }
 }

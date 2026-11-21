@@ -1,8 +1,20 @@
 # UVelocity
 
-Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, ekonomi rupiah virtual, pembelian mobil dan pelek, cat/striping berbayar, pengaturan akses kendaraan oleh administrator, serta jeda salat bersama berdasarkan lokasi pemain.
+Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, ekonomi rupiah virtual, pembelian mobil dan pelek, cat/striping berbayar, pengaturan akses kendaraan oleh administrator, serta jeda salat bersama berdasarkan lokasi pemain. Pembaruan **1.3.0** merapikan tampilan ponsel, kontrol sentuh, dan akses tombol utama tanpa scroll panjang; memperbarui bentuk 3D Koenigsegg Regera serta Hennessey Venom F5 sesuai referensi terbaru; dan menambahkan Isuzu Panther Grand Touring sebagai kendaraan ke-16. Fitur versi **1.2.0** tetap mencakup media garasi/loading dan foto kendaraan yang dikelola admin, kamera dashboard, koleksi Garasi khusus kendaraan milik pemain, navigasi Sebelumnya/Berikutnya, penyelesaian balapan tanpa menunggu bot, serta cat pelek bawaan dan tarif warna striping tersendiri yang dapat diatur admin.
 
-**Identitas:** splash pertama memakai logo Universitas Ibn Khaldun Bogor yang diberikan pengguna dengan teks **`create by civitas UIKA`**. Setelah itu tampil logo UVelocity tersendiri. Aset mobil dan lingkungan dari versi sebelumnya tetap digunakan.
+**Identitas:** splash pertama memakai logo Universitas Ibn Khaldun Bogor dengan alpha transparan tanpa latar kotak-kotak, bersama logo **Teknik Informatika UIKA** yang diberikan pengguna. Teks **`create by civitas UIKA`** tetap ditampilkan. Setelah itu tampil logo UVelocity tersendiri. Aset mobil dan lingkungan dari versi sebelumnya tetap digunakan. Detail sumber logo ada di [docs/BRANDING.md](docs/BRANDING.md).
+
+## Pembaruan 1.3.0
+
+- **Aksi Garasi di atas:** tombol **Pakai mobil ini** dan **Masuk ke ruang balap** berada pada area judul **Garasi Anda**, dengan susunan yang membungkus pada layar sempit. Penggunaan konfigurasi tersimpan tidak dikenai biaya ulang; perubahan kosmetik tetap melalui **Tinjau biaya & pasang**.
+- **Hasil pertandingan:** **Kembali ke garasi** berada di header hasil, sebelum statistik dan daftar peserta.
+- **Arena HP:** arena memakai tinggi layar yang tersedia. Baris ruang/Menu mempunyai tempat tersendiri di atas arena. Speedometer serta peta diperkecil, dengan susunan khusus ketika HP diputar mendatar.
+- **Kontrol dua ibu jari:** kemudi kiri/kanan berada di kiri, gas/rem di kanan, dan nitro memiliki tombol tersendiri. Gas dan kemudi dapat ditahan bersamaan. Setiap jari dilepas secara terpisah; pause, tab tersembunyi, kehilangan fokus, dan jeda salat tetap melepaskan seluruh kontrol.
+- **Halaman lebih ringkas:** tinggi pratinjau menyesuaikan layar, panel lobi didahulukan pada HP, dan daftar panjang dibatasi pada area scroll tersendiri. Scroll yang diperlukan untuk formulir serta daftar panjang tetap tersedia agar seluruh isi bisa dijangkau.
+
+**Kendaraan:** bentuk Koenigsegg kini mengikuti foto Regera terbaru, dengan kanopi melengkung dan sayap belakang melintang; Venom F5 mengikuti foto ungu dengan kokpit terbuka. Isuzu Panther Grand Touring memiliki kabin MPV tinggi, gril krom, roof rail, lampu terpisah, dan pijakan samping. Harga awal Panther adalah Rp150.000 kredit game, terkunci sampai dibeli atau dibuka admin. Harga, akses, serta performanya bisa diubah lewat admin seperti kendaraan lain.
+
+Migrasi **012** menyelaraskan nama bawaan Koenigsegg menjadi **Regera**, tetap memakai ID historis `jesko-absolut` agar pembelian dan modifikasi pemain tidak hilang atau dibayar ulang. Nama khusus yang pernah diisi admin dipertahankan. Migrasi **013** menambahkan Panther dengan menyalin tuning, fisika, dan hadiah admin ke versi aturan baru. Tiga belas GLB lainnya, tiga lingkungan, dan sebelas migrasi terdahulu dipertahankan. CSS/JavaScript HUD serta URL model yang diperbarui memakai penanda cache baru.
 
 ## Mulai dalam beberapa langkah
 
@@ -91,14 +103,20 @@ Pastikan `NODE_ENV=production` di lingkungan proses. Jika menggunakan port nativ
 ## Alur pemain
 
 1. **Daftar / masuk.** Akun baru memperoleh Subaru BRZ, roda standar, dan Rp25.000 kredit game satu kali.
-2. **Garasi.** Putar mobil dengan menyeret, perbesar dengan scroll, pilih sudut depan/samping/belakang, dan dengarkan profil mesin. Garasi memakai lingkungan bengkel 3D.
-3. **Showroom.** Pratinjau 15 kendaraan. Mobil berlabel **Milik permanen** selalu bisa dipakai; **Akses gratis admin** bisa dipakai selama dibuka. **Beli akses permanen** membeli kendaraan satu kali dengan saldo akun, termasuk ketika sedang dibuka gratis.
+2. **Garasi.** Hanya kendaraan milik permanen pemain, termasuk Subaru BRZ awal, yang tampil di koleksi ini. Gunakan **Sebelumnya/Berikutnya** untuk melihat mobil lain yang dimiliki. Putar mobil dengan menyeret, perbesar dengan scroll, pilih sudut depan/samping/belakang, dan dengarkan profil mesin. Garasi memakai lingkungan bengkel 3D. Musik MP3 yang dipilih admin tersedia di garasi; tekan tombol pemutaran jika browser meminta interaksi terlebih dahulu.
+3. **Showroom.** Pratinjau seluruh 16 kendaraan, termasuk yang belum dibeli, melalui kartu atau **Sebelumnya/Berikutnya**. Mobil berlabel **Milik permanen** selalu bisa dipakai; **Akses gratis admin** bisa dipakai selama dibuka. **Beli akses permanen** membeli kendaraan satu kali dengan saldo akun, termasuk ketika sedang dibuka gratis.
 4. **Bengkel.** Pilih kendaraan yang dimiliki, paket pelek, warna bodi/pelek, lapisan metallic/gloss/matte, dan salah satu pola striping. Pratinjau tidak memotong saldo. Tekan **Tinjau biaya & pasang**, periksa rincian, lalu **Bayar & pasang**. Memilih kembali tampilan yang tersimpan gratis.
-5. **Balapan.** Buat ruang atau masukkan kode teman. Pilih sirkuit, jumlah lap, slot manusia, bot, kesulitan, dan kontak antarmobil. Semua pemain menekan **Saya siap balapan**, lalu host memulai persiapan. Status **Memuat arena / Arena siap** menunjukkan perangkat masing-masing. Hitungan 3–2–1 baru berjalan setelah semua arena dan model siap, menggunakan waktu start yang sama dari server.
+5. **Balapan.** Buat ruang atau masukkan kode teman. Pilih sirkuit, jumlah lap, slot manusia, bot, kesulitan, dan kontak antarmobil. Semua pemain menekan **Saya siap balapan**, lalu host memulai persiapan. Halaman loading layar penuh memakai JPEG pilihan admin dan menunjukkan status **Memuat arena / Arena siap** setiap perangkat. Gambar loading tidak menutupi proses pemuatan mesin: arena tetap dirender di bawahnya. Halaman ini hilang ketika seluruh arena siap dan server mengirim hitungan 3–2–1 bersama.
 6. **Lokasi & jeda salat.** Atur GPS atau lokasi manual dari Profil. Jika waktu salat seorang peserta masuk, seluruh ruang membeku minimal 15 menit. Setelah itu semua peserta yang masih berada di ruang menekan **Siap melanjutkan**, lalu menunggu hitungan bersama. Jakarta digunakan jika lokasi tidak diperoleh.
 7. **Finish.** Server menentukan lap, posisi, hasil, dan hadiah. Layar hasil menampilkan hadiah akun sendiri. Transaksi dapat diperiksa di profil.
 
 Semua peserta harus berada pada layanan UVelocity yang sama. Kode ruang tidak menghubungkan dua server instalasi yang terpisah.
+
+### Mengganti mobil aktif
+
+Buka **Garasi**, lalu pilih mobil dengan **Sebelumnya/Berikutnya** atau kartu pada **Kendaraan milik Anda**. Tombol **Ganti mobil** pada ringkasan **MOBIL AKTIF** langsung membuka bagian ini. **Sebelumnya/Berikutnya** menelusuri koleksi secara melingkar dan menampilkan urutan pilihan; tombol dinonaktifkan jika koleksi hanya berisi satu mobil. Klik **Pakai mobil ini** di area judul **Garasi Anda** untuk benar-benar mengaktifkan pilihan tersebut. Memilih kartu atau tombol navigasi saja menampilkan pratinjau. Ringkasan **MOBIL AKTIF** mengikuti pilihan yang berhasil disimpan pada server, bukan mobil yang sekadar sedang dilihat.
+
+Untuk mobil yang belum dimiliki, buka **Showroom**, lalu klik **Beli akses permanen** atau **Gunakan selama dibuka** jika admin membuka akses gratis. Akses gratis sementara tidak memasukkan mobil ke koleksi Garasi; setelah dibeli permanen, mobil muncul di Garasi. Kembali dari pratinjau mobil belum dimiliki ke Garasi memilih pratinjau mobil milik pemain tanpa mengganti mobil aktif di server secara diam-diam. Berpindah ke mobil milik sendiri dengan konfigurasi tersimpan tidak membayar ulang. Jika Anda mengubah cat/striping sekaligus, tombol berubah menjadi **Tinjau biaya & pasang** agar biaya ditinjau sebelum diterapkan. Kendaraan dipilih sebelum persiapan atau pertandingan berjalan.
 
 ### Kendaraan dan sirkuit
 
@@ -117,12 +135,13 @@ Semua peserta harus berada pada layanan UVelocity yang sama. Kode ruang tidak me
 | Mercedes-AMG GT4 | Rp780.000 |
 | Mercedes-Benz SLS AMG GT3 | Rp1.050.000 |
 | Batmobile 1989 | Rp1.300.000 |
-| Koenigsegg Jesko Absolut | Rp2.400.000 |
+| Koenigsegg Regera | Rp2.400.000 |
 | Hennessey Venom F5 | Rp2.200.000 |
+| Isuzu Panther Grand Touring | Rp150.000 |
 
 Tiga sirkuit: **Neon City**, **Azure Coast**, dan **Frostpeak Pass**. Masing-masing mempertahankan geometri lintasan, lingkungan kota/pantai/pegunungan es, serta pilihan suasana senja dan malam. Detail grafis dapat dipilih Ringan, Seimbang, atau Tinggi.
 
-Harga dapat berbeda jika administrator mengubah katalog. Tujuh model tambahan merupakan rekonstruksi 3D khusus berdasarkan referensi pengguna; bukan mesh pabrikan, hasil scan, atau salinan aset game lain. BMW M4 memakai bentuk F82, Batmobile mengikuti versi 1989, Jesko Absolut memakai dua sirip ekor tanpa sayap Attack, dan Venom F5 memakai sayap sesuai foto referensi. Delapan aset kendaraan sebelumnya dipertahankan tanpa perubahan berkas GLB. Angka performa adalah parameter simulasi arcade, bukan klaim spesifikasi mobil asli. Varian Polisi 77 adalah desain fiktif untuk game.
+Harga dapat berbeda jika administrator mengubah katalog. Delapan model tambahan merupakan rekonstruksi 3D khusus berdasarkan referensi pengguna; bukan mesh pabrikan, hasil scan, atau salinan aset game lain. BMW M4 memakai bentuk F82, Batmobile mengikuti versi 1989, Koenigsegg mengikuti bentuk Regera pada foto terbaru, Venom F5 memakai kokpit terbuka serta roda emas sesuai foto, dan Panther mengikuti foto MPV gelap dengan trim krom. Delapan aset kendaraan sebelumnya dipertahankan tanpa perubahan berkas GLB. Angka performa adalah parameter simulasi arcade, bukan klaim spesifikasi mobil asli. Varian Polisi 77 adalah desain fiktif untuk game.
 
 ### Batas ruang
 
@@ -136,6 +155,14 @@ Harga dapat berbeda jika administrator mengubah katalog. Tujuh model tambahan me
 - Pemuatan gagal, pemain terputus, membatalkan kesiapan, atau melewati batas waktu persiapan 45 detik mengembalikan ruang ke lobi. Peserta memilih Siap kembali; server tidak memulai dengan pemain yang masih tertinggal.
 - Menu biasa tidak menjeda balapan pemain lain. Kontrol lokal dilepas ketika menu terbuka. Jeda salat adalah penghentian bersama yang diputuskan server untuk seluruh ruang.
 - Sambungan yang terputus sementara mencoba tersambung kembali; bila kesempatan reconnect habis atau pemain keluar sebelum finish, hasilnya DNF.
+
+### Finis dan hasil langsung
+
+Ketika semua pembalap manusia yang masih mengikuti pertandingan telah finis, balapan diselesaikan **tanpa menunggu bot yang belum finis**. Pembalap yang sudah keluar/DNF tidak menahan penyelesaian. Pemain yang sedang mencoba reconnect masih mengikuti masa tenggang yang sama dengan sebelumnya; ketika tenggang habis, statusnya menjadi DNF.
+
+Waktu dan urutan finis dicatat saat garis benar-benar dilalui. Bot yang sudah finis mempertahankan hasilnya; bot yang masih tertinggal tercatat DNF dengan urutan berdasarkan progres terakhir. Hadiah mengikuti hasil resmi dan tetap disimpan satu kali oleh server.
+
+Mobil yang sudah finis melepas gas dan nitro, lalu melambat bertahap melewati garis. Pemain tidak bisa menambah gas, mengaktifkan nitro, atau memakai reset untuk mengubah hasil setelah finis. Gerak setelah finis tidak menambah lap atau memperbaiki waktu. Hasil akhir langsung tampil setelah server menyimpannya; animasi melambat dapat berlanjut di belakang panel hasil tanpa menunda perhitungan pemenang.
 
 ### Jeda salat bersama
 
@@ -157,12 +184,14 @@ Jadwal dihitung lokal di server dengan Adhan, sudut 20°/18°, Asar Shafi, dan i
 | S / panah bawah | Rem, kemudian mundur |
 | A dan D / panah kiri dan kanan | Kemudi |
 | Shift / Spasi | Nitro |
-| C | Ganti kamera balapan |
+| C | Ganti kamera balapan, termasuk kamera dashboard/interior |
 | R | Minta reset kendaraan |
 | Esc / P | Menu dan pelepasan kontrol lokal |
 | M | Suara |
 
 Kontrol sentuh tersedia untuk layar kecil. Dukungan perangkat dan performa grafis perlu dicoba pada perangkat sasaran sebelum digunakan untuk acara atau turnamen.
+
+Kamera **dashboard/interior** menempatkan pandangan di posisi pengemudi, dengan dashboard dan setir 3D yang mengikuti arah kemudi kendaraan. Kamera pengejar dan kap tetap tersedia. Interior dibuat secara prosedural dan disesuaikan dengan dimensi/kelas mobil; ini bukan replika dashboard pabrikan satu per satu. Berpindah kamera tidak mengganti model eksterior atau kualitas grafis yang dipilih.
 
 ## Kredit rupiah virtual, pelek, cat, dan striping
 
@@ -170,7 +199,7 @@ Rp di dalam aplikasi adalah **kredit permainan**. Tidak ada pembayaran uang nyat
 
 Aturan hadiah awal: Rp10.000 untuk finish, Rp1.000 per lap, dan bonus posisi pertama/kedua/ketiga Rp15.000/Rp8.000/Rp4.000. Batas awal Rp50.000 per balapan; finish terlalu cepat di bawah batas aturan tidak mendapat hadiah. DNF bernilai nol. Administrator dapat menerbitkan aturan baru. Balapan yang sudah berjalan tetap memakai aturan yang dikunci saat pertandingan dibuat.
 
-Empat pilihan roda: standar, Six-Spoke (Rp20.000), Multi-Spoke (Rp35.000), dan Mesh (Rp50.000). Paket yang dibeli dapat dipakai pada kendaraan yang dimiliki. Paket roda disesuaikan terhadap ukuran roda masing-masing mobil; roda standar asli dapat dipulihkan. Warna pelek tersedia untuk paket custom, sementara roda standar mempertahankan material model aslinya.
+Empat pilihan roda: standar, Six-Spoke (Rp20.000), Multi-Spoke (Rp35.000), dan Mesh (Rp50.000). Paket yang dibeli dapat dipakai pada kendaraan yang dimiliki. Paket roda disesuaikan terhadap ukuran roda masing-masing mobil. **Warna pelek bawaan maupun pelek custom dapat diganti melalui bengkel berbayar.** Pelek bawaan pada akun lama tetap memakai material asli sampai pemain memilih dan membayar pengecatan. Warna pelek hanya diterapkan pada bagian logam pelek; ban dan rem tetap terpisah.
 
 Modifikasi ini bersifat kosmetik. Setiap kendaraan yang dimiliki menyimpan satu konfigurasi tersendiri: warna bodi, lapisan, pelek, warna pelek, desain striping, dan warna striping. Berpindah mobil memulihkan tampilannya; tidak membayar ulang untuk memakai tampilan yang sudah terpasang. Belum tersedia beberapa preset untuk satu kendaraan, upgrade mesin, suspensi, atau body kit.
 
@@ -179,7 +208,8 @@ Modifikasi ini bersifat kosmetik. Setiap kendaraan yang dimiliki menyimpan satu 
 | Layanan | Biaya kredit game |
 | --- | ---: |
 | Perubahan warna bodi dan/atau lapisan dalam satu pemasangan | Rp10.000 |
-| Perubahan warna pelek custom | Rp5.000 |
+| Pengecatan/perubahan warna pelek bawaan atau custom | Rp5.000 |
+| Perubahan warna striping tanpa mengganti desain | Rp5.000 |
 | Twin Racing | Rp15.000 |
 | Offset Sport | Rp18.000 |
 | Side Sweep | Rp12.000 |
@@ -187,7 +217,11 @@ Modifikasi ini bersifat kosmetik. Setiap kendaraan yang dimiliki menyimpan satu 
 | Heritage Bands | Rp22.000 |
 | Melepas striping yang sedang terpasang | Rp5.000 |
 
-Pemasangan striping, penggantian desain, atau penggantian warna striping dikenakan biaya layanan desain yang dipilih. Melepas striping hanya dikenakan biaya jika sebelumnya memang terpasang. Memilih warna/desain yang sama tidak dikenakan biaya. Harga akhir berasal dari penawaran server dan dapat diubah admin. Penawaran berlaku 10 menit; perubahan harga, layanan, atau tampilan oleh sesi lain memerlukan rincian baru sebelum membayar.
+Pemasangan striping baru atau penggantian desain memakai tarif desain yang dipilih dan sudah mencakup warna pilihan saat pemasangan. Jika desain tetap sama dan hanya warnanya diubah, biaya memakai layanan **warna striping** tersendiri. Keduanya tidak ditagihkan dua kali untuk satu pemasangan desain. Melepas striping hanya dikenakan biaya jika sebelumnya memang terpasang. Memilih kembali warna/desain yang sudah tersimpan tidak dikenakan biaya. Pengecatan pertama pelek bawaan tetap berbayar, termasuk ketika memilih warna perak yang sama dengan nilai contoh pada pemilih warna, karena material asli pabrik belum dicat.
+
+**Semua tarif perubahan warna yang tersedia dapat dikelola admin:** cat bodi/lapisan, warna pelek, dan warna striping. Harga awal di tabel hanya nilai awal. Harga akhir berasal dari penawaran server, mengikuti katalog admin, dan ditampilkan sebelum pembayaran. Penawaran berlaku 10 menit; perubahan harga, ketersediaan layanan, atau tampilan oleh sesi lain memerlukan rincian baru sebelum membayar.
+
+Pada **Admin → Harga & toko → Tarif perubahan warna**, pilih layanan, masukkan harga dalam angka rupiah tanpa pemisah ribuan, isi alasan, lalu tekan **Simpan penawaran**. Admin dapat menetapkan Rp0 jika sengaja ingin menggratiskan layanan, atau menonaktifkan **Layanan aktif** untuk menutup perubahan baru. Warna yang telah tersimpan tetap dapat dipakai. Mengembalikan pelek yang sudah dicat ke **finishing pabrik** juga memakai tarif cat pelek dan melalui tinjauan biaya terlebih dahulu.
 
 Pembayaran cat dan striping hanya berlaku pada mobil yang dimiliki permanen. Mobil gratis sementara memakai tampilan bawaan; pemain tetap dapat memakai paket pelek yang sudah dimiliki. Saldo tidak dipotong oleh slider warna, kartu pratinjau, atau perpindahan mobil. Kredit, konfigurasi, dan riwayat transaksi disimpan bersama dalam satu transaksi PostgreSQL; retry memakai identitas yang sama.
 
@@ -208,17 +242,41 @@ Masuk melalui halaman login yang sama menggunakan akun admin. Menu **Admin** mun
 
 - **Pemain & kredit:** cari nama/email/ID, pilih penerima, isi jumlah, alasan, dan referensi. Tinjau sebelum menambahkan saldo. Pengiriman ulang memakai identitas transaksi yang sama sehingga kredit tidak digandakan.
 - **Performa mobil:** atur kecepatan maksimum, waktu 0–100, dan handling dalam rentang yang diizinkan. Publikasikan versi baru dengan alasan perubahan.
-- **Harga & toko:** pilih kendaraan untuk membuka/mengunci akses gratis, mengatur harga pembelian permanen, dan mengaktifkan/menonaktifkan penjualan. Pilih jasa cat/striping untuk mengubah harga atau ketersediaan layanan. Setiap perubahan memerlukan alasan dan tercatat di audit. Kunci admin tidak mencabut kepemilikan permanen.
+- **Harga & toko:** pilih kendaraan untuk membuka/mengunci akses gratis, mengatur harga pembelian permanen, dan mengaktifkan/menonaktifkan penjualan. Tarif **cat bodi/lapisan**, **warna pelek**, dan **warna striping** dapat diatur terpisah, bersama biaya setiap desain striping dan pelepasannya. Admin juga dapat mengaktifkan/menonaktifkan layanan. Setiap perubahan memerlukan alasan dan tercatat di audit. Kunci admin tidak mencabut kepemilikan permanen.
 - **Hadiah balapan:** atur hadiah finish, per lap, podium, durasi minimum, dan batas hadiah.
+- **Musik & loading:** unggah MP3 untuk musik garasi atau JPEG untuk gambar loading balapan; pratinjau, pilih media aktif, atur volume, lalu simpan dengan alasan perubahan. Unggahan baru tidak otomatis mengganti media aktif.
+- **Foto kendaraan:** pilih model, unggah foto JPEG/PNG/WebP, periksa pratinjau, isi alasan, lalu simpan. Foto kecil tampil pada kartu koleksi Garasi dan Showroom. Foto dapat diganti atau dihapus per kendaraan.
 - **Riwayat admin:** lihat operator, waktu, alasan, serta nilai sebelum/sesudah perubahan.
 
 Pembuatan admin adalah tindakan operator di terminal, bukan pilihan pada formulir pendaftaran umum. CLI hanya membuat akun baru dan tidak diam-diam mempromosikan akun pemain yang sudah ada. Untuk otomasi privat, CLI juga menerima `ADMIN_EMAIL`, `ADMIN_DISPLAY_NAME`, dan `ADMIN_PASSWORD` melalui lingkungan proses; jangan memasukkannya ke repository atau membagikannya dalam tangkapan layar.
+
+### Musik garasi dan gambar loading
+
+Gunakan menu media di panel admin untuk mengunggah berkas sendiri. Batas MP3 adalah **20 MiB** per berkas dan durasi maksimum 60 menit; batas JPEG adalah **10 MiB**, maksimum 8192 piksel per sisi dan 24 megapiksel. Koleksi menyimpan hingga 40 berkas dengan total 250 MiB. Format diperiksa dari isi, bukan hanya ekstensi. JPEG diproses ulang agar orientasinya benar dan metadata dibuang; audio MP3 dipertahankan tanpa tag nonaudio.
+
+Pilih satu lagu dan satu gambar aktif, atau kosongkan pilihan untuk menonaktifkannya. Simpan perubahan secara eksplisit. Jika admin lain menyimpan pengaturan lebih dulu, muat ulang dan tinjau pilihan agar perubahan tidak tertimpa diam-diam. Media yang masih aktif harus dilepas dan pengaturannya disimpan sebelum berkas dapat dihapus. Unggahan, perubahan, dan penghapusan masuk ke riwayat admin.
+
+Musik digunakan di garasi, showroom, bengkel, serta lobi; berhenti saat persiapan, countdown, balapan, hasil, atau jeda salat. Kontrol suara utama juga membisukannya. Browser dapat meminta klik tombol pemutaran sebelum audio pertama. Aplikasi tidak menyertakan lagu komersial atau gambar loading wajib; tanpa JPEG aktif, loading tetap berfungsi dengan latar bawaan.
+
+**Contoh gambar siap unggah:** `examples/media/uvelocity_loading.jpg` (1672 × 941 piksel, sekitar 600 KiB). Ilustrasi sinematik ini menempatkan mobil di sisi kanan dan ruang teks di kiri. Di **Admin → Musik & loading**, pilih berkas pada **Tambahkan gambar JPEG**, klik **Unggah JPEG**, pilih hasilnya di **Gambar halaman loading**, isi alasan, lalu klik **Simpan pengaturan media**. Gambar contoh tidak diaktifkan otomatis dan dapat diganti dengan JPEG Anda sendiri. Logo serta progress/kesiapan pemain tetap ditampilkan oleh UI game di atas gambar.
+
+Media disimpan di **PostgreSQL**, termasuk berkasnya, sehingga volume dan backup database yang sama menyimpan akun, saldo, MP3, serta gambar. Tidak perlu direktori upload atau volume container tambahan. Layar loading tidak mempercepat hitungan mundur dan tidak melewati pemeriksaan kesiapan arena. Batas persiapan 45 detik, pembatalan, putus sambungan, dan prioritas jeda salat tetap berlaku.
+
+### Foto kecil pada koleksi kendaraan
+
+Buka **Admin → Foto kendaraan**, pilih model, lalu pilih foto mobil asli yang ingin ditampilkan. Format masukan **JPEG, PNG, atau WebP**, maksimum **4 MiB** dan **16 megapiksel**, berupa satu gambar diam. Pratinjau memperlihatkan pilihan sebelum diunggah. Isi **Alasan perubahan foto**, lalu tekan **Simpan foto kendaraan** atau **Simpan foto pengganti**. Unggahan menampilkan kemajuan dan dapat dibatalkan; jika respons terputus, muat ulang untuk memeriksa hasil terakhir dari server sebelum mengulang.
+
+Server mengorientasikan foto, mempertahankan proporsi, dan memperkecilnya agar muat dalam **512 × 288 piksel** tanpa memotong atau memperbesar gambar. Hasil disimpan sebagai WebP maksimal 512 KiB tanpa metadata EXIF/GPS. Kartu memakai bingkai 16:9, pemuatan gambar bertahap saat diperlukan, dan ikon cadangan jika foto belum tersedia atau gagal dimuat. Foto ini melengkapi kartu koleksi; model 3D pada bengkel dan arena tetap digunakan seperti sebelumnya.
+
+Setiap kendaraan mempunyai satu foto aktif dengan versi tersendiri. Penggantian mengubah foto model tersebut bagi semua pemain setelah katalog dimuat ulang; tidak mengubah harga, status kunci, saldo, konfigurasi, atau kepemilikan. Perubahan admin bersamaan ditolak jika memakai versi foto lama, sehingga perlu diperiksa kembali. **Hapus foto** meminta konfirmasi dan alasan; kartu kembali menampilkan ikon. Foto lama dibuang dari penyimpanan saat berhasil diganti/dihapus, sedangkan riwayat perubahan tetap tercatat. Berkas foto tersimpan di PostgreSQL dan ikut backup database.
+
+Paket tidak mengisi foto mobil asli secara otomatis. Admin mengunggah foto yang sesuai untuk masing-masing dari 16 model. Foto hanya muncul di Garasi jika kendaraan tersebut dimiliki pemain; Showroom tetap menampilkan semua kendaraan.
 
 ## Memperbarui pemasangan dari versi sebelumnya
 
 Pertahankan `.env` dan volume/database yang sudah digunakan. Buat backup, ganti sumber aplikasi dengan paket ini, lalu jalankan `docker compose up --build -d` atau `npm ci`, `npm run db:migrate`, dan `npm run build` pada pemasangan native. Jangan membuat database baru atau menghapus volume.
 
-Migrasi tambahan **006** menambahkan akses global, tampilan per kendaraan, serta penawaran/transaksi bengkel. Migrasi **007** menambahkan tujuh kendaraan dan versi aturan baru dengan mempertahankan tuning serta kebijakan hadiah admin sebelumnya. Migrasi **008** menambahkan lokasi dan window jeda salat pribadi yang persisten. Warna dan pelek aktif akun lama dipindahkan ke tampilan mobil terkait; akun, saldo, koleksi, ledger, dan versi aturan lama tetap dipertahankan. Pengujian upgrade menggunakan database berisi akun dan konfigurasi lama, bukan hanya database kosong.
+Migrasi tambahan **006** menambahkan akses global, tampilan per kendaraan, serta penawaran/transaksi bengkel. Migrasi **007** menambahkan tujuh kendaraan dan versi aturan baru dengan mempertahankan tuning serta kebijakan hadiah admin sebelumnya. Migrasi **008** menambahkan lokasi dan window jeda salat pribadi yang persisten. Migrasi **009** menambahkan koleksi media serta pilihan musik/gambar aktif; pilihan awal kosong dan tidak mengubah data pemain. Migrasi **010** menambahkan foto kecil per kendaraan dengan versi terpisah dari katalog harga. Migrasi **011** menambahkan status pengecatan pelek bawaan dan tarif perubahan warna striping yang terpisah. Material pelek bawaan lama dipertahankan. Penawaran bengkel lama yang belum dibayar diminta diperbarui karena aturan biaya berubah; riwayat dan respons pembayaran yang sudah berhasil tetap disimpan. Akun, saldo, koleksi, ledger, serta konfigurasi dan versi aturan lama tetap dipertahankan. Migrasi **012** mengubah nama bawaan Koenigsegg tanpa mengganti identitas kendaraan; migrasi **013** menambahkan Panther dan aturan baru sambil mempertahankan tuning admin lama. Pengujian upgrade menggunakan database berisi akun dan konfigurasi lama, bukan hanya database kosong.
 
 ## Membuat ulang model tambahan
 
@@ -227,9 +285,10 @@ GLB siap pakai sudah tersedia di paket; server produksi tidak perlu Blender. Sum
 ```bash
 node scripts/build-racecar-expansion.cjs --publish
 node scripts/build-hypercar-expansion.cjs --publish
+node scripts/build-panther.cjs --publish
 ```
 
-Skrip memakai Three.js yang dibundel dan menulis kembali tujuh GLB baru saja. `scripts/modeling-kit.cjs` memuat helper permukaan bodi, material, bukaan roda, hierarchy roda/kemudi, dan eksportir glTF. Catatan asal serta ukuran geometri permainan berada di metadata masing-masing model. Gambar pemeriksaan model, bila disertakan, dibuat dengan Blender Cycles CPU dan bukan tangkapan layar gameplay browser.
+Skrip memakai Three.js yang dibundel dan menulis kembali delapan GLB rekonstruksi saja. `scripts/modeling-kit.cjs` memuat helper permukaan bodi, material, bukaan roda, hierarchy roda/kemudi, dan eksportir glTF. Catatan asal serta ukuran geometri permainan berada di metadata masing-masing model. Pratinjau render tiga kendaraan terbaru tersedia di `docs/previews/`. Gambar pemeriksaan model, bila disertakan, dibuat dengan Blender Cycles CPU dan bukan tangkapan layar gameplay browser.
 
 ## Komponen teknis
 
@@ -237,12 +296,12 @@ Skrip memakai Three.js yang dibundel dan menulis kembali tujuh GLB baru saja. `s
 - **Colyseus + WebSocket:** ruang multiplayer dan simulasi kendaraan di server. Klien mengirim kontrol; server menentukan posisi resmi, checkpoint, finish, dan hasil.
 - **React:** login, profil, garasi, toko, ruang, dan admin.
 - **Three.js r128 + GLTFLoader:** model dan dunia 3D yang dipertahankan dari game sebelumnya. Aset dimuat dari server sendiri, bukan CDN.
-- **PostgreSQL:** akun, sesi, tiket balap, kepemilikan, konfigurasi, ledger saldo, hasil, versi aturan, audit, serta lokasi/jeda salat pribadi.
+- **PostgreSQL:** akun, sesi, tiket balap, kepemilikan, konfigurasi, ledger saldo, hasil, versi aturan, audit, lokasi/jeda salat pribadi, berkas MP3/JPEG dan pengaturan media, serta foto kecil WebP per kendaraan.
 - **Adhan + geo-tz/all:** perhitungan jadwal dan penentuan zona waktu dari lokasi di server; tidak memerlukan panggilan API jadwal eksternal.
 
 Autentikasi menggunakan cookie HttpOnly, hash scrypt, pemeriksaan Origin/CSRF, pembatasan permintaan, dan tiket balap sekali pakai yang terikat sesi. Saldo menggunakan integer besar dalam database. Pembelian, topup, dan hadiah memakai transaksi atomik serta pencegahan penggandaan. Data akun/saldo tidak bergantung pada `localStorage`; penyimpanan browser hanya dipakai untuk preferensi tampilan/suara dan token reconnect sementara.
 
-Dokumentasi detail: [docs/API.md](docs/API.md), [docs/GRAPHICS.md](docs/GRAPHICS.md), [docs/PRAYER.md](docs/PRAYER.md), dan [docs/VERIFICATION.md](docs/VERIFICATION.md).
+Dokumentasi detail: [docs/API.md](docs/API.md), [docs/GRAPHICS.md](docs/GRAPHICS.md), [docs/BRANDING.md](docs/BRANDING.md), [docs/PRAYER.md](docs/PRAYER.md), dan [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
 ## Pengujian
 
@@ -256,6 +315,8 @@ npm run test:integration
 npm run test:renderer
 npm run test:ui
 npm run test:prayer-ui
+npm run test:media-ui
+npm run test:vehicle-images-ui
 npm run test:dev
 ```
 
@@ -294,6 +355,9 @@ Belum ada verifikasi email, reset kata sandi melalui email, login sosial, atau p
 | Model 3D gagal dimuat | Periksa koneksi dan aset `/game/assets/cars/`; muat ulang. Pemain belum boleh siap jika model roster yang diperlukan gagal dimuat. |
 | Grafis lambat | Aktifkan akselerasi grafis browser dan pilih kualitas Ringan; model tetap menggunakan aset yang sama. |
 | Tidak ada menu Admin | Buat akun admin lewat CLI, kemudian masuk dengan akun tersebut. |
+| Musik garasi belum terdengar | Pastikan admin sudah memilih dan menyimpan MP3 aktif, suara tidak dibisukan, lalu tekan tombol pemutaran. Musik memang berhenti selama balapan/jeda salat. |
+| Gambar loading belum berubah | Unggah JPEG, pilih sebagai gambar aktif, dan simpan pengaturan; mengunggah saja belum mengaktifkannya. Coba pada persiapan balapan berikutnya. |
+| Mobil pada pratinjau berbeda dari MOBIL AKTIF | Setelah memilih kartu di Garasi, tekan Pakai mobil ini di area judul Garasi Anda. Memilih kartu belum menyimpan kendaraan aktif. |
 | Kredit tidak bertambah | Lihat hasil resmi, durasi minimum, status finish/DNF, serta riwayat transaksi. Topup ulang dengan referensi sama tidak menambah kredit lagi. |
 
 ## Kredit aset

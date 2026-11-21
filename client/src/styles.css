@@ -28,3 +28,295 @@
 
 /* Preserve the live scene beneath the shared pause while making every game control inert. */
 .profile-personal{display:grid;gap:24px;align-content:start}.prayer-locked>.app-header,.prayer-locked>.sidebar,.prayer-locked>.main-content{pointer-events:none;user-select:none}.prayer-locked .online-ribbon{visibility:hidden}
+
+/* Keep the next action near the page title and size previews to the window.
+   Long collections and forms remain in normal document flow. */
+.app-shell:not(.race-stage-active) .main-content {
+  padding-top:calc(var(--header) + 20px);
+}
+.page-heading {
+  gap:14px 24px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
+}
+.page-title {flex:1 1 220px;min-width:0}
+.page-heading-controls {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:10px;
+  min-width:0;
+  max-width:100%;
+}
+.page-heading.has-actions .page-heading-controls {flex:0 1 420px}
+.garage-actions {display:flex;gap:8px;width:100%}
+.garage-actions > button {
+  flex:1;
+  min-width:0;
+  min-height:44px;
+  padding:10px 14px;
+  font-size:12px;
+  line-height:1.4;
+  white-space:normal;
+  touch-action:manipulation;
+}
+.page-heading .page-tools {position:static;max-width:100%}
+.page-heading .page-tools select {min-height:44px;height:44px}
+.page-heading .page-tools > .icon-button {min-width:44px;height:44px}
+.main-content .vehicle-browse-navigation {
+  padding:6px 10px;
+  margin-bottom:10px;
+}
+.main-content .vehicle-browse-navigation button {min-height:44px}
+.app-shell:not(.race-stage-active) {
+  --preview-height:clamp(360px,calc(100dvh - 280px),560px);
+}
+.app-shell:not(.race-stage-active) .stage-panel,
+.app-shell:not(.race-stage-active) .vehicle-panel {
+  height:var(--preview-height);
+}
+.app-shell:not(.race-stage-active) .room-panel {
+  height:auto;
+  max-height:var(--preview-height);
+}
+.room-panel .room-members {
+  max-height:clamp(140px,26dvh,230px);
+  overflow:auto;
+  scrollbar-gutter:stable;
+  scrollbar-width:thin;
+}
+.compact-table-scroll {
+  max-height:clamp(180px,38dvh,420px);
+  overflow:auto;
+  scrollbar-gutter:stable;
+  scroll-padding-top:44px;
+}
+.compact-table-scroll .data-table thead th {
+  position:sticky;
+  top:0;
+  z-index:1;
+  background:#1c2d20;
+}
+.results-card {--results-padding:34px}
+.results-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  position:sticky;
+  top:0;
+  z-index:2;
+  margin:calc(-1 * var(--results-padding)) calc(-1 * var(--results-padding)) 0;
+  padding:20px var(--results-padding) 16px;
+  background:#1c2d20;
+  border-bottom:1px solid var(--line);
+}
+.results-heading > div {min-width:0}
+.results-heading .eyebrow {margin-bottom:7px}
+.results-heading h2 {margin-bottom:6px}
+.results-heading p {margin:0}
+.results-return {
+  flex-shrink:0;
+  min-height:44px;
+  padding:11px 17px;
+  font-size:13px;
+  line-height:1.4;
+  touch-action:manipulation;
+}
+@media(max-width:760px) {
+  .app-shell:not(.race-stage-active) .main-content {padding-top:calc(var(--header) + 14px)}
+  .page-heading {display:flex;padding-top:0;align-items:flex-start;gap:12px}
+  .page-heading .page-heading-controls {flex-basis:100%;align-items:stretch}
+  .page-heading .page-tools {justify-content:flex-end;gap:8px}
+  .page-heading .page-tools select {font-size:11px;min-width:96px}
+  .page-heading .eyebrow {margin-top:0;margin-bottom:7px}
+  .page-heading h1 {margin-bottom:7px}
+  .garage-actions > button {min-height:46px;font-size:12px;padding:10px}
+  .app-shell:not(.race-stage-active) {--preview-height:clamp(320px,42svh,390px)}
+  .app-shell:not(.race-stage-active) .vehicle-panel,
+  .app-shell:not(.race-stage-active) .room-panel {height:auto;max-height:none;overflow:visible}
+  .app-shell:not(.race-stage-active) .room-grid .room-panel {order:-1}
+  .app-shell:not(.race-stage-active) .stage-camera button {min-height:44px;min-width:56px}
+  .results-card {--results-padding:24px;padding:24px}
+  .results-heading {flex-wrap:wrap;gap:12px;padding-top:18px}
+  .results-heading > div {flex:1 1 220px}
+  .results-return {flex:1 1 170px}
+}
+@media(max-width:420px) {
+  .results-card {--results-padding:20px;padding:20px}
+  .results-heading h2 {font-size:25px}
+  .results-heading p {font-size:12px}
+}
+
+/* Mobile racing uses the available viewport, not the garage card's fixed
+   height. The room strip has its own space above the iframe, so Menu never
+   covers steering, pedals, nitro or the in-game instruments. The same frame
+   bounds apply during arena loading and the live race. */
+@media (max-width:960px), (max-height:600px) and (pointer:coarse) {
+  .app-shell.race-stage-active {
+    --race-header-height:calc(52px + env(safe-area-inset-top, 0px));
+    --race-strip-height:44px;
+    --header:var(--race-header-height);
+  }
+  .app-shell.race-stage-active > .app-header {
+    height:var(--race-header-height);
+    padding:calc(4px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 4px max(12px, env(safe-area-inset-left, 0px));
+    gap:12px;
+  }
+  .app-shell.race-stage-active .app-header .brand-link {
+    width:114px;
+    height:40px;
+    padding:4px 8px;
+    flex-shrink:0;
+  }
+  .app-shell.race-stage-active .app-header .edition,
+  .app-shell.race-stage-active .app-header .wallet-display,
+  .app-shell.race-stage-active .app-header .profile-button > span:last-child {
+    display:none;
+  }
+  .app-shell.race-stage-active .app-header .header-right {
+    gap:8px;
+    margin-left:auto;
+  }
+  .app-shell.race-stage-active .app-header .profile-button,
+  .app-shell.race-stage-active .app-header .header-right > .icon-button {
+    min-width:44px;
+    height:44px;
+    justify-content:center;
+  }
+  .app-shell.race-stage-active > .sidebar { display:none; }
+  .app-shell.race-stage-active > .main-content {
+    position:fixed;
+    top:var(--race-header-height);
+    left:0;
+    right:0;
+    height:calc(100vh - var(--race-header-height));
+    height:calc(100dvh - var(--race-header-height));
+    max-width:none;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  .app-shell.race-stage-active > .main-content > .page-heading,
+  .app-shell.race-stage-active > .main-content > .garage-music,
+  .app-shell.race-stage-active .room-panel {
+    display:none;
+  }
+  .app-shell.race-stage-active .content-grid {
+    display:block;
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:0;
+  }
+  .app-shell.race-stage-active .content-grid > .stage-panel {
+    width:100%;
+    height:100%;
+    min-height:0;
+    max-height:none;
+    border:0;
+    border-radius:0;
+    background:#101a15;
+  }
+  .app-shell.race-stage-active .game-frame {
+    top:var(--race-strip-height);
+    bottom:env(safe-area-inset-bottom, 0px);
+    left:env(safe-area-inset-left, 0px);
+    right:env(safe-area-inset-right, 0px);
+    width:auto;
+    height:auto;
+  }
+  .app-shell.race-stage-active .online-ribbon {
+    position:absolute;
+    top:0;
+    bottom:auto;
+    left:0;
+    right:0;
+    transform:none;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    height:var(--race-strip-height);
+    min-height:var(--race-strip-height);
+    max-width:none;
+    padding:0 max(8px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+    border:0;
+    border-bottom:1px solid #40513c;
+    border-radius:0;
+    background:#142018;
+    white-space:nowrap;
+  }
+  .app-shell.race-stage-active .online-ribbon > span {
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:10px;
+    letter-spacing:.06em;
+  }
+  .app-shell.race-stage-active .online-ribbon > b {
+    display:block;
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:9px;
+    font-weight:400;
+    color:#9db295;
+  }
+  .app-shell.race-stage-active .online-ribbon > button {
+    flex-shrink:0;
+    margin-left:auto;
+    min-width:62px;
+    min-height:44px;
+    padding:0 12px;
+    font-size:11px;
+    border-radius:0;
+    touch-action:manipulation;
+  }
+  .app-shell.race-stage-active .toast-message {
+    top:0;
+    bottom:auto;
+    left:0;
+    right:0;
+    transform:none;
+    width:auto;
+    max-width:none;
+    height:var(--race-header-height);
+    padding:env(safe-area-inset-top, 0px) max(8px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+    gap:8px;
+    border-radius:0;
+    font-size:11px;
+    line-height:1.4;
+    animation:none;
+  }
+  .app-shell.race-stage-active .toast-message > span {
+    flex:1;
+    min-width:0;
+    max-height:calc(var(--race-header-height) - env(safe-area-inset-top, 0px) - 8px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  .app-shell.race-stage-active .toast-message > .icon-button {
+    min-width:44px;
+    width:44px;
+    height:44px;
+    margin-left:0;
+  }
+}
+@media (max-width:500px) {
+  .app-shell.race-stage-active .online-ribbon > b { display:none; }
+}
+@media (max-width:960px) and (max-height:510px), (max-height:510px) and (pointer:coarse) {
+  .app-shell.race-stage-active {
+    --race-header-height:calc(44px + env(safe-area-inset-top, 0px));
+  }
+  .app-shell.race-stage-active > .app-header {
+    padding-top:env(safe-area-inset-top, 0px);
+    padding-bottom:0;
+  }
+  .app-shell.race-stage-active .app-header .brand-link {
+    height:34px;
+    width:100px;
+  }
+}

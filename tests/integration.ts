@@ -12,7 +12,7 @@ import { access } from 'node:fs/promises';
 import { Client, type Room } from '@colyseus/sdk';
 import { createApplication } from '../server/index.js';
 import type { Catalog, Profile, Loadout } from '../client/src/api.js';
-import type { RaceResult, RaceSettlement, RoomSnapshot } from '../shared/types.js';
+import type { FrozenLoadout, RaceResult, RaceSettlement, RoomSnapshot } from '../shared/types.js';
 
 const connectionString=process.env.TEST_DATABASE_URL;
 assert(connectionString,'TEST_DATABASE_URL is required; run through tests/with-postgres.mjs.');
@@ -87,7 +87,7 @@ try {
     const health=await http('/health');assert.equal(health.data.application,'UVelocity');assert.equal(health.data.database,'postgresql');assert.equal(health.data.ok,true);
     assert.equal(health.response.headers.get('x-powered-by'),null);
     assert.match(health.response.headers.get('content-security-policy')??'',/frame-ancestors 'self'/);
-    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,8);
+    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,13);
     const db=await application.pool.query('SELECT version()');assert.match(db.rows[0].version,/PostgreSQL/);
   });
 
@@ -108,7 +108,7 @@ try {
   });
 
   await step('HTTP purchase headers and workshop loadout preserve owned rim paint',async()=>{
-    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,15);assert.equal(catalog.wheels.length,4);
+    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,16);assert.equal(catalog.wheels.length,4);
     const wheel=catalog.wheels.find(item=>item.id==='six-spoke')!;assert(wheel);
     const payload={itemId:wheel.itemId,catalogVersion:wheel.catalogVersion},key=randomUUID();
     const purchase=await http('/shop/purchase',{actor:alice,method:'POST',body:payload,key});
@@ -186,6 +186,37 @@ try {
     await initialRoom.room.leave();await peerRoom.room.leave();
   });
 
+  await step('Panther HTTP purchase and saved factory loadout enter an actual SDK race and respond to input',async()=>{
+    const fresh=(await http<Catalog>('/catalog')).data,panther=fresh.cars.find(car=>car.id==='panther-grand-touring');assert(panther);
+    assert.equal(panther.price,'150000');assert.equal(panther.locked,true);assert.equal(panther.color,'#19252e');
+    assert.deepEqual(panther.stats,{topSpeed:170,zeroTo100:10.8,handling:.88});assert.equal(panther.tuningVersion,fresh.rulesetVersion);
+    const before=(await http<Profile>('/profile',{actor:bob})).data;
+    const grant=await http('/admin/topups',{actor:operator,method:'POST',key:randomUUID(),body:{userId:bob.id,amount:panther.price,reference:'adapter-panther-'+suffix,reason:'Panther realtime adapter purchase fixture'}});
+    assert.equal(BigInt(grant.data.wallet.balance)-BigInt(before.wallet.balance),150000n);
+    const purchase=await http('/shop/purchase',{actor:bob,method:'POST',key:randomUUID(),body:{itemId:panther.itemId,catalogVersion:panther.catalogVersion}});
+    assert.equal(purchase.data.itemId,panther.id);assert.equal(purchase.data.pricePaid,panther.price);assert.equal(purchase.data.wallet.balance,before.wallet.balance);
+    await http('/loadout',{actor:bob,method:'PUT',body:{carId:panther.id,rimId:'stock'}});
+    bobProfile=(await http<Profile>('/profile',{actor:bob})).data;assert(bobProfile.inventory.cars.includes(panther.id));assert.equal(bobProfile.wallet.balance,before.wallet.balance);
+    const factory={carId:'panther-grand-touring',rimId:'stock',color:'#19252e',finish:'metallic',rimColor:'#c7cdd4',stockRimPainted:false,stripeId:'none',stripeColor:'#ffffff'} as const;
+    const assertFactory=(loadout:Pick<FrozenLoadout,keyof typeof factory>)=>{for(const key of Object.keys(factory) as Array<keyof typeof factory>)assert.equal(loadout[key],factory[key],`Panther saved ${key}`);};
+    assertFactory(bobProfile.loadout);
+    const observer=observe(await sdk(bob).create('race',{ticket:await ticket(bob),circuit:'city',laps:1,bots:0,maxHumans:1,difficulty:'normal',collisionMode:'solid',loadout:bobProfile.loadout}));
+    try{
+      await waitFor(()=>observer.snapshot?.members.length===1,'Panther admitted to lobby');
+      const member=observer.snapshot!.members.find(entry=>entry.userId===bob.id);assert(member);assertFactory(member.loadout);assert.deepEqual(member.loadout.stats,panther.stats);
+      observer.room.send('ready',{ready:true,assetsLoaded:true});await waitFor(()=>observer.snapshot?.members.every(entry=>entry.ready&&entry.assetsLoaded)===true,'Panther ready acknowledgement');
+      observer.room.send('start');await waitFor(()=>observer.snapshot?.phase==='racing','Panther arena barrier and countdown');
+      assert.equal(observer.snapshot!.rulesetVersion,fresh.rulesetVersion);
+      const racer=observer.snapshot!.racers.find(entry=>entry.userId===bob.id);assert(racer);assertFactory(racer.loadout);assert.deepEqual(racer.loadout.stats,panther.stats);assert.equal(racer.loadout.tuningVersion,fresh.rulesetVersion);
+      const start={x:racer.x,z:racer.z};
+      observer.room.send('input',{seq:1,throttle:1,brake:0,steer:0,nitro:false});
+      await waitFor(()=>{const current=observer.snapshot?.racers.find(entry=>entry.userId===bob.id);return !!current&&current.lastProcessedSeq===1&&current.speed>0&&Math.hypot(current.x-start.x,current.z-start.z)>.01;},'Panther authoritative movement');
+      assert.deepEqual(observer.errors,[]);
+    }finally{
+      if(observer.room.connection.isOpen)await observer.room.leave();
+    }
+  });
+
   await step('logout revokes HTTP session, outstanding race ticket and active SDK connection',async()=>{
     const client=sdk(alice),oldCookie=alice.cookie!,issuedBeforeLogout=await ticket(alice);
     const observer=observe(await client.create('race',{ticket:await ticket(alice),circuit:'city',laps:1,bots:0,maxHumans:1,loadout:aliceProfile.loadout}));
@@ -201,12 +232,17 @@ try {
     await waitFor(async()=>{const row=await application.pool.query('SELECT status FROM races WHERE id=$1',[observer.snapshot!.raceId]);return row.rows[0]?.status==='finished';},'revoked player DNF persistence');
   });
 
-  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all15 GLB assets',async()=>{
+  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all16 GLB assets',async()=>{
     const shell=await fetch(origin+'/');assert.equal(shell.status,200);assert.match(shell.headers.get('content-type')??'',/text\/html/);assert.match(await shell.text(),/UVelocity/);
     const frame=await fetch(origin+'/game/game.html');assert.equal(frame.status,200);const frameHtml=await frame.text();assert.match(frameHtml,/game-api\.js/);
     assert(!/\son[a-z]+\s*=/i.test(frameHtml),'Production game HTML must bind events in external scripts; inline handlers are blocked by its CSP');
     assert(!/script-src[^;]*'unsafe-inline'/.test(frame.headers.get('content-security-policy')??''),'Production script CSP must remain restricted to external scripts');
-    const brand=await fetch(origin+'/branding/uvelocity-logo.png',{method:'HEAD'});assert.equal(brand.status,200);assert.match(brand.headers.get('content-type')??'',/image\/png/);
+    for(const name of ['uvelocity-logo.png','uika-logo-transparent.png','informatika-uika-logo.png']){
+      const brand=await fetch(origin+'/branding/'+name,{method:'HEAD'});assert.equal(brand.status,200,name);assert.match(brand.headers.get('content-type')??'',/image\/png/);
+    }
+    assert.match(frameHtml,/cockpit\.js/,'The production frame includes the fitted dashboard module');
+    const cockpit=await fetch(origin+'/game/cockpit.js');assert.equal(cockpit.status,200);assert.match(cockpit.headers.get('content-type')??'',/javascript/);
+    const presentation=await http('/presentation');assert.equal(presentation.data.version,1);assert.equal(presentation.data.garageMusic,null);assert.equal(presentation.data.loadingImage,null);
     for(const car of catalog.cars){
       const glb=await fetch(origin+`/game/assets/cars/${car.id}.glb`,{headers:{Range:'bytes=0-11'}});assert.equal(glb.status,206,`GLB range route ${car.id}`);
       const header=Buffer.from(await glb.arrayBuffer());assert.equal(header.toString('ascii',0,4),'glTF');assert.equal(header.readUInt32LE(4),2);assert(header.readUInt32LE(8)>1000);

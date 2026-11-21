@@ -34,6 +34,12 @@ function renderer(){
 function runtime(){const loadout=freezeLoadout({carId:'brz',color:'#2866b8',finish:'metallic',rimId:'stock',stats:DEFAULT_VEHICLE_STATS.brz,tuningVersion:'v1'});return new RaceRuntime(validateRoomConfig({maxHumans:1,bots:0,laps:1,collisionMode:'ghost'}),[createRacer('local','Local',loadout,'u')]);}
 function snapshot(sim:RaceRuntime,phase:RoomSnapshot['phase']='racing'):RoomSnapshot{return{protocol:1,roomId:'room-test',inviteCode:'ABC123',raceId:phase==='lobby'?null:'race-test',phase,tick:sim.tick,serverTime:Date.now(),elapsedMs:sim.elapsedMs,startAt:phase==='loading'?null:Date.now(),startToken:phase==='lobby'?null:'attempt-one',loadingDeadline:phase==='loading'?Date.now()+45000:null,prayerPause:null,config:sim.config,rulesetVersion:'v1',trackVersion:'nv-courses-1',physics:sim.physics,hostId:'local',members:[{id:'local',userId:'u',name:'Local',host:true,ready:false,assetsLoaded:false,arenaReady:false,connected:true,loadout:sim.racers[0]!.loadout}],racers:phase==='lobby'?[]:sim.snapshots()};}
 function pausedSnapshot(sim:RaceRuntime,token='pause-one'):RoomSnapshot{return{...snapshot(sim,'prayer_pause'),prayerPause:{pauseToken:token,startedAt:Date.now()-901000,resumeEligibleAt:Date.now()-1000,resumeAt:null,previousPhase:'racing',triggers:[{eventId:'prayer-test',userId:'u',displayName:'Local',prayer:'dhuhr',name:'Zuhur',startedAt:Date.now()-901000,resumesAt:Date.now()-1000}],requiredIds:['local'],readyIds:[]}};}
+function coastSnapshot(sim:RaceRuntime,time:number,x:number,phase:RoomSnapshot['phase']='racing'):RoomSnapshot {
+ const scene=snapshot(sim,phase),base=scene.racers[0]!,finished={...base,x,z:x*2,speed:60-x/2,steerAngle:.4-x/50,heading:x===10?3:-3,
+  finished:true,ghost:true,completedLaps:1,lap:1,progress:1,nextGate:5,finishTimeMs:900,lastLapMs:800,bestLapMs:800,lapTimeMs:800,distanceMeters:1450,nitroActive:false};
+ return{...scene,serverTime:time,tick:Math.floor(time/10),elapsedMs:time,config:{...scene.config,maxHumans:2,bots:1},
+  racers:[finished,{...finished,id:'remote',userId:null,isBot:true,x:x+100,finishTimeMs:850},{...base,id:'waiting',userId:'u2'}]};
+}
 
 test('Client prediction, renderer readiness and connection lifecycle use the actual room protocol',async t=>{
  const originals=new Map<string,PropertyDescriptor|undefined>(),frames=new Map<number,FrameRequestCallback>(),storage=new Map<string,string>();let frameId=0,clock=performance.now();
@@ -148,6 +154,48 @@ test('Client prediction, renderer readiness and connection lifecycle use the act
     sim.setConnected('local',true);h.room.emit('snapshot',snapshot(sim));(h.controller as any).previous=clock;advance(25);const next=h.room.sent.filter(m=>m.type==='input').slice(4);assert.ok(next.length>0);assert.ok(next.every(m=>m.value.seq>4&&m.value.throttle===0&&m.value.brake===0));
     h.controller.neutral();assert.equal(h.room.sent.at(-1)!.value.brake,0,'Blur cannot latch reverse');assert.equal(h.errors.length,0);
    }finally{h.controller.dispose();await flush();assert.equal(h.room.leaves,1);assert.equal(frames.size,0);}
+  });
+  await t.test('Local and remote finishers interpolate authoritative motion at render time without prediction or score changes',async()=>{
+   const realNow=Date.now;let wall=1000;Date.now=()=>wall;const h=setup(),sim=runtime();
+   try{
+    const first=coastSnapshot(sim,1000,10);h.room.emit('snapshot',first);await flush();wall=1100;const latest=coastSnapshot(sim,1100,20);h.room.emit('snapshot',latest);
+    const authoritative=structuredClone(latest),predicted=structuredClone((h.controller as any).prediction);
+    h.input({throttle:1,brake:1,steer:1,nitro:true,reset:true});wall=1150;advance(16);
+    const rendered=h.calls.snapshots.at(-1)!;
+    for(const id of ['local','remote']){
+     const value=rendered.racers.find(r=>r.id===id)!,official=latest.racers.find(r=>r.id===id)!;
+     assert.equal(value.x,id==='local'?15:115);assert.equal(value.z,30);assert.equal(value.speed,52.5);assert(Math.abs(value.heading-Math.PI)<1e-9);assert(Math.abs(value.steerAngle-.1)<1e-9);
+     const {x:_,z:__,heading:___,speed:____,steerAngle:_____,...score}=value;
+     const {x:_x,z:_z,heading:_h,speed:_s,steerAngle:_a,...officialScore}=official;assert.deepEqual(score,officialScore);
+    }
+    wall=1175;advance(16);const later=h.calls.snapshots.at(-1)!.racers[0]!;assert.equal(later.x,17.5);assert.equal(later.speed,51.25);
+    assert.deepEqual(latest,authoritative);assert.deepEqual((h.controller as any).prediction,predicted);assert.equal(h.room.sent.filter(message=>message.type==='input').length,0);assert.equal((h.controller as any).pending.length,0);assert.equal((h.controller as any).controls.throttle,0);assert.equal((h.controller as any).controls.nitro,false);
+   }finally{h.controller.dispose();await flush();Date.now=realNow;}
+  });
+  await t.test('A new finisher never interpolates behind the line and final phases use the latest transform immediately',async()=>{
+   const realNow=Date.now;let wall=1000;Date.now=()=>wall;const h=setup(),sim=runtime();
+   try{
+    const before=coastSnapshot(sim,1000,-2);for(const racer of before.racers.filter(r=>r.id!=='waiting'))Object.assign(racer,{finished:false,finishTimeMs:null,completedLaps:0,progress:.999});
+    h.room.emit('snapshot',before);await flush();wall=1100;const crossing=coastSnapshot(sim,1100,1);h.room.emit('snapshot',crossing);wall=1120;advance(16);
+    assert.equal(h.calls.snapshots.at(-1)!.racers[0]!.x,1);assert.equal(h.calls.snapshots.at(-1)!.racers[0]!.finished,true);
+    wall=1150;h.room.emit('snapshot',coastSnapshot(sim,1150,3));advance(16);assert.equal(h.calls.snapshots.at(-1)!.racers[0]!.x,1,'The first post-line anchor cannot rewind to an unfinished sample');
+    wall=1225;advance(16);assert.equal(h.calls.snapshots.at(-1)!.racers[0]!.x,2);
+    for(const [phase,time,x]of [['settling',1250,7],['finished',1275,8]]as const){
+     wall=time;const official=coastSnapshot(sim,time,x,phase);h.room.emit('snapshot',official);advance(16);assert.deepEqual(h.calls.snapshots.at(-1)!.racers,official.racers);assert.equal((h.controller as any).snapshots.length,1);
+    }
+    assert.equal(h.room.sent.some(message=>message.type==='input'),false);
+   }finally{h.controller.dispose();await flush();Date.now=realNow;}
+  });
+  await t.test('Prayer/resume resets interpolation history so finished and active cars cannot reuse paused or pre-pause movement',async()=>{
+   const realNow=Date.now;let wall=1000;Date.now=()=>wall;const h=setup(),sim=runtime();
+   try{
+    h.room.emit('snapshot',coastSnapshot(sim,1000,1));await flush();wall=1050;h.room.emit('snapshot',coastSnapshot(sim,1050,3));wall=1125;advance(16);assert.equal(h.calls.snapshots.at(-1)!.racers[0]!.x,2);
+    wall=1130;const paused={...coastSnapshot(sim,1130,5,'prayer_pause'),prayerPause:pausedSnapshot(sim).prayerPause};h.room.emit('snapshot',paused);advance(16);assert.deepEqual(h.calls.snapshots.at(-1)!.racers,paused.racers);assert.equal((h.controller as any).snapshots.length,1);
+    wall=901130;const countdown={...paused,serverTime:wall,phase:'resume_countdown' as const,prayerPause:{...paused.prayerPause!,resumeAt:904130}};h.room.emit('snapshot',countdown);advance(16);assert.deepEqual(h.calls.snapshots.at(-1)!.racers,countdown.racers);assert.equal((h.controller as any).snapshots.length,1);
+    wall=904130;const resumed=coastSnapshot(sim,wall,5.1);resumed.racers[2]!.x=100;h.room.emit('snapshot',resumed);advance(16);assert.deepEqual(h.calls.snapshots.at(-1)!.racers,resumed.racers,'First resumed sample is immediate, not blended with the paused position');assert.equal((h.controller as any).snapshots.length,1);
+    wall=904180;const next=coastSnapshot(sim,wall,7.1);next.racers[2]!.x=102;h.room.emit('snapshot',next);wall=904255;advance(16);assert.equal(h.calls.snapshots.at(-1)!.racers[0]!.x,6.1);assert.equal(h.calls.snapshots.at(-1)!.racers[2]!.x,101);
+    assert.equal(h.room.sent.some(message=>message.type==='input'),false);
+   }finally{h.controller.dispose();await flush();Date.now=realNow;}
   });
   await t.test('Disposing while a room request is pending closes its eventual socket',async()=>{
    const h=setup();await h.controller.leave();const pending=deferred<any>(),connecting=(h.controller as any).connect(()=>pending.promise),orphan=new FakeRoom();h.controller.dispose();pending.resolve(orphan);await assert.rejects(connecting,/dibatalkan/);assert.equal(orphan.leaves,1);assert.equal(frames.size,0);await flush();

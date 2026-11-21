@@ -1,5 +1,5 @@
 /** Wire and simulation contracts. This module has no browser or server imports. */
-export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze', 'bmw-hybrid-v8', 'bmw-m4-gt4', 'amg-gt4', 'sls-amg-gt3', 'batmobile-1989', 'jesko-absolut', 'venom-f5'] as const;
+export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze', 'bmw-hybrid-v8', 'bmw-m4-gt4', 'amg-gt4', 'sls-amg-gt3', 'batmobile-1989', 'jesko-absolut', 'venom-f5', 'panther-grand-touring'] as const;
 export type CarId = typeof CAR_IDS[number];
 export const CIRCUIT_IDS = ['city', 'beach', 'glacier'] as const;
 export type CircuitId = typeof CIRCUIT_IDS[number];
@@ -45,16 +45,20 @@ export interface LoadoutSelection {
   finish: Finish;
   rimId?: string | null;
   rimColor?: string;
+  /** Missing on legacy payloads means original stock-wheel materials. */
+  stockRimPainted?: boolean;
   stripeId?: StripeId;
   stripeColor?: string;
   appearanceVersion?: string;
 }
 export interface VehicleAppearance {
   carId:CarId; rimId:string; color:string; finish:Finish; rimColor:string;
+  stockRimPainted?:boolean;
   stripeId:StripeId; stripeColor:string; version:string; owned:boolean; canCustomize:boolean;
 }
 export interface AppearanceSelection {
   carId:CarId; rimId:string; color:string; finish:Finish; rimColor:string; stripeId:StripeId; stripeColor:string;
+  stockRimPainted?:boolean;
 }
 export interface AppearanceLineItem {itemId:string;name:string;price:string;catalogVersion:number}
 export interface GameWallet {balance:string;version:string;currency:'RP_GAME'}

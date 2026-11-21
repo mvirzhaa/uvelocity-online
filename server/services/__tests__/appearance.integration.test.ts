@@ -37,7 +37,7 @@ before(async()=>{
  await services.admin.publishTuning(admin.id,{expectedVersion:'1',carId:'brz',topSpeed:277,zeroTo100:5.2,handling:1.25,reason:'Legacy operator tuning survives expansion'});
  await pool.query("UPDATE catalog_items SET price=165000,version=2 WHERE id='kaze'");
  legacy={wallet:(await pool.query('SELECT * FROM wallets WHERE user_id=$1',[alice.user.id])).rows[0],entries:(await pool.query('SELECT count(*)::int n FROM wallet_entries WHERE user_id=$1',[alice.user.id])).rows[0].n,loadout:(await pool.query('SELECT * FROM loadouts WHERE user_id=$1',[alice.user.id])).rows[0]};
- assert.deepEqual(await migrate(pool),['006_paid_appearances_and_car_access.sql','007_expanded_vehicle_catalog.sql','008_personal_prayer_breaks.sql']);
+ assert.deepEqual(await migrate(pool),['006_paid_appearances_and_car_access.sql','007_expanded_vehicle_catalog.sql','008_personal_prayer_breaks.sql','009_presentation_media.sql','010_vehicle_thumbnails.sql','011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql']);
 });
 after(async()=>{if(pool)await pool.end();await control.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);await control.end();if(legacyDirectory)await rm(legacyDirectory,{recursive:true,force:true});});
 
@@ -46,8 +46,8 @@ test('additive migration preserves old users, inventory, balances, selected pain
  const wallet=(await pool.query('SELECT * FROM wallets WHERE user_id=$1',[alice.user.id])).rows[0];assert.deepEqual(wallet,legacy.wallet);
  const selected=(await pool.query('SELECT * FROM loadouts WHERE user_id=$1',[alice.user.id])).rows[0];assert.equal(selected.color,legacy.loadout.color);assert.equal(selected.rim_color,legacy.loadout.rim_color);assert.equal(selected.version,'9');
  const profile=await services.economy.getProfile(alice.user.id);assert.deepEqual(profile.inventory,{cars:['brz','kaze'],wheels:['six-spoke','stock']});assert.equal(profile.appearances.find(a=>a.carId==='brz')!.color,'#abcdef');assert.equal(profile.appearances.find(a=>a.carId==='brz')!.rimColor,'#ddaa66');assert.equal(profile.appearances.find(a=>a.carId==='kaze')!.color,'#d9e1e5');assert.equal(profile.loadout.finish,'matte');
- const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,15);assert.equal(catalog.services.length,8);assert.equal(catalog.stripes.length,5);assert.equal(catalog.cars.find(c=>c.id==='kaze')!.price,'165000');
- const active=await services.economy.getActiveRuleset();assert.equal(active.version,'3');assert.equal(active.cars.brz.topSpeed,277);assert.equal(active.cars['jesko-absolut'].topSpeed,420);
+ const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,16);assert.equal(catalog.services.length,9);assert.equal(catalog.stripes.length,5);assert.equal(catalog.cars.find(c=>c.id==='kaze')!.price,'165000');
+ const active=await services.economy.getActiveRuleset();assert.equal(active.version,'4');assert.equal(active.cars.brz.topSpeed,277);assert.equal(active.cars['jesko-absolut'].topSpeed,420);
  const original=await services.economy.resolveLoadout(alice.user.id,undefined,'1');assert.equal(original.stats.topSpeed,255);assert.equal((await pool.query('SELECT count(*)::int n FROM ruleset_cars WHERE ruleset_id=(SELECT id FROM rulesets WHERE version=2)')).rows[0].n,8);
  assert.equal((await pool.query('SELECT count(*)::int n FROM wallet_entries WHERE user_id=$1',[alice.user.id])).rows[0].n,legacy.entries);
 });
@@ -73,12 +73,12 @@ test('no-op, restoring each saved car and owned wheel selection are free',async(
 
 test('PUT loadout, generic shop purchase, frozen loadout and beginRace cannot bypass paid cosmetics',async()=>{
  const installed=(await services.economy.getProfile(alice.user.id)).loadout;
- for(const changes of[{color:'#123456'},{finish:'matte'},{rimColor:'#fefefe'},{stripeId:'heritage'},{stripeColor:'#ff0000'}]){
+ for(const changes of[{color:'#123456'},{finish:'matte'},{rimColor:'#fefefe'},{stockRimPainted:true},{stripeId:'heritage'},{stripeColor:'#ff0000'}]){
   await assert.rejects(services.economy.saveLoadout(alice.user.id,{...installed,...changes}),isService('PAID_CUSTOMIZATION_REQUIRED'));
   await assert.rejects(services.economy.resolveLoadout(alice.user.id,{...installed,...changes} as any),isService('PAID_CUSTOMIZATION_REQUIRED'));
  }
  await assert.rejects(services.economy.purchase(alice.user.id,{itemId:'stripe-heritage',catalogVersion:1},'service-shop-bypass'),isService('SERVICE_REQUIRES_QUOTE'));
- await assert.rejects(services.economy.quoteAppearance(alice.user.id,{carId:'brz',rimId:'stock',rimColor:'#777777'}),isService('RIM_PAINT_UNSUPPORTED'));
+ const stockQuote=await services.economy.quoteAppearance(alice.user.id,{carId:'brz',rimId:'stock',rimColor:'#777777'});assert.equal(stockQuote.total,'5000');assert.equal(stockQuote.selection.stockRimPainted,true);
  const frozen=await services.economy.resolveLoadout(alice.user.id),race:BeginRaceInput={raceId:randomUUID(),roomId:'forged',inviteCode:'FORGED',config:{circuit:'city',laps:1,bots:0,maxHumans:1,difficulty:'normal',collisionMode:'solid'},rulesetVersion:frozen.tuningVersion,createdAt:new Date().toISOString(),participants:[{id:'p',userId:alice.user.id,isBot:false,name:'Legacy',carId:'brz',loadout:{...frozen,stripeId:'heritage'}}]};
  await assert.rejects(services.economy.beginRace(race),isService('PAID_CUSTOMIZATION_REQUIRED'));assert.equal((await pool.query('SELECT 1 FROM races WHERE id=$1',[race.raceId])).rowCount,0);
 });
@@ -109,8 +109,8 @@ test('insufficient funds and downstream SQL failure roll back wallet, paint, sel
  const retried=await services.economy.applyAppearance(alice.user.id,{quoteId:quote.quoteId},'rollback-workshop');assert.equal(retried.pricePaid,'20000');
 });
 
-test('stripe recolor/replacement charges design price, removal charges once and absent-stripe edits are no-op',async()=>{
- const recolor=await services.economy.quoteAppearance(alice.user.id,{carId:'brz',stripeId:'twin-racing',stripeColor:'#ffcc00'});assert.equal(recolor.total,'15000');await services.economy.applyAppearance(alice.user.id,{quoteId:recolor.quoteId},'stripe-recolor-test');
+test('same-design stripe recolor uses its own fee, removal charges once and absent-stripe edits are no-op',async()=>{
+ const recolor=await services.economy.quoteAppearance(alice.user.id,{carId:'brz',stripeId:'twin-racing',stripeColor:'#ffcc00'});assert.equal(recolor.total,'5000');assert.equal(recolor.lineItems[0]!.itemId,'stripe-paint');await services.economy.applyAppearance(alice.user.id,{quoteId:recolor.quoteId},'stripe-recolor-test');
  const removed=await pay({carId:'brz',stripeId:'none'});assert.equal(removed.pricePaid,'5000');const noop=await services.economy.quoteAppearance(alice.user.id,{carId:'brz',stripeId:'none',stripeColor:'#111111'});assert.equal(noop.total,'0');assert.equal(noop.noOp,true);
 });
 
@@ -133,13 +133,14 @@ test('actual room rejects unpaid appearance and relocked lobby access but preser
  async function sdk(user:AuthResult){const headers={cookie:'uv_session='+user.sessionToken},session=await services.accounts.authenticateSession(headers);assert(session);return{client:new Client(endpoint,{headers}),ticket:(await services.accounts.issueRaceTicket(session)).ticket};}
  function observe(room:Room){opened.push(room);room.reconnection.enabled=false;const state:{snapshot?:RoomSnapshot;errors:any[];results:any[]}={errors:[],results:[]},acknowledged=new Set<string>();room.onMessage('snapshot',(snapshot:RoomSnapshot)=>{state.snapshot=snapshot;if(snapshot.phase==='loading'&&snapshot.startToken&&snapshot.racers.length&&!acknowledged.has(snapshot.startToken)){acknowledged.add(snapshot.startToken);room.send('arena_ready',{raceId:snapshot.raceId,startToken:snapshot.startToken});}});room.onMessage('room_error',error=>state.errors.push(error));room.onMessage('result',result=>state.results.push(result));room.onMessage('pong',()=>{});room.onError(()=>{});room.send('sync');return state;}
  try{
-  await change('kaze',{locked:false});await services.economy.saveLoadout(bob.user.id,{carId:'kaze'});const hostLoadout=(await services.economy.getProfile(alice.user.id)).loadout,peerLoadout=(await services.economy.getProfile(bob.user.id)).loadout;
+  await change('kaze',{locked:false});await services.economy.saveLoadout(bob.user.id,{carId:'kaze'});await pay({carId:'kaze',rimId:'stock',rimColor:'#ccbbaa',stockRimPainted:true});const hostLoadout=(await services.economy.getProfile(alice.user.id)).loadout,peerLoadout=(await services.economy.getProfile(bob.user.id)).loadout;
   const bad=await sdk(bob);await assert.rejects(bad.client.create('race',{ticket:bad.ticket,maxHumans:1,bots:0,loadout:{...peerLoadout,stripeId:'heritage'}}));
+  const badStock=await sdk(bob);await assert.rejects(badStock.client.create('race',{ticket:badStock.ticket,maxHumans:1,bots:0,loadout:{...peerLoadout,stockRimPainted:true}}));
   const a=await sdk(alice),host=await a.client.create('race',{ticket:a.ticket,maxHumans:2,bots:0,laps:1,loadout:hostLoadout}),hs=observe(host),b=await sdk(bob),peer=await b.client.joinById(host.roomId,{ticket:b.ticket,loadout:peerLoadout}),ps=observe(peer);
   const ready=async()=>{host.send('ready',{ready:true,assetsLoaded:true});peer.send('ready',{ready:true,assetsLoaded:true});await waitFor(()=>hs.snapshot?.members.every(m=>m.ready)===true,'both ready');};
   await waitFor(()=>hs.snapshot?.members.length===2,'both joined');await change('kaze',{locked:true});await ready();host.send('start');await waitFor(()=>hs.errors.some(e=>e.code==='START_FAILED')&&ps.errors.some(e=>e.code==='START_FAILED')&&hs.snapshot?.phase==='lobby','relock notifies host and affected peer');
   const safe=await services.economy.getProfile(bob.user.id);assert.equal(safe.loadout.carId,'brz');peer.send('loadout',safe.loadout);await waitFor(()=>hs.snapshot?.members.find(m=>m.id===peer.sessionId)?.loadout.carId==='brz','peer restores safe saved car');assert.equal((await services.economy.getProfile(bob.user.id)).wallet.balance,'25000');
-  await change('kaze',{locked:false});await services.economy.saveLoadout(bob.user.id,{carId:'kaze'});peer.send('loadout',(await services.economy.getProfile(bob.user.id)).loadout);await waitFor(()=>hs.snapshot?.members.find(m=>m.id===peer.sessionId)?.loadout.carId==='kaze','newly unlocked selection');await ready();host.send('start');await waitFor(()=>hs.snapshot?.phase==='racing','race start');const frozen=structuredClone(hs.snapshot!.racers.map(r=>r.loadout));
+  await change('kaze',{locked:false});await services.economy.saveLoadout(bob.user.id,{carId:'kaze'});peer.send('loadout',(await services.economy.getProfile(bob.user.id)).loadout);await waitFor(()=>hs.snapshot?.members.find(m=>m.id===peer.sessionId)?.loadout.carId==='kaze','newly unlocked selection');await ready();host.send('start');await waitFor(()=>hs.snapshot?.phase==='racing','race start');const frozen=structuredClone(hs.snapshot!.racers.map(r=>r.loadout));assert.equal(hs.snapshot!.racers.find(r=>r.id===host.sessionId)!.loadout.stockRimPainted,true);assert.equal(hs.snapshot!.racers.find(r=>r.id===host.sessionId)!.loadout.rimColor,'#ccbbaa');
   await change('kaze',{locked:true});await pay({carId:'brz',color:'#102030',stripeId:'circuit',stripeColor:'#ffffff'});await delay(100);
   assert.equal(hs.snapshot!.phase,'racing');assert(hs.snapshot!.racers.every(r=>r.connected&&!r.dnf));assert.deepEqual(hs.snapshot!.racers.map(r=>r.loadout),frozen,'Started race cosmetics/access stay frozen');
   await waitFor(()=>hs.results.length>0,'bounded race settlement');assert.equal(hs.results[0].reward.amount,'0');assert.equal((await services.economy.getProfile(bob.user.id)).loadout.carId,'brz');

@@ -26,10 +26,12 @@ function selection(value:unknown):LoadoutSelection {
   const carId=input.carId??'brz',color=input.color??'#2866b8',finish=input.finish??'metallic',rimId=input.rimId??'stock';
   if(!CAR_IDS.includes(carId as never)||typeof color!=='string'||!/^#[\da-f]{6}$/i.test(color)||!['metallic','matte','gloss'].includes(String(finish))||typeof rimId!=='string'||rimId.length>80)throw new ServerError(400,'Pilihan kendaraan tidak valid.');
   if(input.rimColor!==undefined&&(typeof input.rimColor!=='string'||!/^#[\da-f]{6}$/i.test(input.rimColor)))throw new ServerError(400,'Warna velg tidak valid.');
+  if(input.stockRimPainted!==undefined&&typeof input.stockRimPainted!=='boolean')throw new ServerError(400,'Status cat pelek standar tidak valid.');
   if(input.stripeId!==undefined&&!STRIPE_IDS.includes(input.stripeId as never))throw new ServerError(400,'Striping tidak valid.');
   if(input.stripeColor!==undefined&&(typeof input.stripeColor!=='string'||!/^#[\da-f]{6}$/i.test(input.stripeColor)))throw new ServerError(400,'Warna striping tidak valid.');
   if(input.appearanceVersion!==undefined&&(typeof input.appearanceVersion!=='string'||!/^(0|[1-9][0-9]{0,18})$/.test(input.appearanceVersion)))throw new ServerError(400,'Versi tampilan tidak valid.');
   return{carId:carId as LoadoutSelection['carId'],color,finish:finish as LoadoutSelection['finish'],rimId,...(typeof input.rimColor==='string'?{rimColor:input.rimColor}:{}),
+    ...(typeof input.stockRimPainted==='boolean'?{stockRimPainted:input.stockRimPainted}:{}),
     ...(input.stripeId!==undefined?{stripeId:input.stripeId as LoadoutSelection['stripeId']}:{}),...(typeof input.stripeColor==='string'?{stripeColor:input.stripeColor}:{}),...(typeof input.appearanceVersion==='string'?{appearanceVersion:input.appearanceVersion}:{})};
 }
 function configFrom(value:Record<string,unknown>):RoomConfig {
@@ -243,8 +245,10 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
       const event=status.currentPrayer;
       if(status.allowed||!event||!['lobby','loading','countdown','racing'].includes(this.phase))return;
       const key=member.userId+'|'+event.eventId;if(this.handledPrayers.has(key))return;
-      const startedAt=Date.parse(event.startedAt),resumesAt=Math.max(Date.parse(event.resumesAt),startedAt+15*60*1000),holdUntil=Math.max(resumesAt,now()+15*60*1000);
-      if(!Number.isFinite(startedAt)||!Number.isFinite(resumesAt)||resumesAt<=now())return;
+      // Keep the recorded pause start and its minimum hold on one clock sample.
+      // A second read can advance even within this synchronous method.
+      const observedAt=now(),startedAt=Date.parse(event.startedAt),resumesAt=Math.max(Date.parse(event.resumesAt),startedAt+15*60*1000),holdUntil=Math.max(resumesAt,observedAt+15*60*1000);
+      if(!Number.isFinite(startedAt)||!Number.isFinite(resumesAt)||resumesAt<=observedAt)return;
       this.handledPrayers.add(key);
       const previousPhase=this.phase as RoomPrayerPause['previousPhase'];
       if(this.phase==='loading')this.cancelStart(this.pendingStart,'PRAYER_PAUSE','Persiapan arena dihentikan untuk jeda bersama.',false);
@@ -254,7 +258,7 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
         this.prayerPause.triggers.push(trigger);this.prayerPause.readyIds=[];
       }else{
         const requiredIds=[...this.members.values()].filter(person=>!this.runtime?.racers.find(racer=>racer.id===person.id)?.dnf).map(person=>person.id);
-        this.prayerPause={pauseToken:randomUUID(),startedAt:now(),resumeEligibleAt:holdUntil,resumeAt:null,previousPhase,triggers:[trigger],requiredIds,readyIds:[]};
+        this.prayerPause={pauseToken:randomUUID(),startedAt:observedAt,resumeEligibleAt:holdUntil,resumeAt:null,previousPhase,triggers:[trigger],requiredIds,readyIds:[]};
       }
       this.runtime?.clearControls();this.accessHoldAt=null;
       for(const person of this.members.values()){this.readyVersions.set(person.id,(this.readyVersions.get(person.id)??0)+1);if(this.phase==='lobby'){person.ready=false;person.assetsLoaded=false;person.arenaReady=false;}}

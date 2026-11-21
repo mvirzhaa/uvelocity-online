@@ -8,6 +8,7 @@ import { assert } from './errors.js';
 import { idempotent } from './idempotency.js';
 import { mutateWallet } from './wallet.js';
 import {AppearanceService} from './appearance.js';
+import {catalogThumbnails} from './vehicle-thumbnails.js';
 export {WHEEL_IDS} from './appearance.js';
 import * as v from './validation.js';
 
@@ -40,8 +41,8 @@ export class EconomyService {
   }
 
   async getCatalog() {
-    const ruleset=await this.getActiveRuleset(),result=await this.pool.query('SELECT * FROM catalog_items ORDER BY kind,price,id');
-    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,...(row.kind==='car'?{locked:row.locked}:{}),
+    const [ruleset,result,thumbnails]=await Promise.all([this.getActiveRuleset(),this.pool.query('SELECT * FROM catalog_items ORDER BY kind,price,id'),catalogThumbnails(this.pool)]);
+    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,...(row.kind==='car'?{locked:row.locked,thumbnail:thumbnails.get(row.id)??null}:{}),
       ...(row.kind==='car'?{stats:ruleset.cars[row.id as CarId],...ruleset.cars[row.id as CarId],tuningVersion:ruleset.version}:{cosmeticOnly:true}),
       ...(RECONSTRUCTED_CAR_IDS.includes(row.id)?{modelOrigin:'reference-reconstruction',modelNote:'Rekonstruksi 3D berdasarkan referensi'}:{})}));
     return {currency:'RP_GAME',currencyLabel:'Rp · kredit game',rulesetVersion:ruleset.version,tuningBounds:TUNING_BOUNDS,cars:items.filter(x=>x.kind==='car'),wheels:items.filter(x=>x.kind==='wheel'),services:items.filter(x=>x.kind==='service'),stripes:items.filter(x=>x.kind==='service'&&x.service==='stripe-install')};

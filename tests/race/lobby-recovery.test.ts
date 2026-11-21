@@ -58,3 +58,13 @@ test('Saved appearance version changes recover once, while failed refreshes stop
   h.recovery.observe(snapshot(safe));await flush();assert.equal(h.errors.length,1,'A normal snapshot is not an error retry');assert.equal(h.applied.length,1);
  }finally{h.recovery.dispose();}
 });
+
+test('Factory and painted stock rims are distinct saved selections even with identical RGB and versions',async()=>{
+ const h=setup(),painted={...safe,stockRimPainted:true};h.actions.refresh=async()=>painted;
+ try{
+  h.recovery.observe(snapshot({...safe,stockRimPainted:false}));h.recovery.request('LOADOUT_REJECTED');await flush();
+  assert.deepEqual(h.applied,[painted],'A paid first repaint must not be mistaken for unchanged factory silver');
+  h.recovery.observe(snapshot(painted));h.recovery.request('START_FAILED');await flush();assert.equal(h.applied.length,1,'An accepted painted selection does not resend');
+  h.actions.refresh=async()=>({...safe,stockRimPainted:false});h.recovery.request('LOADOUT_REJECTED');await flush();assert.equal(h.applied.length,2);assert.equal(h.applied[1]?.stockRimPainted,false,'A saved factory restoration must also recover');
+ }finally{h.recovery.dispose();}
+});

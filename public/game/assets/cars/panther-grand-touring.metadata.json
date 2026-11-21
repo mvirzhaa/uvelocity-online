@@ -1,0 +1,106 @@
+{
+  "id": "panther-grand-touring",
+  "file": "/game/assets/cars/panther-grand-touring.glb",
+  "bytes": 4502444,
+  "triangles": 119212,
+  "meshCount": 35,
+  "nodeCount": 44,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "metal",
+    "brake_caliper",
+    "paint_body",
+    "carbon",
+    "glass",
+    "panther_window_rubber",
+    "panther_chrome",
+    "panther_satin_cladding",
+    "light_amber",
+    "lamp_reflector",
+    "light_front",
+    "plate_white",
+    "light_rear",
+    "glass_lamp_cover",
+    "interior_seat"
+  ],
+  "bounds": {
+    "min": [
+      -1.1349999904632568,
+      -4.053115842950206e-9,
+      -2.4000000953674316
+    ],
+    "max": [
+      1.1349999904632568,
+      1.9945356845855713,
+      2.450762987136841
+    ]
+  },
+  "dimensions": [
+    2.2699999809265137,
+    1.9945356886386871,
+    4.8507630825042725
+  ],
+  "provenance": "Original UVelocity reference-based recreation from the user-supplied Isuzu Panther Grand Touring photograph; not a manufacturer mesh or scan.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-panther.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "displayName": "Isuzu Panther Grand Touring",
+  "wheelRadius": 0.377,
+  "wheelWidth": 0.235,
+  "wheelCenters": {
+    "FL": [
+      0.75,
+      0.377,
+      1.4849999999999999
+    ],
+    "FR": [
+      -0.75,
+      0.377,
+      1.4849999999999999
+    ],
+    "RL": [
+      0.75,
+      0.377,
+      -1.335
+    ],
+    "RR": [
+      -0.75,
+      0.377,
+      -1.335
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.64,
+      0.907,
+      2.32
+    ],
+    [
+      0.64,
+      0.907,
+      2.32
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      -0.66,
+      0.3,
+      -2.37
+    ]
+  ],
+  "tail": -2.37,
+  "exhaustX": 0.66,
+  "exhaustY": 0.3,
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "length": 4.8507630825042725
+}

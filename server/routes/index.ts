@@ -6,6 +6,8 @@ import type { AuthResult, AuthSession } from '../services/accounts.js';
 import { assert, ServiceError } from '../services/errors.js';
 import { PrayerBreakError } from '../services/prayer.js';
 import { PRAYER_CITIES } from '../../shared/prayer.js';
+import { installMediaRoutes, isMediaUpload } from './media.js';
+import {installVehicleThumbnailRoutes,isVehicleThumbnailUpload} from './vehicle-thumbnails.js';
 
 export interface ApiRouterOptions { services:BackendServices; allowedOrigins:readonly string[]; secureCookies?:boolean }
 type AsyncHandler=(req:Request,res:Response)=>Promise<unknown>;
@@ -31,7 +33,7 @@ export function createApiRouter({services,allowedOrigins,secureCookies=process.e
     if (!['GET','HEAD','OPTIONS'].includes(req.method)) {
       const origin=req.get('origin');
       if (!origin||!origins.has(origin)) return next(new ServiceError(403,'ORIGIN_REJECTED','Origin permintaan tidak diizinkan.'));
-      if (!req.is('application/json')) return next(new ServiceError(415,'JSON_REQUIRED','Kirim permintaan sebagai application/json.'));
+      if (!isMediaUpload(req)&&!isVehicleThumbnailUpload(req)&&!req.is('application/json')) return next(new ServiceError(415,'JSON_REQUIRED','Kirim permintaan sebagai application/json.'));
       if (req.get('sec-fetch-site')==='cross-site') return next(new ServiceError(403,'ORIGIN_REJECTED','Permintaan lintas situs tidak diizinkan.'));
     }
     next();
@@ -93,6 +95,8 @@ export function createApiRouter({services,allowedOrigins,secureCookies=process.e
   router.patch('/admin/catalog/:itemId',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.updateCatalog(auth(res).id,String(req.params.itemId),req.body));}));
   router.post('/admin/tuning/publish',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.publishTuning(auth(res).id,req.body));}));
   router.post('/admin/rewards/publish',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.publishTuning(auth(res).id,req.body));}));
+  installMediaRoutes(router,services,{authenticated,administrator,gameplayAllowed});
+  installVehicleThumbnailRoutes(router,services,{authenticated,administrator,gameplayAllowed});
 
   const handleError:ErrorRequestHandler=(error:unknown,_req:Request,res:Response,_next:NextFunction)=>{
     if (error instanceof PrayerBreakError) {res.status(error.status).json({error:{code:error.code,message:error.message,status:error.prayerStatus}});return;}

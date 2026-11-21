@@ -1,0 +1,42 @@
+.vehicle-thumbnail{display:block;position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:7px;background:radial-gradient(ellipse at 50% 80%,#33453b88,transparent 67%),#101a16;border:1px solid #334239;color:#9eafa1}
+.vehicle-thumbnail>img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;padding:6px}
+.vehicle-thumbnail-fallback{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#889d8d}
+.vehicle-thumbnail-fallback small{font-size:10px;letter-spacing:.05em;color:#9cad9f}
+.vehicle-thumbnail-fallback svg{opacity:.85}
+.vehicle-image-editor{margin-top:24px}
+.vehicle-image-editor>.section-heading{align-items:flex-start}
+.vehicle-image-editor>.section-heading .eyebrow{margin-bottom:10px}
+.vehicle-image-editor>.section-heading>.text-button{white-space:nowrap;flex-shrink:0}
+.vehicle-image-selector{max-width:430px;margin-bottom:24px}
+.vehicle-image-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:start}
+.vehicle-image-current{padding:18px;background:#141e19;border:1px solid var(--line);border-radius:8px;min-width:0}
+.vehicle-image-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.vehicle-image-caption h3{font-size:19px;line-height:1.3}
+.vehicle-image-caption>span{font-size:10px;color:var(--muted);white-space:nowrap}
+.vehicle-image-current>.vehicle-thumbnail{border-color:#3a4e3f}
+.vehicle-image-details{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;flex-wrap:wrap}
+.vehicle-image-details>span:first-child{font-size:11px;color:var(--muted);line-height:1.6}
+.vehicle-image-current>.text-button{margin-top:10px}
+.vehicle-image-upload{gap:16px;padding-top:3px;min-width:0}
+.vehicle-image-upload>.hint{margin:-6px 0 0;font-size:12px;line-height:1.6}
+.vehicle-image-upload>h3{font-size:18px}
+.vehicle-image-upload input[type=file]{padding:10px;background:#121b17;max-width:100%;font-size:12px}
+.vehicle-image-upload input::file-selector-button{font:inherit;color:#ebeee3;background:#2e3d31;border:1px solid #5a6b52;border-radius:4px;padding:8px 10px;margin-right:11px;cursor:pointer}
+.vehicle-image-candidate{border:1px solid #45563f;border-radius:7px;padding:12px;background:#19271c}
+.vehicle-image-candidate .vehicle-image-caption{margin-bottom:8px}
+.vehicle-image-candidate .vehicle-image-caption>b{font-size:11px;color:#d3ddc8}
+.vehicle-image-candidate .text-button{font-size:11px;min-height:28px;padding:4px 0}
+.vehicle-image-candidate>img{width:100%;aspect-ratio:16/9;max-height:240px;display:block;object-fit:contain;background:#101915;border-radius:5px}
+.vehicle-image-preview-fallback{display:flex;align-items:center;justify-content:center;gap:9px;min-height:110px;padding:16px;border-radius:5px;background:#111b15;color:#9fad9a;font-size:12px;text-align:center}
+.vehicle-image-filename{display:block;margin-top:9px;font-size:11px;line-height:1.5;color:#aebeab;overflow-wrap:anywhere}
+.vehicle-image-status{display:flex;gap:10px;align-items:center;background:#203626;border:1px solid #476c4f;border-radius:7px;color:#b8dbbd;padding:13px 15px;font-size:12px;margin-bottom:18px}
+.vehicle-image-status svg{flex-shrink:0}
+.vehicle-image-progress{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 20px;align-items:center;border:1px solid #6e744e;border-radius:7px;background:#252f20;padding:17px;margin-top:23px}
+.vehicle-image-progress>b{font-size:12px;overflow-wrap:anywhere;grid-column:1/-1}
+.vehicle-image-progress>progress{width:100%;height:10px;accent-color:var(--gold);grid-column:1/-1}
+.vehicle-image-progress>span{font-size:11px;color:#c2cbb3}
+.vehicle-image-progress>.text-button{font-size:11px;padding:2px;min-height:28px}
+.vehicle-image-removal{margin-top:25px;padding:22px;border:1px solid #705344;border-radius:8px;background:#2a251c;gap:14px}
+.vehicle-image-removal h3{font-size:18px}.vehicle-image-removal p{margin-bottom:0;font-size:12px}.vehicle-image-removal .button-row{margin-top:3px}
+@media(max-width:900px){.vehicle-image-workspace{grid-template-columns:1fr;gap:24px}.vehicle-image-current{max-width:620px;width:100%}.vehicle-image-upload{padding-top:0}.vehicle-image-candidate>img{max-height:300px}}
+@media(max-width:600px){.vehicle-image-editor>.section-heading{display:block}.vehicle-image-editor>.section-heading>.text-button{margin-top:8px}.vehicle-image-caption{align-items:flex-start;flex-wrap:wrap}.vehicle-image-current{padding:14px}.vehicle-image-progress{gap:12px}.vehicle-image-removal{padding:17px}.vehicle-image-removal .button-row{flex-direction:column}}

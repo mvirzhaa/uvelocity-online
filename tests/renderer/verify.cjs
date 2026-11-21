@@ -5,6 +5,11 @@ const path=require('node:path');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {verifyStripeSurface,verifyMaterialGroups}=require('./stripes.cjs');
+const {verifyCockpitGeometry}=require('./cockpit.cjs');
+const {verifyFinishFlow}=require('./finish.cjs');
+const {verifyStockRimPaint,verifyOnlineStockRimPaint}=require('./stock-rim-paint.cjs');
+const {verifyTouchControls}=require('./touch-controls.cjs');
+const {verifyVehicleExpansion}=require('./vehicle-expansion.cjs');
 const {createCanvas,loadImage}=require('@napi-rs/canvas');
 const REPO=path.resolve(__dirname,'../..');
 const GAME_DIR=path.join(REPO,'public/game');
@@ -15,9 +20,11 @@ async function main(){
  const {parseHTML}=await import('linkedom');
  const expectedAssets=JSON.parse(fs.readFileSync(path.join(__dirname,'asset-hashes.json'),'utf8'));
  for(const [relative,expected]of Object.entries(expectedAssets.files)){const actual=require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(REPO,relative))).digest('hex');assert.equal(actual,expected,'Preserved asset changed: '+relative);}
- const html=fs.readFileSync(process.argv[2]||path.join(GAME_DIR,'game.html'),'utf8');
+ const finishOnly=process.argv.includes('--finish-only');
+ const stockPaintOnly=process.argv.includes('--stock-paint-only');
+ const html=fs.readFileSync(process.argv.slice(2).find(value=>!value.startsWith('--'))||path.join(GAME_DIR,'game.html'),'utf8');
  const gameDir=GAME_DIR;
- const scripts=[...html.matchAll(/<script src="([^"]+)"><\/script>/g)].filter(m=>!m[1].endsWith('game-api.js')).map(m=>fs.readFileSync(path.join(gameDir,m[1]),'utf8'));
+ const scripts=[...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m=>m[1].split(/[?#]/)[0]).filter(src=>!src.endsWith('game-api.js')).map(src=>fs.readFileSync(path.join(gameDir,src),'utf8'));
  const {window,document}=parseHTML(html.replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi,''));
  const errors=[],warnings=[],results=[];
  const storageMap=new Map();
@@ -49,7 +56,7 @@ async function main(){
  const navigator={userAgent:'Node functional harness',maxTouchPoints:0,hardwareConcurrency:4};
  const bitmap=async blob=>loadImage(Buffer.from(await blob.arrayBuffer()));
  global.createImageBitmap=bitmap;global.self={URL};Object.assign(threeScope,{createImageBitmap:bitmap,fetch,Blob,URL,self:{URL}});
- THREE.FileLoader.prototype.load=function(url,onLoad,onProgress,onError){const filename=path.join(gameDir,String(url));fs.readFile(filename,(err,data)=>{if(err){onError?.(err);return;}const result=this.responseType==='arraybuffer'?data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength):data.toString();onLoad(result);});return null;};
+ THREE.FileLoader.prototype.load=function(url,onLoad,onProgress,onError){const filename=path.join(gameDir,String(url).split(/[?#]/)[0]);fs.readFile(filename,(err,data)=>{if(err){onError?.(err);return;}const result=this.responseType==='arraybuffer'?data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength):data.toString();onLoad(result);});return null;};
  // This adapter records scene/camera state but deliberately produces no GPU image.
  class TestRenderer{
   constructor(){this.domElement=document.createElement('canvas');this.shadowMap={};this.xr={enabled:false};this.capabilities={getMaxAnisotropy:()=>8,maxTextures:16};this._color=new THREE.Color();this._alpha=1;this._viewport=new THREE.Vector4(0,0,836,600);this._scissor=this._viewport.clone();this._target=null;this._scissorTest=false;this.autoClear=true;this.renderCount=0;this.info={render:{calls:0,triangles:0},memory:{geometries:0,textures:0}};}
@@ -112,11 +119,13 @@ async function main(){
  assert.equal((await window.NVGame.ensureModels(['brz','veyron77'])).length,2);await assert.rejects(window.NVGame.ensureModels(['missing-car']));
  results.push('Showroom front/side/rear/cycle, explicit-only quality changes, dusk/night, credits and asset-ready API verified.');
  verifyMaterialGroups(THREE,window.NVStripes);
- const stats=[],stripeStats=[];
- const carIds=['veloce','apex','cinder','kaze','aventador','skyline','brz','veyron77','bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5'];
- assert.equal(window.NVGame.getCatalog().cars.length,15);await window.NVGame.ensureModels(carIds);
+ const stats=[],stripeStats=[],cockpitStats=[],stockPaintStats=[];
+ const carIds=['veloce','apex','cinder','kaze','aventador','skyline','brz','veyron77','bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5','panther-grand-touring'];
+ assert.equal(window.NVGame.getCatalog().cars.length,16);await window.NVGame.ensureModels(carIds);
+ const expansion=verifyVehicleExpansion({THREE,Imported:window.NVImportedCars,metadata:window.NV_MODEL_METADATA,Audio:window.NVEngineAudio});
+ results.push('Vehicle expansion: closed Regera canopy versus open Venom cockpit, distinct front body surfaces, taller Panther MPV, finite loaded source geometry and matching effect anchors; diesel waveform has a four-cylinder firing harmonic.');
  assert.equal(window.NVGame.getCatalog().stripes.length,6);
- for(const id of carIds){
+ for(const id of finishOnly||stockPaintOnly?[]:carIds){
   await window.NVGame.preview({carId:id,color:'#3366bb',finish:'metallic',rimId:'stock'});
   assert.equal(q.garage.modelId,id);assert.equal(q.garage.wheels.length,4);assert.equal(q.garage.frontPivots.length,2);
   const car=q.garage,stockNodes=[];
@@ -145,9 +154,16 @@ async function main(){
   stats.push({id,fit:window.NVWheels.inspect(car).fitments.map(f=>({radius:f.radius,width:f.width}))});
   window.NVWheels.apply(car,{rimId:'stock'});for(const [node,geometry,visible]of stockNodes){assert.equal(node.geometry,geometry);assert.equal(node.visible,visible,'Stock visibility failed to restore');}
   assert.equal(car.wheels.flatMap(w=>w.children).filter(n=>n.userData.nvUpgrade).length,0);
+  cockpitStats.push(verifyCockpitGeometry(THREE,car,window.NVCockpit));
+  stockPaintStats.push(verifyStockRimPaint(THREE,car,window.NVWheels,window.NVImportedCars));
  }
- results.push('All fifteen cars: dedicated sound profiles, extended-model camera framing, three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.');
- results.push('Five vinyl patterns on every loaded car: paint-only clipping, every vertex within 1.52 mm of its source triangle, normals, one draw, material-group exclusion and clean removal.');
+ if(!finishOnly&&!stockPaintOnly){
+  results.push('All sixteen cars: dedicated sound profiles, extended-model camera framing, three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.');
+  results.push('Five vinyl patterns on every loaded car: paint-only clipping, every vertex within 1.52 mm of its source triangle, normals, one draw, material-group exclusion and clean removal.');
+  results.push('All sixteen fitted procedural cockpits including the higher right-side Panther seat: finite PBR geometry, driver seat and wheel in camera frustum, clear windshield rays at three aspect ratios, correct steering direction/clamp, source nodes untouched and owned geometry released.');
+ }
+ if(stockPaintOnly)for(const id of carIds){await window.NVGame.preview({carId:id,color:'#3366bb',finish:'metallic',rimId:'stock',stockRimPainted:false});stockPaintStats.push(verifyStockRimPaint(THREE,q.garage,window.NVWheels,window.NVImportedCars));}
+ if(stockPaintStats.length)results.push('All sixteen stock rims: legacy factory appearance, explicit same-default RGB paint, exact Veyron triangle material isolation, no tire/brake/body/texture mutations, per-car clone isolation, custom/stock/factory restoration and owned-resource disposal.');
  const api=window.NVGame,inputs=[];api.on('input',value=>inputs.push(value));
  await api.configure({circuit:'beach',quality:'medium',online:true});await api.setLocalPlayer('me');
  await api.startRace({raceId:'test-race',config:{circuit:'beach',laps:3,bots:0},localRacerId:'me',loadouts:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh',stripeId:'side-sweep',stripeColor:'#f4cb53',stats:{topSpeed:255,zeroTo100:5.6,handling:1.18}}},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke',stripeId:'heritage',stripeColor:'#235eac'}}]});
@@ -155,7 +171,18 @@ async function main(){
  assert.equal(api.applySnapshot(snapshot),true);assert.equal(window.NVStripes.inspect(q.player.visual).stripeId,'side-sweep');assert.equal(window.NVStripes.inspect(q.racers.find(r=>r.id==='rival').visual).color,'#235eac');const pos=q.player.pos.clone(),clock=q.clock,progress=q.player.progress;key('KeyW');frames(.1);assert.ok(q.player.pos.equals(pos),'Renderer must not integrate position');assert.equal(q.clock,clock);assert.equal(q.player.progress,progress);assert.ok(inputs.some(v=>v.throttle===1));assert.equal(q.player.visual.frontPivots[0].rotation.y,.2);assert.equal(q.player.visual.bodyTiltGroup.rotation.z,.04);assert.ok(q.player.visual.flames.every(f=>f.visible));
  q.lapUpdate(q.player,0);assert.equal(q.player.progress,progress,'Offline lap update must be gated');
  await api.setCamera('hood');frames(.03);assert.equal(q.player.visual.bodyTiltGroup.visible,false);await api.setCamera('chase');frames(.03);
+ const sourceVisibility=[...q.player.visual.root.children,...q.player.visual.wheels].map(node=>[node,node.visible]);
+ assert.equal(await api.setCamera('dashboard'),'interior');frames(.03);
+ const cockpit=q.player.visual.cockpit;assert.ok(cockpit.root.visible);assert.equal(api.getState().camera,'interior');assert.equal($('cam-label').textContent,'Dashboard');assert.equal(q.camera.near,.025);
+ assert.equal(q.player.visual.bodyTiltGroup.visible,false);assert.ok(q.player.visual.wheels.every(w=>!w.visible));assert.equal(q.racers.find(r=>r.id==='rival').visual.bodyTiltGroup.visible,true);
+ const eyeInCar=q.camera.position.clone().applyMatrix4(cockpit.root.matrixWorld.clone().invert());assert.ok(eyeInCar.distanceTo(cockpit.eye)<1e-6,'Viewpoint must remain at driver eye');
+ assert.ok(Math.abs(cockpit.wheel.rotation.z+1.26)<1e-8);key('KeyA');frames(.03);assert.ok(Math.abs(cockpit.wheel.rotation.z+1.26)<1e-8,'Keypress alone cannot steer the rendered wheel');key('KeyA','keyup');
+ api.applySnapshot({...snapshot,racers:snapshot.racers.map(r=>r.id==='me'?{...r,steerAngle:-.3}:r)});frames(.03);assert.ok(Math.abs(cockpit.wheel.rotation.z-1.89)<1e-8,'Wheel follows supplied steering snapshot');api.applySnapshot(snapshot);frames(.03);
+ await api.setCamera('chase');frames(.03);assert.equal(q.camera.near,.07);assert.equal(cockpit.root.visible,false);sourceVisibility.forEach(([node,visible])=>assert.equal(node.visible,visible,'Exterior visibility must restore exactly'));
+ key('KeyC');assert.equal(api.getState().camera,'hood');key('KeyC');assert.equal(api.getState().camera,'close');key('KeyC');assert.equal(api.getState().camera,'interior');frames(.03);click('#btn-cam');frames(.03);assert.equal(api.getState().camera,'chase');assert.ok(q.camera.position.distanceTo(q.player.pos)>6,'Leaving cockpit snaps to a usable chase view');
+ results.push('Dashboard camera: actual driver-eye transform, live snapshot steering rather than keyboard animation, 4-mode keyboard/touch/API cycle, near clip and exterior restoration, no hidden rival cars.');
  key('KeyR');frames(.03);assert.ok(inputs.some(v=>v.reset));assert.ok(q.player.pos.equals(pos),'Reset is only an input request');
+ results.push(await verifyTouchControls({api,q,window,document,emit}));
  const renders=q.renderer.renderCount;await api.setVisible(false);frames(.5);assert.equal(q.renderer.renderCount,renders);assert.equal(api.getInput().throttle,0);await api.setVisible(true);frames(.05);assert.ok(q.renderer.renderCount>renders);
 
  let muteEvent=null;const unmute=api.on('mute',event=>muteEvent=event);key('KeyM');assert.equal(muteEvent.muted,api.getState().muted);key('KeyM');unmute();
@@ -163,11 +190,12 @@ async function main(){
  const oldRival=q.racers.find(r=>r.id==='rival').visual;const changed={...snapshot,tick:2,racers:snapshot.racers.map(r=>r.id==='rival'?{...r,loadout:{...r.loadout,stripeId:'offset',stripeColor:'#f3bb24'}}:r)};assert.equal(api.applySnapshot(changed),true);const newRival=q.racers.find(r=>r.id==='rival').visual;assert.notEqual(newRival,oldRival);assert.equal(window.NVStripes.inspect(newRival).stripeId,'offset');assert.equal(window.NVStripes.inspect(newRival).color,'#f3bb24');
  const stale={...snapshot,tick:0};assert.equal(api.applySnapshot(stale),false);
  api.applySnapshot({...snapshot,tick:3,phase:'finished',elapsedMs:4000,racers:snapshot.racers.map(r=>({...r,finished:true,finishTimeMs:4000}))});frames(.05);assert.equal(q.state.mode,'FINISHED');assert.deepEqual(Object.keys(q.settings.records),[],'Renderer cannot store race rewards/results');
- await api.stopRace();assert.equal(q.racers.length,0);assert.equal(api.getState().mode,'preview');
+ await api.setCamera('interior');frames(.03);await api.stopRace();assert.equal(q.racers.length,0);assert.equal(api.getState().mode,'preview');assert.equal(cockpit.root.parent,null);assert.equal(q.camera.near,.07);assert.equal(api.getState().camera,'chase');
  results.push('Online renderer: supplied state only, normalized input, no local physics/laps/results, stock cameras/effects, visibility suspension, stale snapshot guard, clean exit.');
  // Arena loading is separate from the server countdown. Acknowledgement requires
  // an applied grid snapshot, actual scene draw, and a presentation opportunity.
  await api.startRace({raceId:'loading-barrier',startToken:'token-42',phase:'loading',config:{circuit:'beach',laps:3},localRacerId:'me',loadouts:snapshot.racers});
+ await api.setCamera('interior');
  assert.equal(api.getState().phase,'loading');assert.equal(api.getState().arenaFrameReady,false);
  let frameResolved=false;const frameReady=api.waitForRaceFrame({raceId:'loading-barrier',startToken:'token-42',minimumTick:42,timeoutMs:3000}).then(frame=>{frameResolved=true;return frame;});await Promise.resolve();
  frames(.08);await Promise.resolve();assert.equal(frameResolved,false,'Asset/scene creation without a snapshot cannot acknowledge the grid');
@@ -181,12 +209,18 @@ async function main(){
  api.playEvents([{type:'collision',racerId:'me',intensity:.5}]);assert.ok(q.particles.length>0);
  const retainedCars=q.racers.map(r=>r.visual),retainedScene=q.scene,pausedPos=q.player.pos.clone(),pausedWheel=q.player.visual.wheels[0].rotation.x,pausedWorldTime=q.worldTime,pausedParticle=q.particles[0],particlePosition=pausedParticle.mesh.position.clone(),particleLife=pausedParticle.life;
  const prayerPause={pauseToken:'room-prayer-1',startedAt:20000,resumeEligibleAt:920000,resumeAt:null,previousPhase:'racing',triggers:[],requiredIds:['me','rival'],readyIds:[]};
+ emit($('t-gas'),'pointerdown',{pointerId:201,pointerType:'touch',button:0});emit($('t-left'),'pointerdown',{pointerId:202,pointerType:'touch',button:0});
  api.applySnapshot({...loadingSnapshot,tick:45,phase:'prayer_pause',serverTime:20000,elapsedMs:1000,prayerPause});
  assert.equal(q.inputs.up,false,'Entering prayer clears held keys');assert.equal(api.getInput().throttle,0);assert.equal(q.audio.state.active,false);
+ assert.equal(q.inputs.left,false,'Prayer clears a held steering finger');assert.equal($('t-gas').getAttribute('aria-pressed'),'false');assert.equal($('t-left').classList.contains('active'),false);
+ const prayerCockpit=q.player.visual.cockpit,prayerWheelAngle=prayerCockpit.wheel.rotation.z,prayerEye=q.camera.position.clone();
+ key('KeyC');click('#btn-cam');assert.equal(await api.setCamera('chase'),'interior','All camera controls stay locked during room prayer');
  key('KeyW');key('KeyR');key('KeyP');api.setInput({throttle:1,nitro:true,reset:true});api.playEvents([{type:'collision',racerId:'me',intensity:1}]);
+ emit($('t-gas'),'pointerdown',{pointerId:203,pointerType:'touch',button:0});assert.equal($('t-gas').getAttribute('aria-pressed'),'false','Prayer blocks fresh touch input');
  const pausedFrame=api.waitForRaceFrame({raceId:'loading-barrier',startToken:'token-42',minimumTick:45,timeoutMs:3000});await Promise.resolve();frames(1);const pausedPresented=await pausedFrame;
  assert.equal(pausedPresented.tick,45);assert.equal($('countdown-display').textContent,'JEDA SALAT');assert.equal(q.player.visual.wheels[0].rotation.x,pausedWheel);assert.equal(q.worldTime,pausedWorldTime);assert.equal(pausedParticle.life,particleLife);assert.ok(pausedParticle.mesh.position.equals(particlePosition));assert.equal(q.audio.state.active,false);assert.ok(q.player.visual.flames.every(f=>!f.visible));assert.ok(q.player.pos.equals(pausedPos));assert.equal(q.clock,1000);assert.equal(q.inputs.up,false);assert.equal(q.online.resetRequested,false);assert.equal(q.online.paused,false);assert.equal(q.online.externalInput,null);
  assert.strictEqual(q.scene,retainedScene);q.racers.forEach((r,i)=>assert.strictEqual(r.visual,retainedCars[i],'Prayer cannot rebuild/dispose the car roster'));
+ assert.strictEqual(q.player.visual.cockpit,prayerCockpit);assert.equal(prayerCockpit.wheel.rotation.z,prayerWheelAngle);assert.ok(q.camera.position.distanceTo(prayerEye)<1e-9,'Dashboard view remains still during prayer');
  api.applySnapshot({...loadingSnapshot,tick:46,phase:'resume_countdown',serverTime:920000,elapsedMs:1000,prayerPause:{...prayerPause,resumeAt:923000,readyIds:['me','rival']}});
  const resumeFrame=api.waitForRaceFrame({raceId:'loading-barrier',startToken:'token-42',minimumTick:46,timeoutMs:3000});await Promise.resolve();frames(.08);assert.equal((await resumeFrame).tick,46);assert.equal($('countdown-display').textContent,'3');assert.equal(api.getInput().throttle,0);assert.equal(q.player.visual.wheels[0].rotation.x,pausedWheel);
  api.applySnapshot({...loadingSnapshot,tick:47,phase:'racing',serverTime:923000,elapsedMs:1000,prayerPause:null});assert.equal(api.getInput().throttle,0,'Held inputs from prayer cannot reappear on resume');key('KeyW');frames(.03);assert.equal(api.getInput().throttle,1);assert.ok(q.player.visual.wheels[0].rotation.x!==pausedWheel);assert.ok(q.worldTime>pausedWorldTime);assert.equal(q.audio.state.active,true);assert.strictEqual(q.player.visual,retainedCars[0]);key('KeyW','keyup');
@@ -197,11 +231,13 @@ async function main(){
  window.NVImportedCars.load=id=>id==='brz'?new Promise(resolve=>{finishSlowAsset=()=>resolve(window.NVImportedCars.getTemplate(id));}):realLoad(id);
  const slowStart=api.startRace({raceId:'cancelled-slow-start',startToken:'old-token',config:{circuit:'beach'},localRacerId:'me',loadouts:[{id:'me',loadout:{carId:'brz'}}]});const slowStartCheck=assert.rejects(slowStart,{name:'AbortError'});await Promise.resolve();assert.equal(typeof finishSlowAsset,'function');assert.equal(api.getState().preparing,true);await api.stopRace();finishSlowAsset();await slowStartCheck;window.NVImportedCars.load=realLoad;assert.equal(api.getState().active,false);assert.equal(q.racers.length,0);
  results.push('Loading barrier: no ack without applied snapshot or visible scene frame, server-only countdown, motion stopped while loading, frame wait aborted on exit, stale slow model completion cannot reopen arena.');
+ results.push(await verifyFinishFlow({THREE,api,q,frames,key,$}));
+ if(!finishOnly)results.push(await verifyOnlineStockRimPaint({api,q,frames,Wheels:window.NVWheels}));
 
  await api.configure({circuit:'glacier',previewOnly:true});assert.equal(q.settings.circuit,'glacier');frames(.05);await api.configure({circuit:'city',previewOnly:true});assert.equal(q.settings.circuit,'city');frames(.05);
  results.push('All three existing worlds switch through the public API.');
  assert.equal(errors.length,0,errors.join('\n'));
- results.unshift('SHA-256 identity of all eight original GLBs and unchanged city/biome/police/fallback modules.');
- console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,fittedModels:stats.map(item=>item.id),stripes:stripeStats,warnings:warnings.slice(0,12),errors},null,2));api.dispose();
+ results.unshift('SHA-256 integrity of sixteen GLBs: thirteen preserved sources, two reviewed hypercar revisions, one new Panther, and unchanged city/biome/police/fallback modules.');
+ console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,expansion,fittedModels:stats.map(item=>item.id),cockpits:cockpitStats,stockRimPaint:stockPaintStats,stripes:stripeStats,warnings:warnings.slice(0,12),errors},null,2));api.dispose();
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

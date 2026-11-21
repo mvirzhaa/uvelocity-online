@@ -126,8 +126,8 @@
       function computeVehicleRpm(speedKmh){
         const car=playerCar,profile=window.NVEngineAudio?.profiles?.[car?.model.id||settings.model]||{idleRpm:900,redlineRpm:8000,gears:6};
         const idle=profile.idleRpm,redline=profile.redlineRpm;
-        if(car?.speed<-.5){const rpm=idle+Math.min(redline-idle,speedKmh*110+900);return{gear:'R',rpm:Math.round(rpm),rpmNorm:(rpm-idle)/(redline-idle)};}
-        if(speedKmh<2){if(car)car.transmissionGear=0;const rpm=idle+(Input.up&&!Input.down?700:0);return{gear:'N',rpm,rpmNorm:(rpm-idle)/(redline-idle)};}
+        if(nvRenderPose(car)?.speed<-.5){const rpm=idle+Math.min(redline-idle,speedKmh*110+900);return{gear:'R',rpm:Math.round(rpm),rpmNorm:(rpm-idle)/(redline-idle)};}
+        if(speedKmh<2){if(car)car.transmissionGear=0;const rpm=idle+(Input.up&&!Input.down&&!car?.finished&&!car?.dnf?700:0);return{gear:'N',rpm,rpmNorm:(rpm-idle)/(redline-idle)};}
         const ratios=profile.gears===7?[.16,.29,.42,.56,.71,.89,1.24]:profile.gears===5?[.23,.43,.64,.86,1.24]:[.19,.35,.51,.68,.86,1.24];
         const caps=ratios.map(r=>r*(car?.model.topSpeed||currentModel().topSpeed));
         let g=car?.transmissionGear||0;
@@ -240,8 +240,9 @@
         {id:'amg-gt4',name:'Mercedes-AMG GT4',cardName:'AMG GT4',title:'<small class="make-label">MERCEDES-AMG</small>GT <b>4</b>',type:'LONG-HOOD RACER · REKONSTRUKSI REFERENSI',short:'MERCEDES-AMG · GT4',class:'A · 895',description:'Rekonstruksi GT4 dengan kap panjang, kokpit fastback, grille vertikal, dan aero sirkuit yang mengikuti karakter referensi.',color:'#a8afb5',topSpeed:295,zeroTo100:3.5,drive:'RWD',handling:1.16,ratings:[89,89,96],branded:true,newArrival:true,representation:'reference-recreation'},
         {id:'sls-amg-gt3',name:'Mercedes-Benz SLS AMG GT3',cardName:'SLS AMG GT3',title:'<small class="make-label">MERCEDES-BENZ</small>SLS <b>GT3</b>',type:'GULLWING RACER · REKONSTRUKSI REFERENSI',short:'MERCEDES-BENZ · SLS GT3',class:'S · 925',description:'Rekonstruksi SLS balap dengan kap panjang, lampu tegak, garis atap gullwing, grille horizontal, dan sayap besar.',color:'#80878b',topSpeed:310,zeroTo100:3.2,drive:'RWD',handling:1.18,ratings:[92,93,97],branded:true,newArrival:true,representation:'reference-recreation'},
         {id:'batmobile-1989',name:'Batmobile 1989',cardName:'Batmobile 1989',title:'<small class="make-label">1989</small>Batmobile <b>89</b>',type:'CINEMA ICON · REKONSTRUKSI REFERENSI',short:'BATMOBILE · 1989',class:'S · 910',description:'Rekonstruksi dari referensi Batmobile era Keaton/Burton: bodi memanjang, intake turbin bundar, kanopi rendah, dan sirip belakang.',color:'#15191d',topSpeed:300,zeroTo100:3.9,drive:'RWD',handling:.90,ratings:[90,84,78],branded:true,newArrival:true,representation:'reference-recreation'},
-        {id:'jesko-absolut',name:'Koenigsegg Jesko Absolut',cardName:'Jesko Absolut',title:'<small class="make-label">KOENIGSEGG</small>Jesko <b>Absolut</b>',type:'LONG-TAIL HYPERCAR · REKONSTRUKSI REFERENSI',short:'KOENIGSEGG · ABSOLUT',class:'X · 998',description:'Rekonstruksi Jesko Absolut dengan kanopi melengkung, saluran udara samping, ekor panjang, dan dua sirip penstabil.',color:'#d9dde0',topSpeed:420,zeroTo100:2.3,drive:'RWD',handling:.96,ratings:[100,100,85],branded:true,newArrival:true,representation:'reference-recreation'},
-        {id:'venom-f5',name:'Hennessey Venom F5',cardName:'Venom F5',title:'<small class="make-label">HENNESSEY</small>Venom <b>F5</b>',type:'HYPERCAR · REKONSTRUKSI REFERENSI',short:'HENNESSEY · VENOM F5',class:'X · 995',description:'Rekonstruksi F5 dari referensi pengguna: fender tinggi, lampu tipis, intake samping besar, dan paket sayap belakang.',color:'#8b8c87',topSpeed:410,zeroTo100:2.4,drive:'RWD',handling:.95,ratings:[100,99,84],branded:true,newArrival:true,representation:'reference-recreation'}
+        {id:'jesko-absolut',name:'Koenigsegg Regera',cardName:'Regera',title:'<small class="make-label">KOENIGSEGG</small>Regera',type:'HYPERCAR · REKONSTRUKSI REFERENSI',short:'KOENIGSEGG · REGERA',class:'X · 998',description:'Rekonstruksi Regera dari referensi terbaru: kanopi melengkung, lampu depan khas, bodi berlekuk, dan intake samping yang menyatu dengan pintu.',color:'#d9dde0',topSpeed:420,zeroTo100:2.3,drive:'RWD',handling:.96,ratings:[100,100,85],branded:true,newArrival:true,representation:'reference-recreation'},
+        {id:'venom-f5',name:'Hennessey Venom F5',cardName:'Venom F5',title:'<small class="make-label">HENNESSEY</small>Venom <b>F5</b>',type:'HYPERCAR · REKONSTRUKSI REFERENSI',short:'HENNESSEY · VENOM F5',class:'X · 995',description:'Rekonstruksi F5 mengikuti referensi terbaru dengan kokpit terbuka, fender tinggi, lampu tipis, intake samping besar, dan sayap belakang.',color:'#8b8c87',topSpeed:410,zeroTo100:2.4,drive:'RWD',handling:.95,ratings:[100,99,84],branded:true,newArrival:true,representation:'reference-recreation'},
+        {id:'panther-grand-touring',name:'Isuzu Panther Grand Touring',cardName:'Panther Grand Touring',title:'<small class="make-label">ISUZU</small>Panther <b>Grand Touring</b>',type:'DIESEL MPV · REKONSTRUKSI REFERENSI',short:'ISUZU · PANTHER',class:'C · 520',description:'Rekonstruksi Panther Grand Touring dari foto pengguna: bodi MPV tinggi, lampu dan grille lebar, roof rail, serta pijakan samping.',color:'#19252e',topSpeed:170,zeroTo100:10.8,drive:'RWD',handling:.88,ratings:[45,38,73],branded:true,newArrival:true,representation:'reference-recreation'}
       ];
       const PALETTE = [
         {name:'Signal Orange',hex:'#ed6b2f'}, {name:'Crimson Red',hex:'#b92842'},
@@ -313,6 +314,8 @@
       }
       function disposeVehicle(car){
         if(!car)return;
+        restoreCameraVehicle(car);car.cockpit?.dispose();car.cockpit=null;
+        if(cameraVehicle===car)cameraVehicle=null;
         window.NVWheels?.dispose(car);
         window.NVStripes?.dispose(car);
         if(car.imported)NVImportedCars.dispose(car);else NVCarFactory.dispose(car);
@@ -418,9 +421,21 @@
         }
       }
       function clearInput(){
+        // Drop the held-pointer records before releasing capture: the browser
+        // may dispatch lostpointercapture synchronously during a pause/blur.
+        const held=[...touchPointers];touchPointers.clear();
+        for(const [id,{el}]of held){try{if(el.hasPointerCapture?.(id))el.releasePointerCapture(id);}catch{}}
         Object.keys(Input).forEach(k=>Input[k]=false);
-        document.querySelectorAll('.touch-left button,.touch-right button').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.touch-left button,.touch-right button').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false');});
         GameState.mouseDrag=false;
+      }
+      function releaseTouchPointer(id){
+        const held=touchPointers.get(id);if(!held)return;
+        touchPointers.delete(id);
+        if(![...touchPointers.values()].some(pointer=>pointer.key===held.key)){
+          Input[held.key]=false;held.el.classList.remove('active');held.el.setAttribute('aria-pressed','false');
+        }
+        try{if(held.el.hasPointerCapture?.(id))held.el.releasePointerCapture(id);}catch{}
       }
       function pauseRace(){
         if(onlineRender.active){nvPause();return;}
@@ -454,7 +469,7 @@
         for(const p of particles){scene.remove(p.mesh);p.mesh.material.dispose();}particles.length=0;
         if(audio.ctx)audio.ctx.suspend().catch(()=>{});
         renderer.toneMappingExposure=.94;
-        camera.fov=65;garageNeedsRender=true;
+        resetRaceCamera();camera.fov=65;camera.updateProjectionMatrix();garageNeedsRender=true;
         updateCircuitUI();
         document.activeElement?.blur();
       }
@@ -828,7 +843,7 @@ function renderGarageThumbnail(visual) {
       // Status permainan global
       const GameState = {
         mode: 'MENU', // 'MENU' | 'COUNTDOWN' | 'RACING' | 'FINISHED'
-        cameraMode: 0, // 0 = Chase Cam, 1 = Hood Cam
+        cameraMode: 0, // 0 Chase, 1 Hood, 2 Close, 3 Interior / dashboard
         muted: false,
         raceStartTime: 0,
         lapStartTime: 0,
@@ -853,6 +868,7 @@ function renderGarageThumbnail(visual) {
         right: false,
         nitro: false
       };
+      const touchPointers = new Map();
 
       // Referensi DOM
       const DOM = {
@@ -916,7 +932,8 @@ const NV_AUDIO_PROFILES = Object.freeze({
   'sls-amg-gt3':Object.freeze({id:'sls-amg-gt3',label:'V8 aspirasi alami · sintesis',character:'Raungan bass V8 dan resonansi intake balap',cylinders:8,layout:'V8',turbochargers:0,idleRpm:1050,redlineRpm:7800,gears:6,group:[0,.125,.375,.750],fireMix:.49,bankMix:.60,crankMix:.079,edge:1.03,pulseVariation:.038,bodyHz:172,bodyGain:5.0,intakeHz:1280,intakeGain:3.4,maxCutoff:4050,drive:1.66,level:.92,roughness:4.0,shiftTime:.11,turboBase:0,turboRange:0,spoolTime:.4,releaseLevel:0,overrun:.22}),
   'batmobile-1989':Object.freeze({id:'batmobile-1989',label:'Turbin fiksi · sintesis',character:'Desis turbin sinematik; bukan rekaman kendaraan',cylinders:2,layout:'fictional-turbine',turbochargers:1,idleRpm:18000,redlineRpm:48000,gears:1,group:[0,.5],fireMix:.24,bankMix:.38,crankMix:.018,edge:2.35,pulseVariation:0,bodyHz:200,bodyGain:2.0,intakeHz:2100,intakeGain:3.8,maxCutoff:5200,drive:1.12,level:.80,roughness:.6,shiftTime:.32,turboBase:1450,turboRange:3100,spoolTime:.95,releaseLevel:.16,overrun:0}),
   'jesko-absolut':Object.freeze({id:'jesko-absolut',label:'V8 twin-turbo · sintesis',character:'Putaran tinggi dan nada turbo yang terang',cylinders:8,layout:'V8',turbochargers:2,idleRpm:1050,redlineRpm:8600,gears:9,group:[0,.25,.50,.75],fireMix:.72,bankMix:.32,crankMix:.041,edge:1.05,pulseVariation:.010,bodyHz:335,bodyGain:3.5,intakeHz:2150,intakeGain:3.3,maxCutoff:4850,drive:1.45,level:.94,roughness:1.6,shiftTime:.085,turboBase:1150,turboRange:2200,spoolTime:.36,releaseLevel:.62,overrun:.11}),
-  'venom-f5':Object.freeze({id:'venom-f5',label:'V8 twin-turbo · sintesis',character:'Bass besar dan pelepasan turbo pendek',cylinders:8,layout:'V8',turbochargers:2,idleRpm:980,redlineRpm:8400,gears:7,group:[0,.125,.375,.750],fireMix:.46,bankMix:.64,crankMix:.082,edge:1.06,pulseVariation:.029,bodyHz:138,bodyGain:5.2,intakeHz:1250,intakeGain:3.0,maxCutoff:3900,drive:1.66,level:.94,roughness:3.9,shiftTime:.12,turboBase:920,turboRange:2300,spoolTime:.41,releaseLevel:.75,overrun:.16})
+  'venom-f5':Object.freeze({id:'venom-f5',label:'V8 twin-turbo · sintesis',character:'Bass besar dan pelepasan turbo pendek',cylinders:8,layout:'V8',turbochargers:2,idleRpm:980,redlineRpm:8400,gears:7,group:[0,.125,.375,.750],fireMix:.46,bankMix:.64,crankMix:.082,edge:1.06,pulseVariation:.029,bodyHz:138,bodyGain:5.2,intakeHz:1250,intakeGain:3.0,maxCutoff:3900,drive:1.66,level:.94,roughness:3.9,shiftTime:.12,turboBase:920,turboRange:2300,spoolTime:.41,releaseLevel:.75,overrun:.16}),
+  'panther-grand-touring':Object.freeze({id:'panther-grand-touring',label:'Diesel inline-4 · sintesis',character:'Denyut diesel rendah, ketukan mekanis, dan turbo lembut',cylinders:4,layout:'inline-4',fuel:'diesel',turbochargers:1,idleRpm:780,redlineRpm:4600,gears:5,group:[0,.50],fireMix:.74,bankMix:.44,crankMix:.13,edge:1.04,pulseVariation:.075,bodyHz:125,bodyGain:5.0,intakeHz:680,intakeGain:1.7,maxCutoff:2350,drive:1.57,level:.94,roughness:7.4,shiftTime:.30,turboBase:650,turboRange:1050,spoolTime:.85,releaseLevel:.08,overrun:0})
 });
 
 class ProceduralAudio {
@@ -1709,7 +1726,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
 
 
       function resetPlayerToTrack() {
-        if(onlineRender.active){if(onlineRender.phase==='racing')onlineRender.resetRequested=true;return;}
+        if(onlineRender.active){if(onlineRender.phase==='racing'&&!playerCar?.finished&&!playerCar?.dnf)onlineRender.resetRequested=true;return;}
         if (!playerCar || GameState.mode !== 'RACING') return;
         const idx = playerCar.trackIdx;
         const pt = trackPoints[idx];
@@ -1998,24 +2015,65 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
 
 
       // =========================================================================
-      // 13. KAMERA DINAMIS (CHASE CAM, HOOD CAM, FOV NITRO & MOUSE LOOK)
+      // 13. KAMERA DINAMIS & KOKPIT DENGAN KEMUDI DARI SNAPSHOT KENDARAAN
       // =========================================================================
       const smoothCamPos = new THREE.Vector3();
       const smoothLookAt = new THREE.Vector3();
+      const RACE_CAMERAS=['chase','hood','close','interior'];
+      const RACE_CAMERA_LABELS=['Chase','Hood','Close','Dashboard'];
+      let cameraVehicle=null,lastCameraMode=-1;
+
+      function restoreCameraVehicle(car){
+        if(!car)return;
+        if(car.nvCameraVisibility){for(const [node,visible] of car.nvCameraVisibility)node.visible=visible;car.nvCameraVisibility=null;}
+        if(car.cockpit)car.cockpit.root.visible=false;
+      }
+      function applyCameraVehicle(car,hidden){
+        if(!car)return;
+        if(!hidden){restoreCameraVehicle(car);return;}
+        if(!car.nvCameraVisibility)car.nvCameraVisibility=new Map();
+        // Keep headlamps and their targets active. Hide entire source assemblies
+        // including roof/glass, axles and wheel upgrades, without editing a mesh.
+        const nodes=new Set([car.bodyTiltGroup,...car.wheels,...car.root.children.filter(n=>!n.isLight&&!n.userData.nvCockpit)]);
+        for(const node of nodes){if(!car.nvCameraVisibility.has(node))car.nvCameraVisibility.set(node,node.visible);node.visible=false;}
+      }
+      function resetRaceCamera(){
+        restoreCameraVehicle(cameraVehicle);cameraVehicle=null;lastCameraMode=-1;
+        GameState.cameraMode=0;GameState.camYawOffset=0;GameState.camPitchOffset=0;GameState.mouseDrag=false;
+        if(camera){camera.near=.07;camera.updateProjectionMatrix();}
+        if(DOM.camLabel)DOM.camLabel.textContent=RACE_CAMERA_LABELS[0];
+      }
+      function selectRaceCamera(index){
+        GameState.cameraMode=index;GameState.camYawOffset=0;GameState.camPitchOffset=0;GameState.mouseDrag=false;
+        DOM.camLabel.textContent=RACE_CAMERA_LABELS[index];
+        if(camera){camera.near=index===3?.025:.07;camera.updateProjectionMatrix();}
+        return RACE_CAMERAS[index];
+      }
 
       function updateCamera(dt) {
         if (!playerCar) return;
+        const car=playerCar.visual,view=nvRenderPose(playerCar),nitro=nvDrivingNitro(playerCar);
+        const changed=cameraVehicle!==car||lastCameraMode!==GameState.cameraMode;
+        if(cameraVehicle!==car){restoreCameraVehicle(cameraVehicle);cameraVehicle=car;}
+        lastCameraMode=GameState.cameraMode;
+        const interior=GameState.cameraMode===3,firstPerson=interior||GameState.cameraMode===1;
+        car.root.visible=true;applyCameraVehicle(car,firstPerson);
+        if(interior&&!car.cockpit)car.cockpit=window.NVCockpit.create(car);
+        if(car.cockpit)car.cockpit.root.visible=interior;
+        camera.near=interior?.025:.07;
+        const frozen=onlineRender.active&&(nvPrayerPhase()||onlineRender.paused);
+        if(frozen)dt=0;
 
         // Di layar menu, putar kamera sinematik mengelilingi mobil pemain
         if (GameState.mode === 'MENU') {
           const t = performance.now() * 0.00035;
           const radius = 10.5;
           camera.position.set(
-            playerCar.pos.x + Math.sin(t) * radius,
-            playerCar.pos.y + 3.6,
-            playerCar.pos.z + Math.cos(t) * radius
+            view.pos.x + Math.sin(t) * radius,
+            view.pos.y + 3.6,
+            view.pos.z + Math.cos(t) * radius
           );
-          camera.lookAt(playerCar.pos.x, playerCar.pos.y + 1.1, playerCar.pos.z);
+          camera.lookAt(view.pos.x, view.pos.y + 1.1, view.pos.z);
           return;
         }
 
@@ -2025,42 +2083,55 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           GameState.camPitchOffset *= Math.pow(0.05, dt);
         }
 
-        const heading = playerCar.heading + GameState.camYawOffset;
+        const heading = view.heading + GameState.camYawOffset;
         const forward = new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading));
 
         // FOV melebar dinamis saat kecepatan tinggi & Nitro
-        const speedNorm = Math.min(1, Math.abs(playerCar.speed) / 85);
-        const targetFov = (GameState.cameraMode === 0 ? 64 : 72) + speedNorm * 10 + (playerCar.nitroActive ? 14 : 0);
-        camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 6);
+        const speedNorm = Math.min(1, Math.abs(view.speed) / 85);
+        const targetFov = interior?74+speedNorm*4+(nitro&&!frozen?3:0):(GameState.cameraMode === 0 ? 64 : 72) + speedNorm * 10 + (nitro&&!frozen ? 14 : 0);
+        camera.fov = changed?targetFov:camera.fov+(targetFov-camera.fov)*Math.min(1,dt*6);
         camera.updateProjectionMatrix();
 
         // Getaran halus saat Nitro aktif
-        const shake = playerCar.nitroActive ? 0.14 : 0;
+        const shake = nitro&&!frozen ? 0.14 : 0;
         const sx = (Math.random() - 0.5) * shake;
         const sy = (Math.random() - 0.5) * shake;
 
-        if (GameState.cameraMode !== 1) {
+        if(interior){
+          const cockpit=car.cockpit,speedKmh=Math.abs(view.speed)*3.6;
+          const {gear}=computeGearAndRpm(speedKmh);
+          cockpit.update({steerAngle:view.steerAngle,speedKmh,gear,lap:playerCar.lap,totalLaps:TOTAL_LAPS});
+          cockpit.root.rotation.set(view.bodyPitch*.25,0,view.bodyRoll*.25);
+          car.root.updateMatrixWorld(true);
+          // The viewpoint is fixed at the driver's eye, inside the same 3D
+          // cockpit as the wheel. Mouse look rotates the head, not the seat.
+          camera.position.copy(cockpit.eye).applyMatrix4(cockpit.root.matrixWorld);
+          const yaw=THREE.MathUtils.clamp(GameState.camYawOffset,-.85,.85),pitch=THREE.MathUtils.clamp(GameState.camPitchOffset,-.36,.36);
+          const target=cockpit.eye.clone().add(new THREE.Vector3(Math.sin(yaw)*12,-pitch*6,Math.cos(yaw)*12));
+          camera.lookAt(target.applyMatrix4(cockpit.root.matrixWorld));
+          smoothCamPos.copy(camera.position);smoothLookAt.copy(target);
+        }else if (GameState.cameraMode !== 1) {
           // CHASE CAM
-          const distBack = (GameState.cameraMode===2?6.2:8.5) + (playerCar.nitroActive ? 1.2 : 0);
+          const distBack = (GameState.cameraMode===2?6.2:8.5) + (nitro ? 1.2 : 0);
           const height = (GameState.cameraMode===2?2.1:3.2) + GameState.camPitchOffset * 2.5;
-          const desiredPos = playerCar.pos.clone()
+          const desiredPos = view.pos.clone()
             .addScaledVector(forward, -distBack)
             .add(new THREE.Vector3(0, Math.max(1.8, height), 0));
 
-          smoothCamPos.lerp(desiredPos, Math.min(1, dt * 9));
+          if(changed)smoothCamPos.copy(desiredPos);else smoothCamPos.lerp(desiredPos, Math.min(1, dt * 9));
           camera.position.copy(smoothCamPos);
           camera.position.x += sx;
           camera.position.y += sy;
 
-          const desiredLook = playerCar.pos.clone()
+          const desiredLook = view.pos.clone()
             .addScaledVector(forward, 10)
             .add(new THREE.Vector3(0, 1.35, 0));
-          smoothLookAt.lerp(desiredLook, Math.min(1, dt * 12));
+          if(changed)smoothLookAt.copy(desiredLook);else smoothLookAt.lerp(desiredLook, Math.min(1, dt * 12));
           camera.lookAt(smoothLookAt);
         } else {
           // HOOD CAM (Kamera Kap Mesin)
-          const carForward = new THREE.Vector3(Math.sin(playerCar.heading), 0, Math.cos(playerCar.heading));
-          const hoodPos = playerCar.pos.clone()
+          const carForward = new THREE.Vector3(Math.sin(view.heading), 0, Math.cos(view.heading));
+          const hoodPos = view.pos.clone()
             .addScaledVector(carForward, 1.35)
             .add(new THREE.Vector3(0, playerCar.model.id==='kaze'?1.32:1.12, 0));
 
@@ -2068,7 +2139,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           camera.position.x += sx * 0.5;
           camera.position.y += sy * 0.5;
 
-          const lookTarget = playerCar.pos.clone()
+          const lookTarget = view.pos.clone()
             .addScaledVector(carForward, 22)
             .add(new THREE.Vector3(0, 1.2, 0));
           camera.lookAt(lookTarget);
@@ -2093,7 +2164,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
       function updateHUD() {
         if (GameState.mode === 'MENU') return;
 
-        const speedKmh = Math.round(Math.abs(playerCar.speed) * 3.6);
+        const speedKmh = Math.round(Math.abs(nvRenderPose(playerCar).speed) * 3.6);
         const { gear, rpm, rpmNorm } = computeGearAndRpm(speedKmh);
 
         DOM.hudSpeed.textContent = speedKmh;
@@ -2116,8 +2187,8 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         }
 
         // Efek visual Nitro overlay
-        DOM.nitroVignette.style.opacity = playerCar.nitroActive ? '1' : '0';
-        DOM.speedlinesCanvas.style.opacity = playerCar.nitroActive ? '0.85' : '0';
+        DOM.nitroVignette.style.opacity = nvDrivingNitro(playerCar) ? '1' : '0';
+        DOM.speedlinesCanvas.style.opacity = nvDrivingNitro(playerCar) ? '0.85' : '0';
 
         drawMinimap();
       }
@@ -2253,7 +2324,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         renderer.toneMappingExposure=getEnvironmentPreset().exposure;
         DOM.hudLayer.classList.remove('hidden');DOM.hudLayer.classList.add('flex');
         GameState.mode='COUNTDOWN';GameState.currentLap=1;GameState.bestLapTime=Infinity;GameState.totalRaceTime=0;
-        GameState.cameraMode=0;GameState.camYawOffset=0;GameState.camPitchOffset=0;DOM.camLabel.textContent='Chase';
+        resetRaceCamera();
         DOM.hudBestLap.textContent='--:--.--';DOM.hudLapTime.textContent='00:00.00';
         DOM.statusBanner.classList.add('hidden');if(bannerTimeout)clearTimeout(bannerTimeout);
         for(const p of particles){scene.remove(p.mesh);p.mesh.material.dispose();}particles.length=0;
@@ -2274,7 +2345,8 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         window.addEventListener('keydown',e=>{
           if(e.target.closest?.('input,select,textarea,[contenteditable="true"]')||document.querySelector('dialog[open]'))return;
           if(GameState.mode==='TOUR'&&e.code==='Escape'){e.preventDefault();goToGarage();return;}
-          if(onlineRender.active&&nvPrayerPhase()&&(keyMap[e.code]||['Escape','KeyP','KeyR'].includes(e.code))){e.preventDefault();return;}
+          if(onlineRender.active&&nvPrayerPhase()&&(keyMap[e.code]||['Escape','KeyP','KeyR','KeyC'].includes(e.code))){e.preventDefault();return;}
+          if(onlineRender.active&&(playerCar?.finished||playerCar?.dnf)&&(keyMap[e.code]||e.code==='KeyR')){e.preventDefault();return;}
           if(['Escape','KeyP'].includes(e.code)&&!e.repeat){
             if(onlineRender.active){e.preventDefault();onlineRender.paused?nvResume():nvPause();return;}
             if(GameState.mode==='PAUSED'){e.preventDefault();resumeRace();}else if(['RACING','COUNTDOWN'].includes(GameState.mode)){e.preventDefault();pauseRace();}return;
@@ -2284,9 +2356,11 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           if(!e.repeat){if(e.code==='KeyC')toggleCamera();if(e.code==='KeyR')resetPlayerToTrack();if(e.code==='KeyM')toggleMute();}
         });
         window.addEventListener('keyup',e=>{if(keyMap[e.code])Input[keyMap[e.code]]=false;});
-        DOM.container.addEventListener('pointerdown',e=>{if(GameState.mode==='MENU')return;nvUnlockAudio();GameState.mouseDrag=true;GameState.lastMouseX=e.clientX;GameState.lastMouseY=e.clientY;});
-        window.addEventListener('pointerup',()=>GameState.mouseDrag=false);
-        window.addEventListener('pointercancel',()=>{GameState.mouseDrag=false;clearInput();});
+        DOM.container.addEventListener('pointerdown',e=>{if(GameState.mode==='MENU'||(onlineRender.active&&nvPrayerPhase()))return;nvUnlockAudio();GameState.mouseDrag=true;GameState.lastMouseX=e.clientX;GameState.lastMouseY=e.clientY;});
+        // A cancelled steering finger must not release a different gas finger.
+        // Window listeners also cover releases outside a button if capture fails.
+        window.addEventListener('pointerup',e=>{GameState.mouseDrag=false;releaseTouchPointer(e.pointerId);});
+        window.addEventListener('pointercancel',e=>{GameState.mouseDrag=false;releaseTouchPointer(e.pointerId);});
         window.addEventListener('pointermove',e=>{
           if(!GameState.mouseDrag||GameState.mode!=='RACING')return;
           const dx=e.clientX-GameState.lastMouseX,dy=e.clientY-GameState.lastMouseY;
@@ -2304,10 +2378,19 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           $('hud-layer').classList.toggle('has-touch',enabled);
         };showTouch();
         function bindTouch(id,key){
-          const el=$(id),held=new Set();
-          el.addEventListener('pointerdown',e=>{e.preventDefault();if(onlineRender.active&&nvPrayerPhase())return;held.add(e.pointerId);el.setPointerCapture(e.pointerId);if(['RACING','COUNTDOWN'].includes(GameState.mode)){nvUnlockAudio();Input[key]=true;el.classList.add('active');}});
-          const release=e=>{held.delete(e.pointerId);if(!held.size){Input[key]=false;el.classList.remove('active');}};
+          const el=$(id);
+          el.addEventListener('pointerdown',e=>{
+            e.preventDefault();
+            if((e.button!==undefined&&e.button!==0)||!['RACING','COUNTDOWN'].includes(GameState.mode))return;
+            if(onlineRender.active&&(onlineRender.paused||!onlineRender.visible||nvPrayerPhase()||playerCar?.finished||playerCar?.dnf))return;
+            if(touchPointers.has(e.pointerId))return;
+            touchPointers.set(e.pointerId,{el,key});
+            try{el.setPointerCapture?.(e.pointerId);}catch{}
+            nvUnlockAudio();Input[key]=true;el.classList.add('active');el.setAttribute('aria-pressed','true');
+          });
+          const release=e=>releaseTouchPointer(e.pointerId);
           el.addEventListener('pointerup',release);el.addEventListener('pointercancel',release);el.addEventListener('lostpointercapture',release);
+          el.addEventListener('contextmenu',e=>e.preventDefault());
         }
         bindTouch('t-left','left');bindTouch('t-right','right');bindTouch('t-gas','up');bindTouch('t-brake','down');bindTouch('t-nitro','nitro');
         window.addEventListener('resize',()=>{if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyQuality();resizeSpeedLines();showTouch();});
@@ -2317,9 +2400,9 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
 
 
       function toggleCamera() {
-        if(!['RACING','COUNTDOWN','PAUSED'].includes(GameState.mode))return;
-        GameState.cameraMode=(GameState.cameraMode+1)%3;
-        DOM.camLabel.textContent=['Chase','Hood','Close'][GameState.cameraMode];
+        if(!['RACING','COUNTDOWN','PAUSED','FINISHED'].includes(GameState.mode))return;
+        if(onlineRender.active&&nvPrayerPhase())return;
+        selectRaceCamera((GameState.cameraMode+1)%RACE_CAMERAS.length);
       }
       function toggleMute() {
         GameState.muted=!GameState.muted;settings.muted=GameState.muted;audio.setMuted(GameState.muted);
@@ -2355,10 +2438,6 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           updateParticles(dt);audio.updateEngine(0,0,false,0,false);
           if(finishDelay>=0){finishDelay-=dt;if(finishDelay<0){DOM.finishOverlay.classList.remove('hidden');$('btn-play-again').focus();}}
         }
-        // Hide body and wheels in hood view while keeping the headlamps active.
-        playerCar.visual.root.visible=true;
-        playerCar.visual.bodyTiltGroup.visible=GameState.cameraMode!==1;
-        playerCar.visual.wheels.forEach(w=>w.visible=GameState.cameraMode!==1);
         updateCamera(dt);updateHUD();updateSpeedLines(dt);
         updateCityWorld(dt,playerCar.pos);
         renderer.setScissorTest(false);renderer.setViewport(0,0,innerWidth,innerHeight);renderer.render(scene,camera);
@@ -2368,6 +2447,38 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
       // are computed here. The shell supplies predicted/authoritative snapshots.
       function nvNumber(value,fallback=0,min=-Infinity,max=Infinity){const n=Number(value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback;}
       function nvPrayerPhase(phase=onlineRender.phase){return phase==='prayer_pause'||phase==='resume_countdown';}
+      function nvResultPhase(phase=onlineRender.phase){return phase==='settling'||phase==='finished';}
+      function nvRenderPose(racer){return racer?.nvVisualPose||racer;}
+      function nvDrivingNitro(racer){return !!racer?.nitroActive&&!racer.finished&&!racer.dnf&&(!onlineRender.active||onlineRender.phase==='racing');}
+      function nvSyncResultRollout(racer){
+        if(!nvResultPhase()){
+          if(!nvPrayerPhase()){racer.nvRollout=null;racer.nvVisualPose=null;}
+          return;
+        }
+        if(racer.nvRollout)return; // settling -> finished must not restart rollout
+        const t=Number.isFinite(racer.trackT)?racer.trackT:findClosestTrackIndex(racer.pos.x,racer.pos.z,racer.trackIdx)/CURVE_SAMPLES;
+        const center=trackCurve.getPointAt(t),tangent=trackCurve.getTangentAt(t),heading=Math.atan2(tangent.x,tangent.z);
+        racer.nvRollout={elapsed:0,duration:3,startT:t,speed:Math.abs(racer.speed),direction:racer.speed<0?-1:1,offset:racer.pos.clone().sub(center),pathHeading:heading,headingError:Math.atan2(Math.sin(racer.heading-heading),Math.cos(racer.heading-heading)),drift:racer.driftAngle,steer:racer.steerAngle,roll:racer.bodyRoll,pitch:racer.bodyPitch};
+        racer.nvVisualPose={pos:racer.pos.clone(),heading:racer.heading,speed:racer.speed,steerAngle:racer.steerAngle,driftAngle:racer.driftAngle,bodyRoll:racer.bodyRoll,bodyPitch:racer.bodyPitch,nitroActive:false};
+      }
+      function nvUpdateResultRollout(racer,dt){
+        const rollout=racer.nvRollout,pose=racer.nvVisualPose;
+        if(!rollout||!pose)return racer;
+        if(!nvResultPhase()||onlineRender.paused||nvPrayerPhase())return pose;
+        rollout.elapsed=Math.min(rollout.duration,rollout.elapsed+dt);
+        const u=rollout.elapsed/rollout.duration,remaining=1-u;
+        // Analytic, monotonic visual easing. Official x/z, speed, laps, time and
+        // rankings stay on the received snapshot; this has no collision body.
+        const distance=rollout.direction*rollout.speed*rollout.duration*(u-u*u+u*u*u/3);
+        const t=((rollout.startT+distance/trackTotalLength)%1+1)%1;
+        const center=trackCurve.getPointAt(t),tangent=trackCurve.getTangentAt(t),heading=Math.atan2(tangent.x,tangent.z);
+        const turn=Math.atan2(Math.sin(heading-rollout.pathHeading),Math.cos(heading-rollout.pathHeading));
+        pose.pos.copy(rollout.offset).applyAxisAngle(new THREE.Vector3(0,1,0),turn).add(center);
+        pose.heading=heading+rollout.headingError*Math.exp(-rollout.elapsed*4);
+        pose.speed=rollout.direction*rollout.speed*remaining*remaining;pose.steerAngle=rollout.steer*remaining;
+        pose.driftAngle=rollout.drift*remaining;pose.bodyRoll=rollout.roll*remaining;pose.bodyPitch=rollout.pitch*remaining;
+        return pose;
+      }
       function nvAbortError(message){const error=new Error(message);error.name='AbortError';return error;}
       function nvCancelFrameWaiters(message){
         if(onlineRender.presentationRequest)cancelAnimationFrame(onlineRender.presentationRequest);
@@ -2410,9 +2521,9 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
       }
       function nvLoadout(value){
         const input=value||{},id=CAR_CATALOG.some(c=>c.id===input.carId)?input.carId:settings.model;
-        return {carId:id,color:/^#[\da-f]{6}$/i.test(input.color||'')?input.color:(settings.colors[id]||CAR_CATALOG.find(c=>c.id===id).color),finish:['metallic','gloss','matte'].includes(input.finish)?input.finish:settings.finish,rimId:NVWheels.validId(input.rimId||'stock'),rimColor:/^#[\da-f]{6}$/i.test(input.rimColor||'')?input.rimColor:'#c7cdd4',stripeId:window.NVStripes?.validId(input.stripeId)||'none',stripeColor:/^#[\da-f]{6}$/i.test(input.stripeColor||'')?input.stripeColor:'#ffffff',stats:input.stats||null,tuningVersion:input.tuningVersion||null,appearanceVersion:input.appearanceVersion||null};
+        return {carId:id,color:/^#[\da-f]{6}$/i.test(input.color||'')?input.color:(settings.colors[id]||CAR_CATALOG.find(c=>c.id===id).color),finish:['metallic','gloss','matte'].includes(input.finish)?input.finish:settings.finish,rimId:NVWheels.validId(input.rimId||'stock'),rimColor:/^#[\da-f]{6}$/i.test(input.rimColor||'')?input.rimColor:'#c7cdd4',stockRimPainted:input.stockRimPainted===true,stripeId:window.NVStripes?.validId(input.stripeId)||'none',stripeColor:/^#[\da-f]{6}$/i.test(input.stripeColor||'')?input.stripeColor:'#ffffff',stats:input.stats||null,tuningVersion:input.tuningVersion||null,appearanceVersion:input.appearanceVersion||null};
       }
-      function nvAppearanceKey(loadout){return [loadout.carId,loadout.color,loadout.finish,loadout.rimId,loadout.rimColor,loadout.stripeId,loadout.stripeColor].join('|');}
+      function nvAppearanceKey(loadout){return [loadout.carId,loadout.color,loadout.finish,loadout.rimId,loadout.rimColor,loadout.stockRimPainted?1:0,loadout.stripeId,loadout.stripeColor].join('|');}
       function nvSetLoadout(value){
         const loadout=nvLoadout(value);
         if(!NVImportedCars.isLoaded(loadout.carId)&&CAR_CATALOG.find(c=>c.id===loadout.carId).branded)throw new Error('Model '+loadout.carId+' belum tersedia');
@@ -2445,7 +2556,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         updateCircuitUI();return nvGetState();
       }
       function nvGetInput(){
-        if(!onlineRender.active||onlineRender.paused||!onlineRender.visible||document.hidden||onlineRender.phase!=='racing')return {throttle:0,brake:0,steer:0,nitro:false};
+        if(!onlineRender.active||onlineRender.paused||!onlineRender.visible||document.hidden||onlineRender.phase!=='racing'||playerCar?.finished||playerCar?.dnf)return {throttle:0,brake:0,steer:0,nitro:false};
         const external=onlineRender.externalInput;
         const value=external?{throttle:nvNumber(external.throttle,0,0,1),brake:nvNumber(external.brake,0,0,1),steer:nvNumber(external.steer,0,-1,1),nitro:!!external.nitro}:{throttle:Input.up?1:0,brake:Input.down?1:0,steer:(Input.left?1:0)-(Input.right?1:0),nitro:!!Input.nitro};
         if(onlineRender.resetRequested)value.reset=true;return value;
@@ -2510,7 +2621,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         if(!playerCar)nvEnsureRacer({id:onlineRender.localId,name:'ANDA',loadout:onlineRender.previewLoadout||{carId:settings.model}});
         aiCars=allRacers.filter(r=>!r.isPlayer);
         GameState.raceConfig=Object.freeze({circuit:settings.circuit,laps:TOTAL_LAPS,bots:0,model:playerCar.model.id,difficulty:'normal',...options.config});
-        GameState.mode='COUNTDOWN';GameState.currentLap=1;GameState.bestLapTime=Infinity;GameState.totalRaceTime=0;GameState.raceStartTime=0;GameState.lapStartTime=0;GameState.cameraMode=0;GameState.camYawOffset=0;GameState.camPitchOffset=0;
+        GameState.mode='COUNTDOWN';GameState.currentLap=1;GameState.bestLapTime=Infinity;GameState.totalRaceTime=0;GameState.raceStartTime=0;GameState.lapStartTime=0;resetRaceCamera();
         gameClock=0;simulationAccumulator=0;clearInput();stopEnginePreview();audio.setVehicle(playerCar.model.id);audio.init();audio.setMuted(settings.muted);GameState.muted=settings.muted;
         document.body.classList.remove('nv-preview');DOM.startOverlay.classList.add('hidden');DOM.finishOverlay.classList.add('hidden');$('pause-overlay').classList.add('hidden');$('tour-overlay').classList.add('hidden');DOM.hudLayer.classList.remove('hidden');DOM.hudLayer.classList.add('flex');
         $('hud-lap-total').textContent=TOTAL_LAPS;$('hud-pos-total').textContent=allRacers.length;$('hud-track-name').textContent=currentCircuit().short;$('hud-car-name').textContent=playerCar.model.name;DOM.camLabel.textContent='Chase';DOM.hudBestLap.textContent='--:--.--';DOM.hudLapTime.textContent='00:00.00';DOM.countdown.textContent='MENYIAPKAN GRID';DOM.countdown.classList.remove('hidden');DOM.statusBanner.classList.add('hidden');
@@ -2523,21 +2634,22 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         if(!onlineRender.active||!snapshot||!Array.isArray(snapshot.racers))return false;
         if(snapshot.raceId&&onlineRender.raceId&&snapshot.raceId!==onlineRender.raceId)return false;
         if(Number.isFinite(snapshot.tick)&&Number.isFinite(onlineRender.snapshot?.tick)&&snapshot.tick<onlineRender.snapshot.tick)return false;
-        const ids=new Set();
+        const ids=new Set(),wasPlayerFinished=!!(playerCar?.finished||playerCar?.dnf);
         for(const raw of snapshot.racers){
           if(!raw||!Number.isFinite(Number(raw.x))||!Number.isFinite(Number(raw.z)))continue;
           const racer=nvEnsureRacer(raw);if(!racer)continue;ids.add(racer.id);
           racer.previousSpeed=racer.speed;racer.pos.set(nvNumber(raw.x,0,-100000,100000),nvNumber(raw.y,0,-20,1000),nvNumber(raw.z,0,-100000,100000));
           racer.heading=nvNumber(raw.heading);racer.speed=nvNumber(raw.speed,0,-250,250);racer.steerAngle=nvNumber(raw.steerAngle,0,-1,1);racer.driftAngle=nvNumber(raw.driftAngle,0,-2,2);racer.bodyRoll=nvNumber(raw.bodyRoll,0,-.5,.5);racer.bodyPitch=nvNumber(raw.bodyPitch,0,-.5,.5);racer.nitro=nvNumber(raw.nitro,0,0,100);racer.nitroActive=!!raw.nitroActive;
-          racer.lap=nvNumber(raw.lap,1,1,21);racer.completedLaps=nvNumber(raw.completedLaps);racer.progress=nvNumber(raw.progress);racer.finished=!!raw.finished;racer.finishTime=nvNumber(raw.finishTimeMs);racer.serverPosition=nvNumber(raw.position,0,0,64);racer.connected=raw.connected!==false;racer.ghost=!!raw.ghost;racer.trackIdx=Math.round(nvNumber(raw.trackIdx,0,0,CURVE_SAMPLES-1));racer.lapTimeMs=nvNumber(raw.lapTimeMs,Math.max(0,nvNumber(snapshot.elapsedMs)-nvNumber(raw.lapStartedMs)));racer.bestLapMs=raw.bestLapMs==null?null:nvNumber(raw.bestLapMs);racer.lastLapMs=raw.lastLapMs==null?null:nvNumber(raw.lastLapMs);racer.lastProcessedSeq=nvNumber(raw.lastProcessedSeq);
+          racer.lap=nvNumber(raw.lap,1,1,21);racer.completedLaps=nvNumber(raw.completedLaps);racer.progress=nvNumber(raw.progress);racer.finished=!!raw.finished;racer.dnf=!!raw.dnf;racer.finishTime=nvNumber(raw.finishTimeMs);racer.serverPosition=nvNumber(raw.position,0,0,64);racer.connected=raw.connected!==false;racer.ghost=!!raw.ghost;racer.trackIdx=Math.round(nvNumber(raw.trackIdx,0,0,CURVE_SAMPLES-1));racer.trackT=typeof raw.trackT==='number'&&Number.isFinite(raw.trackT)?((raw.trackT%1)+1)%1:null;racer.lapTimeMs=nvNumber(raw.lapTimeMs,Math.max(0,nvNumber(snapshot.elapsedMs)-nvNumber(raw.lapStartedMs)));racer.bestLapMs=raw.bestLapMs==null?null:nvNumber(raw.bestLapMs);racer.lastLapMs=raw.lastLapMs==null?null:nvNumber(raw.lastLapMs);racer.lastProcessedSeq=nvNumber(raw.lastProcessedSeq);
           racer.visual.root.userData.ghost=racer.ghost;racer.visual.root.position.copy(racer.pos);racer.visual.root.rotation.y=racer.heading+racer.driftAngle*.55;
         }
         if(ids.size){for(const racer of allRacers)if(!ids.has(racer.id))disposeVehicle(racer.visual);allRacers=allRacers.filter(r=>ids.has(r.id));}
         playerCar=allRacers.find(r=>r.id===onlineRender.localId)||allRacers[0]||null;aiCars=allRacers.filter(r=>r!==playerCar);
         if(!playerCar)return false;
         const previousPhase=onlineRender.phase;onlineRender.phase=String(snapshot.phase||onlineRender.phase).toLowerCase();onlineRender.snapshot=snapshot;onlineRender.receivedAt=performance.now();
-        if(previousPhase!==onlineRender.phase&&nvPrayerPhase()){
-          clearInput();onlineRender.externalInput=null;onlineRender.resetRequested=false;nvEmitInput(0,true);audio.updateEngine(0,0,false,0,false);
+        allRacers.forEach(nvSyncResultRollout);
+        if((previousPhase!==onlineRender.phase&&(nvPrayerPhase()||nvResultPhase()))||(!wasPlayerFinished&&(playerCar.finished||playerCar.dnf))){
+          clearInput();onlineRender.externalInput=null;onlineRender.resetRequested=false;nvEmitInput(0,true);if(nvPrayerPhase())audio.updateEngine(0,0,false,0,false);
         }
         gameClock=nvNumber(snapshot.elapsedMs);GameState.totalRaceTime=gameClock;GameState.lapStartTime=gameClock-playerCar.lapTimeMs;GameState.bestLapTime=playerCar.bestLapMs==null?Infinity:playerCar.bestLapMs;GameState.currentLap=playerCar.lap;
         GameState.mode=onlineRender.phase==='racing'?'RACING':['settling','finished','aborted'].includes(onlineRender.phase)?'FINISHED':'COUNTDOWN';
@@ -2547,25 +2659,27 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
       }
       function nvRenderOnline(dt,now){
         if(!playerCar)return;
-        nvEmitInput(dt);const input=nvGetInput(),canDrive=onlineRender.phase==='racing'&&!onlineRender.paused&&!playerCar.finished;
+        nvEmitInput(dt);const input=nvGetInput(),canDrive=onlineRender.phase==='racing'&&!onlineRender.paused&&!playerCar.finished&&!playerCar.dnf;
         for(const racer of allRacers){
-          const car=racer.visual;car.root.position.copy(racer.pos);car.root.rotation.y=racer.heading+racer.driftAngle*.55;car.bodyTiltGroup.rotation.z=racer.bodyRoll;car.bodyTiltGroup.rotation.x=racer.bodyPitch;
-          car.wheels.forEach(w=>w.rotation.x+=(onlineRender.phase==='racing'?racer.speed:0)*dt/(w.userData.nvRollingRadius||car.wheelRadius||.33));car.frontPivots.forEach(p=>p.rotation.y=racer.steerAngle);
+          const car=racer.visual,pose=nvUpdateResultRollout(racer,dt);car.root.position.copy(pose.pos);car.root.rotation.y=pose.heading+pose.driftAngle*.55;car.bodyTiltGroup.rotation.z=pose.bodyRoll;car.bodyTiltGroup.rotation.x=pose.bodyPitch;
+          const moving=!nvPrayerPhase()&&!onlineRender.paused&&(onlineRender.phase==='racing'||nvResultPhase());
+          car.wheels.forEach(w=>w.rotation.x+=(moving?pose.speed:0)*dt/(w.userData.nvRollingRadius||car.wheelRadius||.33));car.frontPivots.forEach(p=>p.rotation.y=pose.steerAngle);
           car.brakeMat.color.setHex((racer===playerCar?input.brake>.1:racer.previousSpeed-racer.speed>.35)?0xff3b48:0xa51d2e);
-          for(const flame of car.flames){flame.visible=onlineRender.phase==='racing'&&racer.nitroActive;if(flame.visible)flame.scale.set(1,1,.85+Math.random()*.65);}
+          for(const flame of car.flames){flame.visible=nvDrivingNitro(racer);if(flame.visible)flame.scale.set(1,1,.85+Math.random()*.65);}
         }
-        const speedKmh=Math.abs(playerCar.speed)*3.6,{rpmNorm,rpm,gear}=computeGearAndRpm(speedKmh);
-        audio.updateEngine(rpmNorm,Math.min(1,speedKmh/300),playerCar.nitroActive,Math.min(1,Math.abs(playerCar.driftAngle)*3),canDrive,{throttle:input.throttle>.1,brake:input.brake>.1,gear,rpm,speedMps:playerCar.speed,dt});
+        const playerPose=nvRenderPose(playerCar),speedKmh=Math.abs(playerPose.speed)*3.6,{rpmNorm,rpm,gear}=computeGearAndRpm(speedKmh);
+        const coasting=(playerCar.finished||playerCar.dnf||nvResultPhase())&&Math.abs(playerPose.speed)>.2;
+        const soundActive=!nvPrayerPhase()&&!onlineRender.paused&&(canDrive||coasting);
+        audio.updateEngine(rpmNorm,Math.min(1,speedKmh/300),nvDrivingNitro(playerCar),canDrive?Math.min(1,Math.abs(playerPose.driftAngle)*3):0,soundActive,{throttle:canDrive&&input.throttle>.1,brake:canDrive&&input.brake>.1,gear,rpm,speedMps:playerPose.speed,dt});
         if(GameState.mode==='COUNTDOWN'){
           const snapshot=onlineRender.snapshot,start=Number(onlineRender.phase==='resume_countdown'?snapshot?.prayerPause?.resumeAt:snapshot?.startAt),remaining=Number.isFinite(start)&&start>0?Math.ceil((start-nvNumber(snapshot.serverTime)-(now-onlineRender.receivedAt))/1000):null;
           const numeric=['countdown','resume_countdown'].includes(onlineRender.phase)&&remaining!=null;
           DOM.countdown.textContent=numeric?String(Math.max(1,remaining)):onlineRender.phase==='prayer_pause'?'JEDA SALAT':'MENUNGGU PEMAIN';DOM.countdown.classList.remove('hidden');
         }else DOM.countdown.classList.add('hidden');
-        playerCar.visual.root.visible=true;playerCar.visual.bodyTiltGroup.visible=GameState.cameraMode!==1;playerCar.visual.wheels.forEach(w=>w.visible=GameState.cameraMode!==1);
         const worldDt=nvPrayerPhase()?0:dt;
         updateParticles(worldDt);updateCamera(dt);updateHUD();
         if(nvPrayerPhase())speedCtx?.clearRect(0,0,DOM.speedlinesCanvas.width,DOM.speedlinesCanvas.height);else updateSpeedLines(dt);
-        updateCityWorld(worldDt,playerCar.pos);
+        updateCityWorld(worldDt,playerPose.pos);
         // HUD timing and rank always use the supplied simulation snapshot.
         DOM.hudLapTime.textContent=formatTime(playerCar.lapTimeMs||0);if(playerCar.serverPosition)DOM.hudPos.textContent=playerCar.serverPosition;
         renderer.setScissorTest(false);renderer.setViewport(0,0,innerWidth,innerHeight);renderer.render(scene,camera);nvRecordRaceFrame(now);
@@ -2583,8 +2697,11 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         return onlineRender.visible;
       }
       function nvSetCamera(value){
+        if(typeof value==='string')value=value.toLowerCase();
         if(!onlineRender.active&&(value==null||['front','side','rear','auto','cycle'].includes(value))){const views=['front','side','rear'],view=value&&value!=='cycle'?value:views[(views.indexOf(onlineRender.previewView||'front')+1)%3];return nvSetView(view);}
-        const names=['chase','hood','close'];GameState.cameraMode=value==='cycle'||value==null?(GameState.cameraMode+1)%3:typeof value==='string'?Math.max(0,names.indexOf(value.toLowerCase())):Math.round(nvNumber(value,0,0,2));DOM.camLabel.textContent=['Chase','Hood','Close'][GameState.cameraMode];return names[GameState.cameraMode];
+        if(onlineRender.active&&nvPrayerPhase())return RACE_CAMERAS[GameState.cameraMode];
+        if(value==='dashboard')value='interior';
+        return selectRaceCamera(value==='cycle'||value==null?(GameState.cameraMode+1)%RACE_CAMERAS.length:typeof value==='string'?Math.max(0,RACE_CAMERAS.indexOf(value.toLowerCase())):Math.round(nvNumber(value,0,0,RACE_CAMERAS.length-1)));
       }
       function nvSetView(value){
         if(value!=='auto')onlineRender.previewView=value;
@@ -2592,13 +2709,13 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         garageNeedsRender=true;return value;
       }
       function nvShowCredits(){const dialog=$('credits-dialog');if(dialog&&!dialog.open)dialog.showModal();return true;}
-      function nvGetState(){return {ready:gameReady,mode:onlineRender.active?'race':GameState.mode==='TOUR'?'tour':'preview',online:onlineRender.enabled,active:onlineRender.active,preparing:onlineRender.preparing,visible:onlineRender.visible,paused:onlineRender.paused,raceId:onlineRender.raceId,startToken:onlineRender.startToken,arenaFrameReady:!!onlineRender.presentedFrame,localRacerId:onlineRender.localId,phase:onlineRender.phase,circuit:settings.circuit,loadout:onlineRender.previewLoadout||nvLoadout({carId:settings.model}),quality:settings.quality,timeOfDay:settings.timeOfDay,muted:settings.muted};}
+      function nvGetState(){return {ready:gameReady,mode:onlineRender.active?'race':GameState.mode==='TOUR'?'tour':'preview',online:onlineRender.enabled,active:onlineRender.active,preparing:onlineRender.preparing,visible:onlineRender.visible,paused:onlineRender.paused,raceId:onlineRender.raceId,startToken:onlineRender.startToken,arenaFrameReady:!!onlineRender.presentedFrame,localRacerId:onlineRender.localId,phase:onlineRender.phase,camera:RACE_CAMERAS[GameState.cameraMode],circuit:settings.circuit,loadout:onlineRender.previewLoadout||nvLoadout({carId:settings.model}),quality:settings.quality,timeOfDay:settings.timeOfDay,muted:settings.muted};}
       NVGame._registerRuntime({
         configure:nvConfigure,setLoadout:nvSetLoadout,setLocalPlayer:nvSetLocalPlayer,startRace:nvStartRace,waitForRaceFrame:nvWaitForRaceFrame,stopRace:nvStopRace,applySnapshot:nvApplySnapshot,getInput:nvGetInput,getState:nvGetState,
-        setInput:input=>{if(onlineRender.active&&onlineRender.phase!=='racing')return;onlineRender.externalInput=input;if(input.reset)onlineRender.resetRequested=true;},setVisible:nvSetVisible,setCamera:nvSetCamera,setView:nvSetView,showCredits:nvShowCredits,pause:nvPause,resume:nvResume,
+        setInput:input=>{if(onlineRender.active&&(onlineRender.phase!=='racing'||playerCar?.finished||playerCar?.dnf))return;onlineRender.externalInput=input;if(input.reset)onlineRender.resetRequested=true;},setVisible:nvSetVisible,setCamera:nvSetCamera,setView:nvSetView,showCredits:nvShowCredits,pause:nvPause,resume:nvResume,
         previewEngine:previewSelectedEngine,stopEnginePreview,
         unlockAudio:nvUnlockAudio,
-        playEvents:events=>{for(const event of events){if(!event||!onlineRender.active||onlineRender.phase!=='racing')continue;if(event.type==='collision'||event.type==='rail'){const car=allRacers.find(r=>r.id===event.racerId);if(car===playerCar){audio.playCollision(nvNumber(event.intensity,.35,0,1));const p=car.pos.clone();p.y=.5;spawnParticles(p,0xd5c8a5,5,7,.25);}}}},
+        playEvents:events=>{for(const event of events){if(!event||!onlineRender.active||onlineRender.phase!=='racing')continue;if(event.type==='collision'||event.type==='rail'){const car=allRacers.find(r=>r.id===event.racerId);if(car===playerCar&&!car.finished&&!car.dnf){audio.playCollision(nvNumber(event.intensity,.35,0,1));const p=car.pos.clone();p.y=.5;spawnParticles(p,0xd5c8a5,5,7,.25);}}}},
         showCircuit:id=>{nvConfigure({circuit:id,previewOnly:true});enterCityTour();return nvGetState();},
         getCatalog:()=>({cars:CAR_CATALOG.map(c=>({id:c.id,name:c.name,color:c.color,topSpeed:c.topSpeed,zeroTo100:c.zeroTo100,handling:c.handling,loaded:NVImportedCars.isLoaded(c.id),representation:c.representation||'imported-model'})),circuits:CIRCUITS.map(c=>({id:c.id,name:c.name,description:c.description})),wheels:NVWheels.catalog,stripes:window.NVStripes?.catalog||[]}),
         ensureModels:nvEnsureModels,

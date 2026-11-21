@@ -1,5 +1,5 @@
 import { neutralInput, parseInput, resolvePhysics } from '../../shared/config.js';
-import { advanceLapProgress, advanceVehicle, botInput, placeStartingGrid, resolveCarCollisions, sortRacers } from '../../shared/simulation.js';
+import { advanceFinishedVehicle, advanceLapProgress, advanceVehicle, botInput, placeStartingGrid, resolveCarCollisions, sortRacers } from '../../shared/simulation.js';
 import { getTrack, type Track } from '../../shared/track.js';
 import type { GameplayEvent, PhysicsConfig, RacerSnapshot, RacerState, RoomConfig, VehicleInput } from '../../shared/types.js';
 
@@ -23,7 +23,7 @@ export class RaceRuntime {
   }
   acceptInput(id:string,value:unknown):boolean {
     const racer=this.racers.find(r=>r.id===id),input=parseInput(value);
-    if(!racer||racer.isBot||!racer.connected||racer.dnf||racer.finished||!input||input.seq<=racer.input.seq||input.seq<=racer.lastProcessedSeq)return false;
+    if(this.ended||!racer||racer.isBot||!racer.connected||racer.dnf||racer.finished||!input||input.seq<=racer.input.seq||input.seq<=racer.lastProcessedSeq)return false;
     racer.input=input;racer.inputReceivedMs=this.elapsedMs;
     const queue=this.commands.get(id)??[];queue.push(input);
     if(queue.length>12)queue.splice(0,queue.length-12);
@@ -59,7 +59,8 @@ export class RaceRuntime {
     const dt=1/this.physics.tickRate;this.tick++;this.elapsedMs=this.tick*1000/this.physics.tickRate;
     const events:GameplayEvent[]=[];
     for(const racer of this.racers){
-      if(racer.finished||racer.dnf)continue;
+      if(racer.finished){advanceFinishedVehicle(racer,this.track,dt,this.physics);continue;}
+      if(racer.dnf)continue;
       let input:VehicleInput;
       if(racer.isBot)input=botInput(racer,this.racers,this.track,dt,this.config.difficulty);
       else if(!racer.connected||this.elapsedMs-racer.inputReceivedMs>this.inputTimeoutMs){
@@ -84,15 +85,20 @@ export class RaceRuntime {
       if(racer.finished||racer.dnf)continue;
       const progress=advanceLapProgress(racer,racer.trackT,this.config.laps,this.elapsedMs,dt*1000);
       progress.forEach(event=>events.push({...event,racerId:racer.id}));
-      if(racer.finished){racer.ghost=true;if(!racer.isBot&&this.firstHumanFinishMs===null)this.firstHumanFinishMs=this.elapsedMs;}
+      if(racer.finished){
+        racer.ghost=true;racer.lastProcessedSeq=Math.max(racer.lastProcessedSeq,racer.input.seq);
+        racer.input=neutralInput(racer.lastProcessedSeq);this.commands.delete(racer.id);this.applied.delete(racer.id);
+        if(!racer.isBot&&this.firstHumanFinishMs===null)this.firstHumanFinishMs=this.elapsedMs;
+      }
     }
     const deadline=this.maximumDurationMs??Math.max(180000,this.config.laps*this.track.length/12*1000+60000);
     const grace=this.firstHumanFinishMs!==null&&this.elapsedMs-this.firstHumanFinishMs>Math.max(60000,this.track.length/15*1000);
     if(this.elapsedMs>=deadline||grace)for(const racer of this.racers)if(!racer.finished)this.markDnf(racer.id);
     const humans=this.racers.filter(r=>!r.isBot);
-    // Other participants keep racing after any individual finishes. If every
-    // human abandoned, no spectator needs us to run an otherwise empty bot race.
-    if((humans.length>0&&humans.every(r=>r.dnf))||this.racers.every(r=>r.finished||r.dnf)){
+    // Every still-participating human gets their finish. A dropped connection
+    // is still a participant until RaceRoom's existing reconnect grace marks
+    // it DNF; unfinished bots never delay the final human's result.
+    if(humans.every(r=>r.finished||r.dnf)){
       for(const racer of this.racers)if(!racer.finished)this.markDnf(racer.id);
       this.ended=true;
     }

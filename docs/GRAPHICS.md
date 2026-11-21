@@ -2,17 +2,17 @@
 
 ## Yang dipertahankan
 
-UVelocity mempertahankan delapan model kendaraan dan tiga lingkungan dari versi World Tour, lalu menambahkan tujuh rekonstruksi kendaraan serta striping yang mengikuti permukaan bodi. Berkas GLB dipindahkan dari data base64 di dalam HTML menjadi aset statis terpisah di `public/game/assets/cars/`. Geometri dan tekstur yang tersimpan dalam kedelapan GLB **tidak diubah**. Total delapan berkas tersebut sekitar 30,7 MB sebelum kompresi HTTP. Tujuh model tambahan berukuran sekitar 22,1 MB; seluruh lima belas GLB berjumlah sekitar 52,8 MB.
+UVelocity mempertahankan delapan model kendaraan dan tiga lingkungan dari versi World Tour. Versi 1.1 menambahkan tujuh rekonstruksi kendaraan; versi **1.3.0** memperbarui dua di antaranya sesuai foto terbaru (Koenigsegg Regera dan Hennessey Venom F5) serta menambahkan **Isuzu Panther Grand Touring**. Total katalog kini **16 model 3D**, dengan jumlah berkas GLB sekitar **60,0 MB** sebelum kompresi HTTP. Semua GLB disajikan sebagai aset statis terpisah di `public/game/assets/cars/`.
 
-Delapan model sumber yang dipertahankan adalah Veloce R, Apex GT, Cinder V8, Kaze Rally, Lamborghini Aventador, Nissan Skyline R34, Subaru BRZ, dan Bugatti Veyron Polisi 77. Modul arsitektur kota, bioma pantai dan gunung es, aksesori Polisi 77, serta model cadangan juga dipertahankan byte demi byte. Acuan SHA-256 untuk aset tersebut tersedia di `tests/renderer/asset-hashes.json`.
+**Tiga belas GLB dari paket 1.2.0 dipertahankan byte demi byte:** delapan model World Tour (Veloce R, Apex GT, Cinder V8, Kaze Rally, Aventador, Skyline R34, BRZ, Veyron Polisi 77), empat model BMW/Mercedes, dan Batmobile. Modul arsitektur kota, bioma pantai dan gunung es, aksesori Polisi 77, serta model cadangan juga tetap identik. Dua hypercar menerima geometri yang ditinjau ulang; Panther memakai aset baru. `tests/renderer/asset-hashes.json` membedakan aset yang dipertahankan dengan perubahan yang disengaja, sehingga revisi ini tidak menjadi alasan mengganti model lainnya.
 
-Three.js r128 dan GLTFLoader disajikan dari `public/game/vendor/`. Tidak ada CDN yang diperlukan saat menjalankan renderer. Aset model dimuat melalui `NV_MODEL_URLS`, sehingga browser dapat menyimpan GLB dalam cache tanpa mem-parsing ulang puluhan megabita base64 dari halaman HTML. Sintesis mesin dan delapan profil suara lama tetap menggunakan kode sebelumnya. Tujuh profil tambahan memakai parameter sintesis sendiri; Batmobile memakai karakter turbin fiksi. Suara tambahan bukan rekaman mesin asli, dan parameter RPM, perpindahan gigi, serta resonansinya merupakan penyetelan permainan.
+Three.js r128 dan GLTFLoader disajikan dari `public/game/vendor/`. Tidak ada CDN yang diperlukan saat menjalankan renderer. Aset model dimuat melalui `NV_MODEL_URLS`, sehingga browser dapat menyimpan GLB dalam cache tanpa mem-parsing ulang puluhan megabita base64 dari halaman HTML. Sintesis mesin dan delapan profil suara lama tetap menggunakan kode sebelumnya. Delapan profil tambahan memakai parameter sintesis sendiri; Batmobile memakai karakter turbin fiksi, dan Panther memakai karakter diesel empat silinder dengan rentang RPM lebih rendah serta turbo lembut. Suara tambahan bukan rekaman mesin asli, dan parameter RPM, perpindahan gigi, serta resonansinya merupakan penyetelan permainan.
 
 Kredit pencipta model dan lisensinya tetap tersedia dalam halaman kredit aplikasi serta `public/game/assets/CREDITS.txt`. Lisensi Three.js tersedia di direktori vendor.
 
-## Tujuh rekonstruksi kendaraan tambahan
+## Delapan rekonstruksi kendaraan tambahan
 
-Tujuh model berikut dibuat dari geometri asli untuk UVelocity dengan mengacu pada gambar pengguna. Model ini **bukan mesh resmi pabrikan, hasil pemindaian, atau aset yang diambil dari permainan lain**. Katalog menandainya sebagai `reference-recreation`; GLB dan metadata pembuatannya juga menyimpan asal-usul tersebut.
+Delapan model berikut dibuat dari geometri asli untuk UVelocity dengan mengacu pada gambar pengguna. Model ini **bukan mesh resmi pabrikan, hasil pemindaian, atau aset yang diambil dari permainan lain**. Katalog menandainya sebagai `reference-recreation`; GLB dan metadata pembuatannya juga menyimpan asal-usul tersebut.
 
 | ID | Kendaraan referensi | Pembeda bentuk yang dituju |
 | --- | --- | --- |
@@ -21,8 +21,11 @@ Tujuh model berikut dibuat dari geometri asli untuk UVelocity dengan mengacu pad
 | `amg-gt4` | Mercedes-AMG GT4 | Kap panjang, grille vertikal, atap fastback rendah |
 | `sls-amg-gt3` | Mercedes-Benz SLS AMG GT3 | Kap panjang, lampu tegak, grille horizontal, garis atap gullwing |
 | `batmobile-1989` | Batmobile 1989 | Intake turbin bundar, bodi memanjang, kanopi dan sirip belakang |
-| `jesko-absolut` | Koenigsegg Jesko Absolut | Kanopi rendah, ekor panjang, dua sirip penstabil tanpa sayap besar |
-| `venom-f5` | Hennessey Venom F5 | Fender tinggi, lampu tipis, intake samping, sayap sesuai referensi pengguna |
+| `jesko-absolut` | Koenigsegg Regera | Kanopi tertutup melengkung, lampu tetesan, intake samping panjang, sayap belakang melintang |
+| `venom-f5` | Hennessey Venom F5 | Fender depan tinggi, lampu memanjang, bukaan depan besar, kokpit terbuka, scoop dan sayap sesuai foto ungu |
+| `panther-grand-touring` | Isuzu Panther Grand Touring | Kabin MPV tinggi dengan tiga bidang kaca samping, gril krom, lampu reflektor, roof rail, cladding dan pijakan samping |
+
+**Kompatibilitas Koenigsegg:** foto terbaru mengarah ke Regera. Nama tampilannya diselaraskan, tetapi ID historis `jesko-absolut` tetap digunakan supaya inventory, foto admin, tampilan berbayar, dan riwayat balapan lama tetap terhubung. Nama operator yang sudah dikustomisasi tidak ditimpa. Parameter performa lama juga tidak direset hanya karena bentuk dan label diperbarui.
 
 Geometri dibangun menggunakan helper pada `scripts/modeling-kit.cjs` dan script pembentuk kendaraan. Permukaan bodi, kaca, karbon, lampu, roda, dan kaliper menggunakan material terpisah. Bukaan roda dibentuk pada panel bodi; ban bukan sekadar ditempel pada sisi kotak tertutup. Semua model memakai satuan meter, sumbu +Y ke atas, dan +Z ke depan.
 
@@ -72,7 +75,7 @@ Mode iframe memakai posisi vertikal kamera yang disesuaikan dengan keterangan ke
 
 ## Paket roda dan penyimpanan roda asli
 
-`public/game/wheel-customization.js` menyediakan empat pilihan untuk kelima belas kendaraan:
+`public/game/wheel-customization.js` menyediakan empat pilihan untuk keenam belas kendaraan:
 
 | ID | Pilihan | Geometri |
 | --- | --- | --- |
@@ -87,9 +90,42 @@ Ukuran paket diukur dari ban setiap roda kendaraan, termasuk perbedaan roda depa
 
 Roda asli tidak dihapus atau ditulis ulang. Mesh roda yang diganti disembunyikan, sementara pivot kemudi dan putaran tetap digunakan. Cakram dan kaliper asli yang terpisah dipertahankan. Memilih `stock` memulihkan visibilitas semula. Veyron memiliki ban dan velg bawaan dalam satu primitive; model ini menerima penggantian satu set roda utuh, tanpa memotong ulang bodi atau tekstur aslinya.
 
-Warna roda bawaan sengaja tidak diubah oleh pilihan warna paket. Hal ini juga mencegah warna ban Veyron berubah ketika pengguna menginginkan warna velg saja. Pilih salah satu dari tiga paket kustom untuk menggunakan `rimColor`.
+### Cat pelek bawaan dan pilihan RGB
+
+`rimColor` menyimpan warna RGB pelek pada setiap kendaraan. Pada tiga paket kustom, warna tetap diterapkan ke material palang paket. Pada pelek bawaan, penerapannya ditentukan oleh `stockRimPainted`: nilai yang hilang atau `false` mempertahankan material pabrik, sedangkan `true` menerapkan warna yang dipilih. Dengan demikian, nilai `rimColor` bawaan pada akun lama tidak langsung mengecat pelek aslinya. Memilih warna yang sama persis dengan RGB bawaan tetap dapat menjadi pilihan cat eksplisit. Aplikasi/server menentukan penawaran, biaya, saldo, serta penerapan; renderer hanya menampilkan preview atau tampilan resmi yang diterima.
+
+Empat belas model memiliki slot material sumber `rim_paint*`. Hanya slot tersebut yang memperoleh salinan material milik kendaraan itu sendiri. Ban, sidewall, cakram, kaliper, baut, dan bagian bibir pelek yang memakai material tersendiri tetap memakai material semula. Warna RGB dikonversi sekali dari sRGB ke ruang linear renderer; tekstur detail dan normal yang sudah ada tetap dipakai tanpa diubah. Warna piksel akhir mengikuti pencahayaan, refleksi, dan tone mapping, sehingga bukan warna datar tanpa bayangan.
+
+Veyron memakai satu primitive bertekstur yang menggabungkan pelek, ban, dan beberapa detail rem. Modul memeriksa atlas sumber dan memisahkan **segitiga yang seluruh koordinat UV-nya berada pada pulau cat pelek**. Pemisahan ini memakai salinan geometri/index pada runtime: vertex, normal, UV, posisi ban, dan mesh GLB sumber tetap utuh. Kelompok pertama mempertahankan material/tekstur asli untuk ban, rem, logo, dan baut; kelompok kedua memakai salinan material cat. Pada kelompok cat saja, albedo oranye yang tertanam di atlas dilepas supaya pilihan RGB baru tidak dikalikan dengan warna lama; peta normal tetap dipakai. Segitiga yang melintasi batas mask secara konservatif tetap memakai material asli; pada keempat roda sumber saat ini tidak ada segitiga yang melintasi batas tersebut.
+
+| Roda Veyron | Segitiga pelek yang dicat | Segitiga yang mempertahankan material sumber |
+| --- | ---: | ---: |
+| Depan kiri | 4.336 | 2.550 |
+| Depan kanan | 4.409 | 2.578 |
+| Belakang kiri | 4.743 | 2.573 |
+| Belakang kanan | 4.805 | 2.539 |
+
+Uji menyimpan rentang segitiga sumber yang telah diperiksa secara terpisah dari fungsi pemilahan runtime, lalu membandingkan setiap index hasil pemisahan. Dua mobil dengan model sama memperoleh material cat tersendiri; mengecat atau menghapus satu tidak mengubah warna, tekstur, atau geometri mobil lainnya. Memilih paket kustom memulihkan material pelek sumber yang sedang disembunyikan, kembali ke pelek bawaan menerapkan flag resmi, dan pemulihan pabrik (`false`) mengembalikan objek material/geometri semula. Salinan material dan pemisahan geometri dibuang ketika kendaraan dilepas. Berkas GLB maupun tekstur sumber tidak ditulis ulang.
+
+Flag ini termasuk dalam identitas tampilan renderer dan loadout balapan. Perubahan flag saja—meskipun RGB tetap sama—memperbarui mobil lokal atau lawan. Snapshot identik memakai ulang model, sementara pemulihan tampilan tetap kompatibel dengan kamera dashboard dan pergantian kendaraan. Biaya mengecat, mengganti warna striping, atau memulihkan cat pabrik berasal dari katalog/penawaran server; renderer tidak mengurangi saldo dan tidak menyimpan hak pembelian.
 
 Geometri paket dibagi melalui cache dengan penghitungan referensi. Material warna dimiliki tiap kendaraan. Paket memiliki tiga tingkat detail dengan perpindahan sekitar 32 dan 86 meter. Cache model sumber tetap terpisah dari kepemilikan geometri baru, sehingga mengganti atau menghapus satu kendaraan tidak merusak kendaraan lain.
+
+## Kamera dashboard / interior
+
+Balapan menyediakan empat sudut: **Chase, Hood, Close, dan Dashboard**. Tombol **C** atau tombol kamera pada layar mengurutkan keempatnya. Aplikasi dapat langsung memilih dashboard melalui `setCamera('interior')`; `setCamera('dashboard')` diterima sebagai alias. Kamera bengkel depan/samping/belakang tetap menggunakan API sebelumnya.
+
+`public/game/cockpit.js` membuat kokpit 3D milik UVelocity untuk semua enam belas kendaraan. Ukuran dashboard, posisi kursi, dan tinggi mata pengemudi mengikuti dimensi model. Panther memiliki posisi pengemudi di kanan dan titik pandang lebih tinggi, dengan dashboard yang disesuaikan dengan lebar kabin MPV. Kendaraan GT/prototype mendapat detail rangka pengaman dan prototype memakai setir yang lebih pipih. Kokpit berisi fascia melengkung, trim, bukaan kaca depan dengan pilar, ventilasi, konsol, setir dengan palang dan paddle, serta layar kecepatan, gigi, dan lap. **Interior ini merupakan geometri prosedural buatan permainan, bukan hasil pemindaian atau replika interior resmi pabrikan.**
+
+Kamera ditempatkan pada mata pengemudi di dalam kokpit yang sama, mengikuti posisi dan arah kendaraan. Menggeser mouse memutar pandangan dari kursi tersebut. Rentang FOV dashboard lebih terbatas daripada kamera luar agar dashboard tidak menjauh berlebihan ketika nitro aktif. Near clipping turun menjadi 2,5 cm selama tampilan interior dan kembali menjadi 7 cm pada kamera balapan lainnya. Dashboard memakai material fisik, detail normal pada trim, cahaya kabin lembut tanpa peta bayangan tambahan, serta instrumen emisif yang tetap terbaca pada suasana malam.
+
+Setir memakai `steerAngle` dari keadaan kendaraan yang diterapkan renderer—termasuk hasil prediksi/rekonsiliasi aplikasi—sehingga input keyboard saja tidak memutar setir sebelum keadaan kemudi berubah. Sudut jalan dibatasi ±0,62 radian, lalu dikalikan 6,3 untuk sudut visual setir. Tanda di tengah setir bergerak ke kiri layar ketika mobil membelok kiri dan sebaliknya. Batas ini merupakan penyetelan visual permainan, bukan rasio kemudi pabrikan. Speedometer mengikuti kecepatan snapshot; tampilan gigi memakai transmisi visual renderer yang sudah ada.
+
+Ketika memakai Hood atau Dashboard, visibilitas assembly eksterior pemain disimpan lalu disembunyikan sementara supaya atap, kaca gelap, atau roda sumber tidak menutup pandangan. Mesh, material, cat, pelek, dan vinyl sumber tidak diubah. Lampu depan tetap aktif, kendaraan pemain lain tetap tampil, dan nilai visibilitas sebelumnya dipulihkan saat beralih ke kamera luar. Kokpit hanya dibuat saat diperlukan untuk mobil yang menjadi sudut pandang pemain; geometri dan teksturnya dibuang saat mobil diganti atau balapan ditutup. Kokpit biasa memiliki 42 mesh dan 5.716 segitiga; versi dengan rangka balap memiliki 44 mesh dan 5.812 segitiga. Ini merupakan hitungan geometri, bukan pengukuran performa GPU.
+
+Selama `prayer_pause` dan `resume_countdown`, tombol C, tombol kamera, API pemilihan kamera, dan geser pandangan dikunci. Kokpit, sudut setir, serta posisi kamera yang tersimpan tetap digambar; tidak ada pembangunan ulang scene. Pemain yang menyambung kembali tetap dapat menampilkan snapshot jeda dan memenuhi barrier frame. Setelah fase `racing` diterima, pilihan kamera kembali dapat digunakan. Keluar balapan mengembalikan keadaan kamera ke Chase.
+
+Uji portabel memeriksa geometri kokpit keenam belas model, posisi mata, setir di dalam frustum, arah putaran, batas sudut, koridor kaca depan melalui ray casting pada rasio 16:9, 4:3, dan 9:16, serta pelepasan sumber daya. Uji integrasi renderer memeriksa snapshot kemudi, keyboard/tombol/API kamera, pemulihan eksterior, near clip, loading barrier pada interior, dan pembekuan dashboard ketika jeda salat. Pemeriksaan tersebut memvalidasi struktur dan perilaku renderer; hasil kualitas pencahayaan/piksel memerlukan penilaian WebGL di browser nyata.
 
 ## Batas antara renderer dan permainan online
 
@@ -107,6 +143,7 @@ Antarmuka yang digunakan aplikasi:
 | `preview(loadout)` / `setLoadout(loadout)` | Menampilkan mobil, cat, finishing, paket roda, serta striping di bengkel |
 | `configure({quality,timeOfDay,...})` | Mengubah pengaturan yang secara eksplisit diberikan |
 | `setCamera('front'|'side'|'rear')` | Mengatur sudut showroom |
+| `setCamera('chase'|'hood'|'close'|'interior')` | Memilih kamera balapan; `dashboard` merupakan alias `interior` |
 | `setCamera()` | Mengganti sudut showroom atau kamera balapan, mengikuti mode aktif |
 | `startRace(...)` | Menunggu model roster, kemudian menyiapkan scene dan visual kendaraan; belum mengakui frame telah tampil |
 | `applySnapshot(...)` | Menerapkan posisi grid atau keadaan balapan dari aplikasi induk |
@@ -136,6 +173,14 @@ Fase server `prayer_pause` dan `resume_countdown` mempertahankan scene, kamera, 
 
 Antarmuka `Prayer.tsx` menampilkan waktu lokal dari zona waktu server, menyimpan GPS hanya setelah tombol pengguna ditekan, membulatkan koordinat ke dua desimal, dan menampilkan alasan penggunaan lokasi cadangan. Timer pribadi dan timer room menggunakan jangkar waktu server. Tombol “Siap melanjutkan” baru aktif ketika snapshot server melewati batas minimum; hasil pengiriman pesan tidak dianggap sebagai persetujuan yang telah diterima. Daftar `readyIds` dan perubahan fase server tetap menentukan tampilan selanjutnya. Lokasi pribadi tidak ditampilkan pada overlay room.
 
+### Finish dan perlambatan di belakang hasil
+
+Begitu pemain dinyatakan `finished` atau `dnf` oleh server, renderer membersihkan tombol yang sedang ditahan dan menolak gas, rem, kemudi, nitro, serta reset. Kamera tetap tersedia. Efek api nitro, getaran nitro, dan efek tabrakan bagi pembalap yang telah selesai dihentikan. Selama manusia lain masih berlomba, posisi, arah, dan kecepatan mobil yang sudah finish tetap diambil langsung dari snapshot perlambatan server. Renderer tidak menghitung ulang posisi, lap, atau hasilnya.
+
+Fase server `settling` atau `finished` langsung diteruskan ke aplikasi. Panel hasil tidak menunggu animasi mobil atau bot selesai. Setelah snapshot akhir, renderer membuat pose visual tersendiri selama **3 detik**: mobil mengikuti bentuk lintasan dari `trackT` terakhir, mempertahankan offset awal dari pusat jalan, dan kecepatannya turun monoton hingga nol. Putaran roda, kamera, HUD, instrumen dashboard, dan suara mesin mengikuti pose visual itu. Gas dan nitro tetap nol; suara putaran turun lalu berhenti ketika mobil diam. Pose ini tidak memiliki badan tabrakan dan tidak mengubah posisi/speed resmi, lap, waktu, peringkat, uang, maupun isi hasil server.
+
+Peralihan `settling` ke `finished` atau pengiriman ulang snapshot hasil tidak mengulang animasi. Tab tersembunyi, penghentian renderer, menu jeda, atau jeda salat tidak membuat waktu animasi berjalan diam-diam. Jika fase salat diterima ketika animasi penutup masih berjalan, posisi, putaran roda, dan durasinya dibekukan hingga fase hasil kembali diterima. Keluar balapan membuang seluruh objek balapan dan pose visualnya. Aplikasi mempertahankan iframe renderer di belakang panel hasil sehingga perlambatan masih terlihat.
+
 Kualitas lama yang valid tetap dibaca dari preferensi browser; nilai bawaan tetap `medium`. Renderer tidak menurunkan kualitas ketika hanya warna, model, atau sudut kamera yang diubah. Aplikasi induk dapat mengatur kualitas secara eksplisit. Suasana `dusk` dan `night` tetap berlaku pada tiga sirkuit.
 
 ## Menjalankan verifikasi
@@ -152,24 +197,33 @@ Pengujian hanya membaca aset yang disertakan dalam proyek. Tidak memerlukan berk
 
 Kasus yang diperiksa meliputi:
 
-1. Identitas SHA-256 delapan GLB dan modul lingkungan yang dipertahankan.
+1. Identitas SHA-256 16 GLB: 13 aset yang dipertahankan, dua revisi hypercar, satu Panther baru, serta modul lingkungan yang dipertahankan.
 2. Geometri serta parameter material bengkel yang finite, jumlah kelompok/segitiga, area tengah yang bebas, dan kontrak visibilitas kamera.
-3. Lima belas kendaraan dengan tiga paket roda, seluruh tingkat detail, batas ban sumber, serta pemulihan geometri dan visibilitas roda asli.
+3. Enam belas kendaraan dengan tiga paket roda, seluruh tingkat detail, batas ban sumber, serta pemulihan geometri dan visibilitas roda asli.
 4. Pratinjau, sudut kamera, kualitas yang tidak berubah tanpa permintaan, suasana, kredit, dan barrier pemuatan model.
 5. Start, snapshot, input, kamera dan efek kendaraan, penghentian render saat tersembunyi, penolakan snapshot lama, serta stop/return ke bengkel.
 6. Tidak ada integrasi posisi, penghitungan lap, atau pencatatan hasil balapan oleh renderer online.
 7. Pergantian tiga sirkuit melalui antarmuka publik.
-8. Lima pola striping pada kelima belas model: setiap vertex paling jauh 1,52 mm dari segitiga sumber, normal unit, pemisahan kelompok material, pemakaian ulang saat ganti warna, dan pemulihan saat memilih `none`.
-9. Perubahan striping saja pada snapshot lawan memperbarui model yang terlihat; tujuh profil audio tersedia dan kamera showroom memuat model yang lebih panjang.
+8. Lima pola striping pada keenam belas model: setiap vertex paling jauh 1,52 mm dari segitiga sumber, normal unit, pemisahan kelompok material, pemakaian ulang saat ganti warna, dan pemulihan saat memilih `none`.
+9. Perubahan striping saja pada snapshot lawan memperbarui model yang terlihat; delapan profil audio tambahan tersedia dan kamera showroom memuat model yang lebih panjang.
 10. Barrier loading tidak selesai sebelum snapshot dan render arena yang terlihat, countdown hanya mengikuti server, penantian dibatalkan saat keluar, dan penyelesaian aset lama tidak membuka ulang race.
 11. Jeda salat mempertahankan objek scene dan mobil, membekukan efek serta audio mengemudi, menolak input yang tertahan/eksternal/reset, tetap memenuhi barrier frame untuk pemain yang menyambung kembali, dan melanjutkan hanya setelah fase server berubah.
+12. Cat pelek bawaan pada enam belas model: kondisi pabrik akun lama, pilihan RGB bawaan yang eksplisit, isolasi segitiga Veyron, material ban/rem yang utuh, dua kendaraan yang tidak saling memengaruhi, transisi paket/pabrik, pelepasan sumber daya, dan perubahan flag pada snapshot.
+
+Untuk memeriksa perubahan cat pelek beserta kontrak renderer online tanpa mengulang pembuatan semua pola vinyl:
+
+```bash
+node tests/renderer/verify.cjs --stock-paint-only
+```
 
 Suite `test:prayer-ui` menggunakan React dan LinkeDOM dengan batas HTTP terprogram. Kasusnya memeriksa permintaan GPS eksplisit dan pembulatan koordinat; penyimpanan Jakarta ketika GPS gagal; kegagalan penyimpanan; pilihan kota dan koordinat manual pada hook; pembatalan GPS/fetch ketika komponen atau akun berubah; penanganan 401; tampilan zona waktu dan alasan cadangan; serta kesiapan room yang menunggu waktu dan konfirmasi server. Suite ini tidak meminta izin GPS sebenarnya, tidak memanggil layanan geolokasi eksternal, dan tidak menggantikan pengujian perhitungan jadwal/backend.
 
 ### Batas verifikasi
 
-Sebagian model tambahan juga diperiksa melalui render Blender Cycles di CPU untuk melihat siluet, bukaan roda, penempatan lampu, dan bentuk panel. Gambar tersebut adalah render inspeksi aset, bukan tangkapan layar renderer Three.js atau bukti tampilan persis di browser.
+Model tambahan juga diperiksa melalui render Blender Cycles di CPU untuk melihat siluet, bukaan roda, penempatan lampu, dan bentuk panel. Gambar tersebut adalah render inspeksi aset, bukan tangkapan layar renderer Three.js atau bukti tampilan persis di browser. Hasil depan/belakang tiga model yang diperbarui, serta sisi Panther, disertakan di `docs/previews/`.
 
 Harness mengganti `WebGLRenderer` dan `PMREMGenerator` dengan pencatat keadaan. Pengujian ini **bukan pengujian GPU**, bukan tangkapan layar permainan, dan bukan bukti frame rate pada perangkat tertentu. Kompilasi shader oleh driver, hasil akhir pencahayaan/refleksi, antialiasing, kualitas bayangan, audio yang benar-benar terdengar, dan kelancaran 15 kendaraan perlu diperiksa pada browser/perangkat sasaran.
+
+Khusus cat pelek Veyron, uji membuktikan pemisahan index, atribut geometri, dan material/tekstur yang dipertahankan. Uji tersebut tidak membuktikan penampilan cat yang fotorealistis atau kecocokan warna layar pada GPU tertentu; evaluasi visual akhir masih memerlukan WebGL pada browser sasaran.
 
 Pengujian batas roda menggunakan geometri dan envelope sumber; ini bukan simulasi suspensi atau pemeriksaan kontak ban yang baru. Mobil serta lingkungan tetap memiliki detail asli, sehingga pilihan kualitas masih penting pada perangkat dengan GPU terbatas. Paket roda tidak mengubah statistik performa; perubahan performa mengikuti konfigurasi permainan yang disahkan server.

@@ -184,7 +184,65 @@
       machined:new THREE.MeshStandardMaterial({name:'nv_upgrade_machined',color:0xc7d0d8,metalness:1,roughness:.18,envMapIntensity:1.2}),
       rotor:new THREE.MeshStandardMaterial({name:'nv_upgrade_brake_disc',color:0xb1b7bd,map:rotorTexture,metalness:.86,roughness:.48,side:THREE.DoubleSide})
     };
-    state={car,fits,materials,packages:[],groups:[],id:'stock',color:'#c7cdd4'};instances.set(car,state);return state;
+    state={car,fits,materials,packages:[],groups:[],id:'stock',color:'#c7cdd4',stockPaintReady:false,stockPaintActive:false,stockParts:[],stockMaterials:new Map(),stockGeometries:new Set()};instances.set(car,state);return state;
+  }
+  function stockPaintMaterial(state,original,composite=false){
+    let material=state.stockMaterials.get(original);if(material)return material;
+    material=original.clone();material.name='nv_stock_rim_'+original.name;
+    material.userData={...material.userData,nvStockRimPaint:true};
+    if(composite){
+      // The Veyron paint island contains a baked orange finish. Replace that
+      // albedo only on its isolated metal faces; retain its original normal map.
+      material.map=null;material.metalness=.87;material.roughness=.24;
+    }
+    state.stockMaterials.set(original,material);return material;
+  }
+  function compositeVeyronRim(geometry){
+    const uv=geometry.attributes.uv,index=geometry.index,position=geometry.attributes.position;
+    if(!uv||!position)return null;
+    const retained=[],painted=[],count=index?index.count:position.count;
+    // Inspected source atlas: this isolated UV island is the rim's baked paint.
+    // Sidewall/tread/disc/logo/bolt UVs are outside it. Test fixtures pin the
+    // exact original triangle ranges on all four wheels, including Int16/Uint16
+    // normalized attributes. A mixed-boundary triangle is conservatively kept.
+    for(let i=0;i<count;i+=3){
+      const triangle=[0,1,2].map(offset=>index?index.getX(i+offset):i+offset);
+      const eligible=triangle.every(vertex=>{const u=componentValue(uv,vertex,0),v=componentValue(uv,vertex,1);return u>=.855&&u<=1&&v>=.212&&v<=.282;});
+      (eligible?painted:retained).push(...triangle);
+    }
+    if(!painted.length||!retained.length)return null;
+    const split=geometry.clone();split.setIndex([...retained,...painted]);split.clearGroups();
+    split.addGroup(0,retained.length,0);split.addGroup(retained.length,painted.length,1);
+    split.userData={...split.userData,nvStockRimPartition:{paintedTriangles:painted.length/3,retainedTriangles:retained.length/3}};
+    return split;
+  }
+  function prepareStockPaint(state){
+    if(state.stockPaintReady)return;state.stockPaintReady=true;
+    const seen=new Set();
+    for(const fit of state.fits)for(const item of fit.nodes){
+      const node=item.node;if(seen.has(node)||item.brake)continue;seen.add(node);
+      const original=node.material,materials=Array.isArray(original)?original:[original];
+      if(state.car.modelId==='veyron77'&&materials.length===1&&/Wheel1A_3D_3DWheel1C_Material$/.test(materials[0]?.name||'')){
+        const geometry=compositeVeyronRim(node.geometry);if(!geometry)continue;
+        state.stockGeometries.add(geometry);
+        state.stockParts.push({node,originalMaterial:original,originalGeometry:node.geometry,paintedGeometry:geometry,paintedMaterial:[materials[0],stockPaintMaterial(state,materials[0],true)]});
+        continue;
+      }
+      let changed=false;
+      const painted=materials.map(material=>{
+        // Explicit authored rim slots (or the procedural fallback's dedicated
+        // rim material); never infer paint from darkness or generic metal names.
+        if(!material||(!/^rim_paint(?:_|$)/.test(material.name||'')&&material!==state.car.wheelMaterial))return material;
+        changed=true;return stockPaintMaterial(state,material);
+      });
+      if(changed)state.stockParts.push({node,originalMaterial:original,originalGeometry:node.geometry,paintedGeometry:node.geometry,paintedMaterial:Array.isArray(original)?painted:painted[0]});
+    }
+  }
+  function stockPaint(state,enabled,color){
+    if(enabled)prepareStockPaint(state);
+    for(const material of state.stockMaterials.values())material.color.set(color).convertSRGBToLinear();
+    for(const part of state.stockParts){part.node.material=enabled?part.paintedMaterial:part.originalMaterial;part.node.geometry=enabled?part.paintedGeometry:part.originalGeometry;}
+    state.stockPaintActive=enabled&&state.stockParts.length>0;
   }
   function clearUpgrade(state) {
     for(const group of state.groups)if(group.parent)group.parent.remove(group);
@@ -196,10 +254,12 @@
     options=typeof options==='string'?{rimId:options}:options||{};
     const id=validId(options.rimId||options.wheelSet||'stock');
     const existing=instances.get(car);
-    if(id==='stock'&&!existing){car.wheelCustomization={rimId:'stock',rimColor:options.rimColor||'#c7cdd4'};return {id,compatible:true};}
+    const stockRimPainted=options.stockRimPainted===true;
+    if(id==='stock'&&!existing&&!stockRimPainted){car.wheelCustomization={rimId:'stock',rimColor:options.rimColor||'#c7cdd4',stockRimPainted:false};return {id,compatible:true};}
     const state=existing||prepare(car),color=colorPattern.test(options.rimColor||options.wheelColor||'')?(options.rimColor||options.wheelColor):state.color;
     state.materials.paint.color.set(color).convertSRGBToLinear();state.color=color;
-    if(id===state.id&&state.groups.length){car.wheelCustomization={rimId:id,rimColor:color};return {id,compatible:true};}
+    stockPaint(state,id==='stock'&&stockRimPainted,color);
+    if(id===state.id&&state.groups.length){car.wheelCustomization={rimId:id,rimColor:color,stockRimPainted};return {id,compatible:true};}
     clearUpgrade(state);state.id=id;
     if(id!=='stock')for(const fit of state.fits){
       for(const item of fit.nodes)if(!item.brake)item.node.visible=false;
@@ -214,16 +274,17 @@
       fit.wheel.add(group);state.groups.push(group);
       fit.wheel.userData.nvRollingRadius=fit.rollingRadius;
     }
-    car.wheelCustomization={rimId:id,rimColor:color};
+    car.wheelCustomization={rimId:id,rimColor:color,stockRimPainted};
     return {id,compatible:true,fitments:state.fits.map(f=>({radius:f.radius,width:f.width,center:f.center.toArray(),stockPreserved:true}))};
   }
   function dispose(car) {
     const state=instances.get(car);if(!state)return;
-    clearUpgrade(state);Object.values(state.materials).forEach(m=>m.dispose());instances.delete(car);
+    stockPaint(state,false,state.color);clearUpgrade(state);Object.values(state.materials).forEach(m=>m.dispose());
+    state.stockMaterials.forEach(m=>m.dispose());state.stockGeometries.forEach(g=>g.dispose());instances.delete(car);
   }
   function inspect(car) {
-    const state=instances.get(car);if(!state)return {rimId:'stock',stockPreserved:true};
-    return {rimId:state.id,stockPreserved:true,fitments:state.fits.map(f=>({index:f.index,radius:f.radius,width:f.width,center:f.center.toArray(),retainedBrake:f.hasRotor,stockBounds:{min:f.stockBounds.min.toArray(),max:f.stockBounds.max.toArray()}})),geometryCacheEntries:geometryCache.size};
+    const state=instances.get(car);if(!state)return {rimId:'stock',stockPreserved:true,stockRimPainted:false,stockPaintActive:false};
+    return {rimId:state.id,rimColor:state.color,stockPreserved:true,stockRimPainted:car.wheelCustomization?.stockRimPainted===true,stockPaintActive:state.stockPaintActive,stockPaintParts:state.stockParts.length,stockPaintMaterials:state.stockMaterials.size,stockCompositePartitions:[...state.stockGeometries].map(g=>({...g.userData.nvStockRimPartition})),fitments:state.fits.map(f=>({index:f.index,radius:f.radius,width:f.width,center:f.center.toArray(),retainedBrake:f.hasRotor,stockBounds:{min:f.stockBounds.min.toArray(),max:f.stockBounds.max.toArray()}})),geometryCacheEntries:geometryCache.size};
   }
   global.NVWheels={catalog,apply,dispose,inspect,validId};
 })(window);

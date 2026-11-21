@@ -4,21 +4,21 @@ All routes below are relative to `/api`. The API stores accounts, sessions, owne
 
 ## Authentication and request conventions
 
-- JSON request bodies use `Content-Type: application/json`.
+- JSON request bodies use `Content-Type: application/json`. The admin media and vehicle-photo upload routes described below accept bounded raw file bytes instead, while retaining the same Origin, cookie, CSRF, role, and prayer checks.
 - Every state-changing HTTP request must include an `Origin` exactly matching a configured application origin. Missing origins, foreign origins and `Sec-Fetch-Site: cross-site` are rejected.
 - Login and registration do not require an existing session. Every other authenticated mutation also requires `X-CSRF-Token`, obtained from login, registration or `GET /auth/me`.
 - Authentication uses an opaque `uv_session` cookie with `HttpOnly`, `SameSite=Lax`, `Path=/` and an absolute seven-day expiry. `Secure` is enabled by default when `NODE_ENV=production`; the main server can explicitly configure it. Session tokens are hashed before storage. Never put them into browser local storage or URLs.
 - Race admission uses a separate short-lived one-time ticket, described below.
 - All balances, prices, rewards and ledger amounts are **decimal strings**, for example `"25000"`. Wallet and loadout versions are also strings. Catalog versions are numbers; ruleset versions are strings.
 - Money calculations use integer PostgreSQL `BIGINT` and Node.js `BigInt`. The wallet limit is `1000000000000000` credits. A manual top-up or catalog price cannot exceed `1000000000000` credits.
-- API responses use `Cache-Control: no-store`.
+- API responses use `Cache-Control: no-store`, except immutable public media bytes at `/media/:id` and `/vehicle-thumbnails/:id`.
 - Errors have this shape:
 
 ```json
 {"error":{"code":"INSUFFICIENT_BALANCE","message":"Kredit game tidak mencukupi."}}
 ```
 
-Typical statuses are `400` for invalid input, `401` for missing/invalid authentication, `403` for ownership/CSRF/origin/role failures, `404` for missing resources, `409` for version or idempotency conflicts, `415` for a non-JSON mutation `423` for an active personal prayer break, and `429` for throttling.
+Typical statuses are `400` for invalid input, `401` for missing/invalid authentication, `403` for ownership/CSRF/origin/role failures, `404` for missing resources, `409` for version or idempotency conflicts, `413` for an oversized upload, `415` for an unsupported request format, `416` for an unsatisfiable media byte range, `423` for an active personal prayer break, and `429` for throttling.
 
 ### Idempotency
 
@@ -86,14 +86,14 @@ Authenticated response:
   "inventory": {"cars":["brz"],"wheels":["stock"]},
   "loadout": {
     "carId":"brz","rimId":"stock","wheelId":"stock",
-    "color":"#2866b8","rimColor":"#c7cdd4","finish":"metallic",
+    "color":"#2866b8","rimColor":"#c7cdd4","stockRimPainted":false,"finish":"metallic",
     "stripeId":"none","stripeColor":"#ffffff","version":"1","appearanceVersion":"1"
   },
   "statistics": {"races":0,"wins":0,"rewards":"0"}
 }
 ```
 
-`accessibleCars` also lists every car currently usable, including temporary admin-open cars. `appearances` contains `{carId,rimId,color,finish,rimColor,stripeId,stripeColor,version,owned,canCustomize}` per accessible car. Permanent cars keep their saved appearance. Temporary cars use factory appearance with `owned:false`, `canCustomize:false`, and version `"0"`. If the active temporary car has been relocked, reading the profile repairs the active choice to a permanently owned car without changing any running race.
+`accessibleCars` also lists every car currently usable, including temporary admin-open cars. `appearances` contains `{carId,rimId,color,finish,rimColor,stockRimPainted,stripeId,stripeColor,version,owned,canCustomize}` per accessible car. Permanent cars keep their saved appearance. Temporary cars use factory appearance with `owned:false`, `canCustomize:false`, `stockRimPainted:false`, and version `"0"`. If the active temporary car has been relocked, reading the profile repairs the active choice to a permanently owned car without changing any running race.
 
 `statistics.races` counts stored human race results, including DNF. Wins require a finished result in position 1. Rewards are the total credits awarded by race settlement.
 
@@ -124,7 +124,7 @@ Public response:
 }
 ```
 
-Each car has `id`, `itemId` (same as `id`), `kind:"car"`, `name`, `price`, `catalogVersion`, `enabled`, `locked`, `color`, `drive`, `stats:{topSpeed,zeroTo100,handling}`, the same three stats at the top level for UI compatibility, and `tuningVersion`. The starter car also has `starter:true`.
+Each car has `id`, `itemId` (same as `id`), `kind:"car"`, `name`, `price`, `catalogVersion`, `enabled`, `locked`, `color`, `drive`, `stats:{topSpeed,zeroTo100,handling}`, the same three stats at the top level for UI compatibility, `tuningVersion`, and `thumbnail:VehicleThumbnail|null` as described under vehicle collection photos. The starter car also has `starter:true`.
 
 Each wheel has `id`, `itemId`, `kind:"wheel"`, `name`, `price`, `catalogVersion`, `enabled`, `color`, `cosmeticOnly:true`, and optional `spokes`/`starter`. Wheel selection and wheel color do not modify vehicle stats.
 
@@ -149,14 +149,15 @@ Initial catalog:
 | `amg-gt4` | Mercedes-AMG GT4 | 780000 |
 | `sls-amg-gt3` | Mercedes-Benz SLS AMG GT3 | 1050000 |
 | `batmobile-1989` | Batmobile 1989 | 1300000 |
-| `jesko-absolut` | Koenigsegg Jesko Absolut | 2400000 |
+| `jesko-absolut` | Koenigsegg Regera | 2400000 |
 | `venom-f5` | Hennessey Venom F5 | 2200000 |
+| `panther-grand-touring` | Isuzu Panther Grand Touring | 150000 |
 | `stock` | Roda bawaan | 0; starter |
 | `six-spoke` | Six Spoke | 20000 |
 | `multi-spoke` | Multi Spoke | 35000 |
 | `mesh` | Mesh Gold | 50000 |
 
-Prices and tuning are game design values, not market prices or manufacturer performance specifications.
+Prices and tuning are game design values, not market prices or manufacturer performance specifications. The catalogue contains 16 cars; a race still allows at most 15 participants (14 bots). The historical `jesko-absolut` key is retained for the Regera reference update, preserving purchases, photos, appearances and race history. Migration 012 changes only the original default label; operator-custom labels survive. Panther is added by migration 013 with a new ruleset that copies existing published vehicle tuning, physics and reward policy.
 
 ### `POST /shop/purchase`
 
@@ -178,15 +179,21 @@ Authenticated, with CSRF. Free selection of a saved vehicle/owned wheel:
 
 `wheelId` is an accepted alias for `rimId`; if both are supplied they must agree. An omitted wheel retains the selected vehicle's saved rim. The car must be permanently owned or globally unlocked; the wheel must be owned. Every cosmetic field supplied through this endpoint must equal the server-saved appearance, otherwise the request fails with `PAID_CUSTOMIZATION_REQUIRED`. Optional `appearanceVersion`/`expectedAppearanceVersion` must match if supplied. This endpoint cannot apply unpaid paint or striping.
 
-Returns `{loadout:{carId,rimId,wheelId,color,rimColor,finish,stripeId,stripeColor,version,appearanceVersion}}`. Switching between saved cars does not debit credits. Changing an owned rim selection updates that vehicle's saved appearance. Temporary admin-open vehicles use factory cosmetics and an owned wheel; they cannot purchase custom appearance until permanently acquired.
+Returns `{loadout:{carId,rimId,wheelId,color,rimColor,stockRimPainted,finish,stripeId,stripeColor,version,appearanceVersion}}`. Switching between saved cars does not debit credits. Changing an owned rim selection updates that vehicle's saved appearance. Temporary admin-open vehicles use factory cosmetics and an owned wheel; they cannot purchase custom appearance until permanently acquired. The paid stock-rim override is also checked by this endpoint and the realtime admission/loadout path; sending a boolean does not grant free paint.
 
 ### `POST /garage/appearance/quote`
 
-Authenticated, with CSRF. Body contains `carId` and any desired `rimId`, `color`, `finish`, `rimColor`, `stripeId`, or `stripeColor`. Colors are normalized `#RRGGBB`. Finish is `metallic`, `gloss`, or `matte`. Stripe IDs are `none`, `twin-racing`, `offset`, `side-sweep`, `circuit`, and `heritage`. Custom rim paint requires a non-stock owned wheel. Paid customization requires permanent car ownership.
+Authenticated, with CSRF. Body contains `carId` and any desired `rimId`, `color`, `finish`, `rimColor`, `stockRimPainted`, `stripeId`, or `stripeColor`. Colors are normalized `#RRGGBB`. Finish is `metallic`, `gloss`, or `matte`. Stripe IDs are `none`, `twin-racing`, `offset`, `side-sweep`, `circuit`, and `heritage`. Both owned stock and custom rims support paid color changes. Paid customization requires permanent car ownership.
+
+`stockRimPainted` is an explicit boolean indicating whether the original stock wheel uses the saved color override. Migration initializes legacy appearances to false, and the renderer treats a missing legacy wire flag as false, preserving the actual original wheel material regardless of the old placeholder `rimColor`. Explicit first repaint sets this flag true and charges the rim-paint service even when choosing `#c7cdd4`. The flag and RGB value are saved per car and frozen with its race loadout. Changing a wheel package alone cannot change this paid flag without a workshop quote. Custom packages continue to use `rimColor`.
+
+Quote normalization differs from legacy initialization: when selecting stock rims, an omitted flag preserves the saved state, unless a changed `rimColor` infers an explicit repaint. Explicit `false` requests factory restoration and retains the previously saved RGB; toggling the saved state incurs `paint-rims`. When selecting a custom rim, the saved stock-paint flag is preserved even if the request supplies a different boolean. Its visible custom rim RGB can still change through the paid quote path. Selecting no stripe similarly retains the stored, currently hidden stripe color.
 
 Returns `{quoteId,carId,appearanceVersion,selection,currentAppearance,lineItems,total,wallet,affordable,noOp,expiresAt}`. Each line item contains `{itemId,name,price,catalogVersion}`. The server stores this offer for **10 minutes**; creating it does not debit credits or change appearance. `total` and line prices are decimal strings. A quote can be returned even when the wallet is currently insufficient so the UI can show the exact cost.
 
-Initial services: `paint-body` 10000, `paint-rims` 5000, `stripe-twin-racing` 15000, `stripe-offset` 18000, `stripe-side-sweep` 12000, `stripe-circuit` 20000, `stripe-heritage` 22000, `stripe-remove` 5000. Body color and finish changed together form one paint charge. Changing stripe color uses the selected design's installation price. Identical appearance incurs no cosmetic charge.
+Initial services: `paint-body` 10000, `paint-rims` 5000, `stripe-paint` 5000, `stripe-twin-racing` 15000, `stripe-offset` 18000, `stripe-side-sweep` 12000, `stripe-circuit` 20000, `stripe-heritage` 22000, `stripe-remove` 5000. Body color and finish changed together form one paint charge. Changing only the color of an existing design uses `stripe-paint`; installing/replacing a design includes the chosen color in that design's installation price, without an additional recolor charge. Every fee and availability flag comes from the versioned admin service catalog, never a client-supplied amount. Identical saved appearance incurs no cosmetic charge.
+
+Migration **011** adds the stock-paint state and stripe recolor service without overriding existing admin service prices. It expires unapplied pre-migration quotes so they cannot apply under the old pricing contract. Successfully committed applications and idempotent responses remain replayable without a second charge.
 
 ### `POST /garage/appearance/apply`
 
@@ -231,6 +238,10 @@ The room obtains one ruleset for everyone before countdown. `beginRace` persists
 
 The client cannot supply a reward amount or settle a race through an HTTP endpoint. The authoritative room simulation supplies checkpoint/lap/finish outcomes. Reward calculation uses the ruleset saved for that race, even if an admin has published a new one.
 
+Race completion is driven by the human roster: once every non-bot racer is finished or DNF, the runtime ends immediately and marks remaining unfinished bots DNF. Previously finished bots retain their finish times and ranks. A temporarily disconnected human remains a participant until the existing reconnect grace ends or that participant leaves; finished/DNF humans do not block completion. Existing maximum-duration and late-finisher deadlines remain in force. The room transitions to settlement exactly once and persists the final result before reporting rewards.
+
+Finishing preserves the crossing speed and interpolated crossing time. Throttle, brake, steering, reset, and nitro inputs from that racer are no longer accepted. While others still race, a shared server-side coasting step reduces speed monotonically and follows the course as a ghost, without changing scored progress, lap counts, distance, or finish/lap times. Finished cars cannot collide with racers still competing. After the last official simulation tick, the renderer may complete a cosmetic rollout beneath the result overlay; this does not send new movement, postpone settlement, or alter positions in the result. Prayer pauses also freeze coasting.
+
 Initial reward policy is 10000 credits for a valid finish, plus 1000 per completed lap, plus podium bonuses of 15000/8000/4000 for positions 1/2/3, capped at 50000. A finish must take at least 15000 simulation milliseconds. DNF earns zero. Bots receive no wallet entries. Fixed-tick simulation time may trail wall time under server load without blocking settlement.
 
 `abortInterruptedRaces()` is available for a **single-server startup** before accepting rooms. It marks unfinished persisted races aborted without a payout. Do not call it on each worker in a multi-server deployment.
@@ -238,6 +249,8 @@ Initial reward policy is 10000 credits for a valid finish, plus 1000 per complet
 ## Arena and shared prayer protocol
 
 The loading barrier is separate from lobby readiness. After all players are ready and the host requests start, the server broadcasts `phase:"loading"`, a unique `startToken`, and `loadingDeadline`. Every client must load the actual models, build/apply the grid, and observe a visible rendered arena frame before sending `arena_ready {raceId,startToken}`. `members[].arenaReady` exposes the current barrier. Loading failure sends `arena_failed {raceId,startToken,reason}`. Timeout after 45 seconds, unready, disconnect, or cancellation returns the room to lobby and invalidates old acknowledgments. Only the completed barrier may persist/start a race and broadcast one common countdown deadline.
+
+The administrator-selected JPEG is a presentation overlay on this barrier. The actual game iframe stays mounted and rendering beneath it; neither loading a JPEG nor reaching 100% file-download progress is an arena acknowledgment. A missing/failed JPEG uses the default background and does not stall readiness. Prayer overlays take priority. The loading overlay ends only when the server leaves the loading phase for the common countdown, cancellation, failure, or prayer handling.
 
 Prayer schedule status is checked server-side for every room member. A triggering member freezes the entire room, including bots, using `phase:"prayer_pause"`. `snapshot.prayerPause` is:
 
@@ -376,7 +389,128 @@ Limits: finish and each podium bonus 0–100000; per-lap amount 0–10000; cap 0
 
 ### `GET /admin/audit?limit=50`
 
-`limit` is 1–100. Returns `{entries:[{id,actorId,actorName,action,targetId,reason,before,after,createdAt}]}`. Events include `admin.created`, `wallet.topup`, `catalog.updated` and `ruleset.published`. Audit rows are append-only.
+`limit` is 1–100. Returns `{entries:[{id,actorId,actorName,action,targetId,reason,before,after,createdAt}]}`. Events include `admin.created`, `wallet.topup`, `catalog.updated`, `ruleset.published`, `media.uploaded`, `media.deleted`, `presentation.updated`, `vehicle.thumbnail.updated`, and `vehicle.thumbnail.deleted`. Audit rows are append-only.
+
+## Garage music and loading artwork
+
+Types are declared in `shared/media.ts`. Migration **009** adds `presentation_assets` and a singleton `presentation_settings` row. Upload bytes are PostgreSQL `bytea`, so the existing database volume and backup contain the actual media as well as metadata. No app-container upload directory is needed. Initial selections are `null`; there is no seeded song or mandatory loading picture.
+
+### `GET /presentation`
+
+Public, uncached response:
+
+```ts
+interface PresentationSettings {
+  version: number;
+  garageMusic: MediaAsset | null;
+  loadingImage: MediaAsset | null;
+  musicVolume: number; // 0..1; initial value 0.35
+}
+
+interface MediaAsset {
+  id: string; // UUID
+  kind: 'garage_music' | 'loading_image';
+  name: string;
+  url: string; // same-origin /api/media/<UUID>
+  mimeType: 'audio/mpeg' | 'image/jpeg';
+  bytes: number;
+  durationSeconds: number | null;
+  width: number | null;
+  height: number | null;
+  createdAt: string; // ISO timestamp
+}
+```
+
+Only presentation metadata is public; uploader/account identifiers are not returned. The client refreshes configuration outside an active race. Music playback observes browser autoplay restrictions, the user's sound preference, page visibility, race preparation, and prayer pauses. An audio rejection presents a user-action button rather than claiming playback succeeded. No media request changes race simulation state.
+
+### `GET /admin/media`
+
+Authenticated admin response: `{assets: MediaAsset[], settings: PresentationSettings, limits}`. `limits` contains `garageMusicBytes:20971520`, `loadingImageBytes:10485760`, `maxAssets:40`, and `totalBytes:262144000`. Assets are listed newest first. The settings row lock keeps the collection/settings response coherent with concurrent writes.
+
+### `POST /admin/media/:kind?name=...`
+
+Authenticated admin mutation with exact Origin, `X-CSRF-Token`, and prayer gating. `:kind` is `garage_music` or `loading_image`. The body is the actual binary file, **not JSON and not multipart**:
+
+| Kind | Content-Type | Input limit | Content validation |
+| --- | --- | --- | --- |
+| `garage_music` | `audio/mpeg` | 20 MiB | Complete MPEG Layer III frame sequence, maximum 60 minutes; MPEG1/2/2.5 and CBR/VBR supported |
+| `loading_image` | `image/jpeg` | 10 MiB | JPEG fully decoded and encoded again; maximum 8192 pixels per side and 24 megapixels |
+
+`name` is a URL-encoded display filename containing 1–120 characters without folder separators. The server does not use it as a filesystem path. HTTP-compressed upload bodies are rejected. Authentication and authorization run before the binary body reader. The existing JSON body limit remains in force for other mutations.
+
+JPEG autoorientation and sRGB conversion run before quality-92 output; EXIF/GPS metadata is not retained. MP3 ID3/APE tags are removed while encoded audio frames are preserved. File extensions alone do not establish validity. Invalid/truncated content returns `INVALID_JPEG` or `INVALID_MP3`; wrong MIME returns `MEDIA_TYPE_REQUIRED`; excessive size returns `MEDIA_TOO_LARGE`.
+
+HTTP `201` returns `{asset: MediaAsset}`. Uploading does not activate a file. The normalized content hash deduplicates a repeated upload, returning the existing asset without another audit row or storage allocation. A serialized quota check limits the complete collection to 40 files / 250 MiB (`MEDIA_LIBRARY_FULL`). Upload attempts also use the account throttle. Media content is immutable: changing bytes creates another UUID, and database triggers reject updates to asset rows.
+
+### `PUT /admin/presentation`
+
+Authenticated admin mutation, with JSON, CSRF, Origin, and prayer checks. Body:
+
+```json
+{
+  "expectedVersion": 1,
+  "garageMusicId": "uploaded MP3 UUID or null",
+  "loadingImageId": "uploaded JPEG UUID or null",
+  "musicVolume": 0.35,
+  "reason": "Musik dan ilustrasi untuk sesi latihan"
+}
+```
+
+Use real JSON `null` to clear a selection. Both selection fields and the volume are required. IDs must exist and match the target media kind. Volume is finite in `[0,1]` and rounded to three decimals. `reason` contains 4–500 characters. The version check and selection/audit writes share one database transaction. A stale version returns `PRESENTATION_CHANGED`; the client must reload and review rather than silently overwrite another admin's changes. Response is the new `PresentationSettings` with an incremented numeric version.
+
+### `DELETE /admin/media/:id`
+
+Authenticated admin mutation with JSON `{reason}` plus CSRF, Origin, and prayer checks. A file currently selected for either presentation slot returns `MEDIA_IN_USE`; first clear/change the selection and save the new settings. A successful removal returns `{deleted:true}` and appends an audit event. The audit stores metadata, not file bytes. Nonexistent IDs return `MEDIA_NOT_FOUND`.
+
+### `GET /media/:id` and `HEAD /media/:id`
+
+Public same-origin delivery of validated media bytes. A UUID always denotes the same content. Responses include the fixed validated `Content-Type`, `X-Content-Type-Options:nosniff`, `Cross-Origin-Resource-Policy:same-origin`, `Accept-Ranges:bytes`, `Content-Length`, a SHA-256 `ETag`, and `Cache-Control:public, max-age=31536000, immutable`. `Content-Disposition` uses a server-generated UUID filename.
+
+One byte range is supported, including open-ended and suffix ranges. Valid ranges return `206` and `Content-Range`; invalid/multiple/unsatisfiable ranges return `416`. `HEAD` returns headers without reading/sending the content. `If-None-Match` supports `304`; `If-Range` with a matching validator permits partial delivery, otherwise the whole representation is sent. PostgreSQL reads just the requested byte substring for range delivery. These URLs are intended for game presentation, not private per-account attachments.
+
+## Vehicle collection photos
+
+Types are declared in `shared/vehicle-thumbnails.ts`. Migration **010** adds `vehicle_thumbnail_assets` and one `vehicle_thumbnail_slots` row for each vehicle. Slots begin at numeric version **1** with `thumbnail:null`. Photo versions are independent of `catalogVersion`, ownership, saved appearances, and the presentation music/loading version. Replacing a photo does not invalidate a purchase quote or change the active car.
+
+The catalog response includes `thumbnail: VehicleThumbnail | null` on each car. Photo URLs are public, same-origin game assets. Clients should use an icon until an admin uploads a photo, or if the image fails to load. The application displays a fixed 16:9 frame with `object-fit:contain`, lazy loading, and model-specific alternative text. It filters the Garage by permanent ownership; Showroom retains all catalog cars.
+
+```ts
+interface VehicleThumbnail {
+  id: string; // UUID; changing photo bytes creates a new UUID
+  url: string; // /api/vehicle-thumbnails/<UUID>
+  mimeType: 'image/webp';
+  bytes: number;
+  width: number;
+  height: number;
+}
+interface VehicleThumbnailSlot {
+  carId: CarId;
+  version: number;
+  thumbnail: VehicleThumbnail | null;
+}
+```
+
+### `GET /admin/vehicle-thumbnails`
+
+Authenticated admin response: `{cars:VehicleThumbnailSlot[],limits}`. Limits are `inputBytes:4194304`, `inputPixels:16000000`, `maxWidth:512`, `maxHeight:288`, `outputBytes:524288`, and accepted MIME types `image/jpeg`, `image/png`, `image/webp`. No uploader identity is included in the public catalog metadata.
+
+### `POST /admin/vehicle-thumbnails/:carId?expectedVersion=...&reason=...`
+
+Authenticated admin mutation with exact Origin, session cookie, `X-CSRF-Token`, and prayer gating. Send the original file as the **raw binary body**, not multipart or JSON, with its matching `Content-Type`. `carId` must be a supported catalog vehicle. Query parameters contain the current slot version and a URL-encoded reason of 4–500 characters. The request is throttled by account. Authorization and prayer checks run before reading binary bytes.
+
+Input is limited to **4 MiB / 16 megapixels**. The server checks the signature, decodes the complete image, rejects animation and malformed/truncated content, applies orientation, preserves aspect ratio, and fits it inside **512 × 288** without cropping or enlarging. It encodes sRGB WebP at quality 82, removes EXIF/GPS metadata, and enforces a maximum 512 KiB output. Original upload bytes are not retained.
+
+HTTP `201` returns the complete updated `VehicleThumbnailSlot`. Photo upload and activation are one transaction: the slot row is locked, `expectedVersion` is checked, new bytes are inserted, the slot version increments, the old photo bytes are removed, and an audit event is appended. A stale version returns `409 THUMBNAIL_CHANGED` without overwriting the newer photo. Reload and review before resubmission. Each vehicle retains one photo, and public UUIDs are never reused. Neither successful nor rejected uploads debit the wallet or mutate the purchase/access/tuning tables.
+
+Invalid formats return `THUMBNAIL_TYPE_REQUIRED` or `INVALID_THUMBNAIL`; an oversized body returns `THUMBNAIL_TOO_LARGE`; animated input returns `ANIMATED_THUMBNAIL`. A canceled network request may have committed on the server; reload the slot rather than assuming cancellation rolled back a completed upload.
+
+### `DELETE /admin/vehicle-thumbnails/:carId`
+
+Authenticated admin mutation with JSON `{expectedVersion,reason}`, CSRF, Origin, and prayer checks. The UI asks for confirmation and an audit reason. The same version check applies. A successful transaction returns the incremented `VehicleThumbnailSlot` with `thumbnail:null`, removes the old photo bytes, and records `vehicle.thumbnail.deleted`. An empty slot returns `409 THUMBNAIL_EMPTY`. This does not delete the vehicle or its ownership.
+
+### `GET /vehicle-thumbnails/:id` and `HEAD /vehicle-thumbnails/:id`
+
+Public delivery of normalized WebP with fixed content type, `nosniff`, same-origin resource policy, content length, last-modified time, a SHA-256 ETag, and `Cache-Control:public, max-age=31536000, immutable`. `If-None-Match` supports `304`; HEAD sends metadata without loading the blob. Byte ranges are not needed for these small photos. After replacement/deletion, a fresh request for the old UUID returns `404 THUMBNAIL_NOT_FOUND`; already cached bytes may remain in a browser. Reloading the catalog selects the new immutable URL or the fallback icon.
 
 ## Server integration and operations
 

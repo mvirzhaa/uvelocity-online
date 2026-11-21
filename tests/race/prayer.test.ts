@@ -22,8 +22,8 @@ const selection={carId:'brz' as const,color:'#2866b8',finish:'metallic' as const
 const positions=(snapshot:RoomSnapshot)=>snapshot.racers.map(r=>[r.id,r.x,r.z,r.heading,r.speed,r.lap,r.completedLaps,r.progress,r.nitro]);
 
 test('Room prayer pause freezes all racers and requires fresh unanimous consent after the full hold',{timeout:45000},async t=>{
- let offset=Date.parse('2026-11-20T03:00:00Z')-Date.now(),beginGate:ReturnType<typeof deferred>|null=null;
- const now=()=>Date.now()+offset,moveTo=(time:number)=>{offset+=Math.max(0,time-now());};
+ let offset=Date.parse('2026-11-20T03:00:00Z')-Date.now(),advancePerReadMs=0,beginGate:ReturnType<typeof deferred>|null=null;
+ const now=()=>{offset+=advancePerReadMs;return Date.now()+offset;},moveTo=(time:number)=>{offset+=Math.max(0,time-now());};
  const tickets=new Map<string,string>(),windows=new Map<string,PrayerWindow[]>(),opened:Room[]=[],begun=new Map<string,BeginRaceInput>(),beginCalls=new Map<string,number>(),aborted=new Set<string>(),results=new Map<string,RaceResult>();
  const lookupHolds=new Map<string,{entered:ReturnType<typeof deferred>;gate:ReturnType<typeof deferred>;skip?:number}>();
  function addPrayer(userId:string,start:number,prayer:PrayerName='dhuhr'){
@@ -72,7 +72,11 @@ test('Room prayer pause freezes all racers and requires fresh unanimous consent 
   await t.test('One local event freezes humans, bots and all race clocks; another room continues; expiry alone never resumes',async()=>{
    const p=await pair({leadMs:5000}),other=await pair({bots:1});try{
     await start(p);await start(other);p.host.room.send('input',{seq:1,throttle:1,brake:0,steer:0,nitro:true});await delay(60);
-    moveTo(Date.parse(p.event!.startedAt)+1);await waitFor(()=>p.host.snapshot?.phase==='prayer_pause'&&p.peer.snapshot?.phase==='prayer_pause','room prayer pause');
+    moveTo(Date.parse(p.event!.startedAt)+1);
+    // Force distinct clock readings so a separately sampled start/deadline
+    // cannot accidentally shorten the promised full fifteen-minute hold.
+    advancePerReadMs=2;
+    try{await waitFor(()=>p.host.snapshot?.phase==='prayer_pause'&&p.peer.snapshot?.phase==='prayer_pause','room prayer pause');}finally{advancePerReadMs=0;}
     const paused=structuredClone(p.host.snapshot!),pause=paused.prayerPause!,otherTick=other.host.snapshot!.tick;
     assert(pause.resumeEligibleAt>=pause.startedAt+900000);assert.equal(pause.requiredIds.length,2);assert.equal(paused.racers.filter(r=>r.isBot).length,2);assert(!JSON.stringify(paused).includes('latitude'));assert(!JSON.stringify(paused).includes('longitude'));assert(!JSON.stringify(paused).includes('Asia/Jayapura'));
     for(let seq=2;seq<20;seq++)p.host.room.send('input',{seq,throttle:1,brake:0,steer:1,nitro:true});await delay(1100);

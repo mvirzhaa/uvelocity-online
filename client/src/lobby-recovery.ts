@@ -11,7 +11,7 @@ type RecoveryActions={
 
 function selectionKey(loadout:LoadoutSelection){
  return JSON.stringify([loadout.carId,loadout.rimId||'stock',loadout.color.toLowerCase(),loadout.finish,
-  (loadout.rimColor||'#c7cdd4').toLowerCase(),loadout.stripeId||'none',
+  (loadout.rimColor||'#c7cdd4').toLowerCase(),loadout.stockRimPainted===true,loadout.stripeId||'none',
   (loadout.stripeColor||'#ffffff').toLowerCase(),loadout.appearanceVersion||'']);
 }
 

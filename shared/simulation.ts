@@ -23,10 +23,34 @@ export function shortestAngle(value:number):number {
   while(value>Math.PI)value-=Math.PI*2;while(value<-Math.PI)value+=Math.PI*2;return value;
 }
 
+/** Finishers are ghosts with locked controls. Follow the road while slowing,
+ * leaving all scored distance, gates and lap/finish timestamps unchanged. */
+export function advanceFinishedVehicle(state:VehicleState,track:Track,dt:number,physics:PhysicsConfig=DEFAULT_PHYSICS):void {
+  if(!(dt>0&&dt<=.1)||!state.finished)return;
+  state.nitroActive=false;
+  const oldSpeed=state.speed,deceleration=Math.max(5.5,physics.coastDrag);
+  state.speed=Math.sign(oldSpeed)*Math.max(0,Math.abs(oldSpeed)-deceleration*dt);
+  if(state.speed===0)state.speed=0; // Normalize negative zero for snapshots.
+  const distance=(oldSpeed+state.speed)*.5*dt;
+  if(distance!==0){
+    const from=pointAt(track,state.trackT),nextT=wrap(state.trackT+distance/track.length),to=pointAt(track,nextT);
+    const lane=clamp(signedTrackOffset(track,state.x,state.z,state.trackIdx),-ROAD_HALF+CAR_HALF_WIDTH,ROAD_HALF-CAR_HALF_WIDTH);
+    // Translate along the centerline without snapping a finisher to its center.
+    state.x+=to.x-from.x+(to.nx-from.nx)*lane;state.z+=to.z-from.z+(to.nz-from.nz)*lane;
+    const turn=shortestAngle(Math.atan2(to.tx,to.tz)-state.heading);
+    state.heading=shortestAngle(state.heading+turn*Math.min(1,dt*5));
+    state.steerAngle+=(clamp(turn*2.5,-1,1)*.45-state.steerAngle)*Math.min(1,dt*12);
+    state.trackT=nextT;state.trackIdx=nearestTrackIndex(track,state.x,state.z,state.trackIdx);
+  }else state.steerAngle*=Math.max(0,1-dt*12);
+  state.driftAngle*=Math.max(0,1-dt*7);state.bodyRoll*=Math.max(0,1-dt*10);
+  state.bodyPitch+=((state.speed!==0?.018:0)-state.bodyPitch)*Math.min(1,dt*8);
+}
+
 /** Pure arcade rules shared by the authoritative server and local prediction.
  * Mutates only state. Rendering, sound, timing and network policy are separate. */
 export function advanceVehicle(state:VehicleState,input:VehicleInput,track:Track,stats:VehicleStats,dt:number,elapsedMs=0,physics:PhysicsConfig=DEFAULT_PHYSICS):GameplayEvent[] {
-  if(!(dt>0&&dt<=.1)||state.finished)return[];
+  if(!(dt>0&&dt<=.1))return[];
+  if(state.finished){advanceFinishedVehicle(state,track,dt,physics);return[];}
   const events:GameplayEvent[]=[];
   if(input.reset&&elapsedMs-state.lastResetMs>=physics.resetCooldownMs){
     const point=track.samples[state.trackIdx]!;
