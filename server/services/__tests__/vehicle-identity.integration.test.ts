@@ -53,9 +53,9 @@ after(async()=>{
 });
 
 test('012/013 preserve purchased identity, cosmetics, quotes and history while appending Panther',async()=>{
-  assert.deepEqual(await migrate(pool),['012_reference_vehicle_name.sql','013_panther_grand_touring.sql']);
+  assert.deepEqual(await migrate(pool),['012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql']);
   assert.deepEqual(await migrate(pool),[]);
-  const count=await pool.query('SELECT count(*)::int n FROM schema_migrations');assert.equal(count.rows[0].n,13);
+  const count=await pool.query('SELECT count(*)::int n FROM schema_migrations');assert.equal(count.rows[0].n,14);
   for(const table of preservedTables)assert.deepEqual(await rows(table),legacy.tables[table],table+' must retain all existing rows');
   assert.deepEqual(await services.economy.getProfile(owner.user.id),legacy.profile);
   const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,16);

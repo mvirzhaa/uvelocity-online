@@ -29,7 +29,7 @@ before(async()=>{
   await control.query(`CREATE SCHEMA ${schema}`);
   pool=new pg.Pool({connectionString,options:`-c search_path=${schema}`,max:12});
   const files=await migrate(pool);
-  assert.equal(files.length,13);
+  assert.equal(files.length,14);
   services=createServices(pool,{prayerNow:()=>new Date('2026-11-20T03:00:00.000Z')});
   alice=await services.accounts.register({email:'alice@example.test',displayName:'Alice Racer',password});
   bob=await services.accounts.register({email:'bob@example.test',displayName:'Bob Racer',password});

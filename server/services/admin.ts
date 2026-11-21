@@ -3,9 +3,11 @@ import type { Pool, PoolClient } from 'pg';
 import { transaction } from '../db/pool.js';
 import { CAR_IDS } from '../../shared/types.js';
 import { TUNING_BOUNDS } from './economy.js';
-import { assert } from './errors.js';
+import { assert,ServiceError } from './errors.js';
 import { idempotent } from './idempotency.js';
 import { mutateWallet } from './wallet.js';
+import {categoryId,categoryName,categoryOrder,listVehicleCategories,lockVehicleCategory} from './vehicle-categories.js';
+import type {VehicleCategory} from '../../shared/vehicle-categories.js';
 import * as v from './validation.js';
 
 export async function requireAdmin(db: Pool|PoolClient, actorId: string): Promise<void> {
@@ -34,6 +36,13 @@ function rewardPolicy(value:unknown) {
   assert(Array.isArray(input.podium)&&input.podium.length===3,400,'INVALID_REWARDS','Bonus podium harus terdiri dari tiga jumlah.');
   return {version:1,finish:moneyAllowZero(input.finish,100_000n),perLap:moneyAllowZero(input.perLap,10_000n),podium:input.podium.map(n=>moneyAllowZero(n,100_000n)),
     minimumDurationMs:v.integer(input.minimumDurationMs,'Durasi minimum',15000,300000),maximum:moneyAllowZero(input.maximum,500_000n)};
+}
+async function categoryConflict<T>(operation:Promise<T>):Promise<T> {
+  try{return await operation;}catch(error){
+    const databaseError=error as {code?:string;constraint?:string};
+    if(databaseError.code==='23505'&&databaseError.constraint==='vehicle_categories_name_idx')throw new ServiceError(409,'CATEGORY_NAME_TAKEN','Nama kategori sudah digunakan. Pilih nama lain.');
+    throw error;
+  }
 }
 
 export class AdminService {
@@ -85,7 +94,8 @@ export class AdminService {
 
   async updateCatalog(actorId:string,itemId:string,input:unknown) {
     const body=v.object(input),version=expectedVersion(body.expectedVersion),reason=v.text(body.reason,'Alasan',4,500);
-    assert(body.price!==undefined||body.enabled!==undefined||body.locked!==undefined,400,'NO_CHANGES','Pilih harga, status penjualan, atau akses mobil yang ingin diubah.');
+    const changingCategory=body.categoryId!==undefined,nextCategory=changingCategory&&body.categoryId!==null?categoryId(body.categoryId):null;
+    assert(body.price!==undefined||body.enabled!==undefined||body.locked!==undefined||changingCategory,400,'NO_CHANGES','Pilih harga, status penjualan, akses mobil, atau kategori yang ingin diubah.');
     const price=body.price===undefined?null:moneyAllowZero(body.price);
     assert(body.enabled===undefined||typeof body.enabled==='boolean',400,'INVALID_ENABLED','Status harus berupa boolean.');
     assert(body.locked===undefined||typeof body.locked==='boolean',400,'INVALID_LOCKED','Status kunci harus berupa boolean.');
@@ -94,11 +104,65 @@ export class AdminService {
       const found=await client.query('SELECT * FROM catalog_items WHERE id=$1 FOR UPDATE',[itemId]);
       assert(found.rowCount,404,'ITEM_NOT_FOUND','Item tidak ditemukan.');
       assert(body.locked===undefined||found.rows[0].kind==='car',400,'INVALID_LOCKED','Penguncian global hanya berlaku untuk mobil.');
+      assert(!changingCategory||found.rows[0].kind==='car',400,'INVALID_CATEGORY','Kategori hanya dapat dipasang pada kendaraan.');
       assert(found.rows[0].version===version,409,'CATALOG_CHANGED','Item telah diubah admin lain. Muat ulang sebelum menyimpan.');
+      let previousCategory:string|null=null;
+      if(changingCategory){
+        if(nextCategory!==null)await lockVehicleCategory(client,nextCategory);
+        previousCategory=(await client.query('SELECT category_id FROM vehicle_category_assignments WHERE car_id=$1',[itemId])).rows[0]?.category_id??null;
+        if(nextCategory===null)await client.query('DELETE FROM vehicle_category_assignments WHERE car_id=$1',[itemId]);
+        else await client.query('INSERT INTO vehicle_category_assignments(car_id,category_id) VALUES($1,$2) ON CONFLICT(car_id) DO UPDATE SET category_id=excluded.category_id',[itemId,nextCategory]);
+      }
       const result=await client.query('UPDATE catalog_items SET price=COALESCE($2,price),active=COALESCE($3,active),locked=COALESCE($4,locked),version=version+1 WHERE id=$1 RETURNING id,kind,name,price,active AS enabled,locked,version AS "catalogVersion"',[itemId,price,body.enabled??null,body.locked??null]);
-      const updated=result.rows[0];
-      await audit(client,actorId,'catalog.updated',itemId,reason,{price:found.rows[0].price,enabled:found.rows[0].active,locked:found.rows[0].locked,catalogVersion:version},updated);
+      const updated={...result.rows[0],...(changingCategory?{categoryId:nextCategory}:{})};
+      await audit(client,actorId,'catalog.updated',itemId,reason,{price:found.rows[0].price,enabled:found.rows[0].active,locked:found.rows[0].locked,catalogVersion:version,...(changingCategory?{categoryId:previousCategory}:{})},updated);
       return {item:updated};
+    });
+  }
+
+  async getVehicleCategories(actorId:string) {
+    await requireAdmin(this.pool,actorId);
+    return {categories:await listVehicleCategories(this.pool)};
+  }
+
+  async createVehicleCategory(actorId:string,input:unknown) {
+    const body=v.object(input),name=categoryName(body.name),sortOrder=categoryOrder(body.sortOrder===undefined?0:body.sortOrder),reason=v.text(body.reason,'Alasan',4,500);
+    return categoryConflict(transaction(this.pool,async client=>{
+      await requireAdmin(client,actorId);
+      const result=await client.query<VehicleCategory>('INSERT INTO vehicle_categories(id,name,sort_order) VALUES($1,$2,$3) RETURNING id,name,sort_order AS "sortOrder",version',[randomUUID(),name,sortOrder]);
+      const category=result.rows[0]!;
+      await audit(client,actorId,'vehicle.category.created',category.id,reason,null,category);
+      return {category};
+    }));
+  }
+
+  async updateVehicleCategory(actorId:string,rawId:unknown,input:unknown) {
+    const id=categoryId(rawId),body=v.object(input),version=expectedVersion(body.expectedVersion),name=categoryName(body.name),sortOrder=categoryOrder(body.sortOrder),reason=v.text(body.reason,'Alasan',4,500);
+    return categoryConflict(transaction(this.pool,async client=>{
+      await requireAdmin(client,actorId);
+      const found=await client.query<VehicleCategory>('SELECT id,name,sort_order AS "sortOrder",version FROM vehicle_categories WHERE id=$1 FOR UPDATE',[id]);
+      assert(found.rowCount,404,'CATEGORY_NOT_FOUND','Kategori tidak ditemukan. Muat ulang daftar kategori.');
+      assert(found.rows[0]!.version===version,409,'CATEGORY_CHANGED','Kategori sudah diubah admin lain. Muat ulang sebelum menyimpan.');
+      const result=await client.query<VehicleCategory>('UPDATE vehicle_categories SET name=$2,sort_order=$3,version=version+1 WHERE id=$1 RETURNING id,name,sort_order AS "sortOrder",version',[id,name,sortOrder]);
+      const category=result.rows[0]!;
+      await audit(client,actorId,'vehicle.category.updated',id,reason,found.rows[0],category);
+      return {category};
+    }));
+  }
+
+  async deleteVehicleCategory(actorId:string,rawId:unknown,input:unknown) {
+    const id=categoryId(rawId),body=v.object(input),version=expectedVersion(body.expectedVersion),reason=v.text(body.reason,'Alasan',4,500);
+    return transaction(this.pool,async client=>{
+      await requireAdmin(client,actorId);
+      const found=await client.query<VehicleCategory>('SELECT id,name,sort_order AS "sortOrder",version FROM vehicle_categories WHERE id=$1 FOR UPDATE',[id]);
+      assert(found.rowCount,404,'CATEGORY_NOT_FOUND','Kategori tidak ditemukan. Muat ulang daftar kategori.');
+      assert(found.rows[0]!.version===version,409,'CATEGORY_CHANGED','Kategori sudah diubah admin lain. Muat ulang sebelum menghapus.');
+      const assigned=await client.query('SELECT car_id FROM vehicle_category_assignments WHERE category_id=$1 LIMIT 1',[id]);
+      assert(!assigned.rowCount,409,'CATEGORY_IN_USE','Kategori masih digunakan kendaraan. Pindahkan seluruh kendaraan sebelum menghapusnya.');
+      await client.query('DELETE FROM vehicle_categories WHERE id=$1',[id]);
+      const deleted={deleted:true as const,id};
+      await audit(client,actorId,'vehicle.category.deleted',id,reason,found.rows[0],deleted);
+      return deleted;
     });
   }
 

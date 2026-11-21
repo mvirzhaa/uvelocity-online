@@ -108,8 +108,14 @@ async function main(){
  workshop.root.updateMatrixWorld(true);
  workshop.root.traverse(n=>{if(!n.isMesh)return;workshopCalls++;workshopTriangles+=(n.geometry.index?.count||n.geometry.attributes.position.count)/3;for(const value of n.geometry.attributes.position.array)assert.ok(Number.isFinite(value),'Nonfinite workshop geometry');const bounds=new THREE.Box3().setFromObject(n);if(bounds.max.y>.04&&bounds.min.y<2.4)assert.ok(bounds.max.x<=-3.1||bounds.min.x>=3.1||bounds.max.z<=-4.1||bounds.min.z>=4.1,'Workshop obstruction in central car bay: '+n.name);for(const m of Array.isArray(n.material)?n.material:[n.material]){if('roughness'in m)assert.ok(m.roughness>=0&&m.roughness<=1);if('metalness'in m)assert.ok(m.metalness>=0&&m.metalness<=1);}});
  assert.equal(workshopCalls,workshop.stats.drawCalls);assert.ok(workshopCalls<100);assert.ok(workshopTriangles<70000);
+ const serviceArms=workshop.root.children.filter(node=>node.userData.serviceRobot);assert.equal(serviceArms.length,2,'Two actual 3D service arms must flank the bay');
+ for(const arm of serviceArms){const bounds=new THREE.Box3().setFromObject(arm),size=bounds.getSize(new THREE.Vector3());assert.ok(bounds.max.x<=-3.1||bounds.min.x>=3.1,'Robot gripper crosses the clear car bay');assert.ok(size.y>1.5&&size.y<2.8,'Service arm must remain human-scale');assert.ok(arm.children.filter(node=>node.isMesh).length>=4,'Robot must retain body, joints and light materials');}
+ const displayRings=workshop.root.children.find(node=>node.userData.floorMounted);assert.ok(displayRings,'Display rings must exist as floor geometry');const ringBounds=new THREE.Box3().setFromObject(displayRings);assert.ok(ringBounds.min.y>=-1e-6&&ringBounds.max.y<.04,'Display light geometry must remain below the car');
+ const cyanCore=displayRings.children.find(node=>node.isMesh&&!node.material.transparent);assert.ok(cyanCore&&cyanCore.material.color.b>cyanCore.material.color.r&&cyanCore.material.color.g>cyanCore.material.color.r,'Display rings use cyan light');assert.equal(cyanCore.castShadow,false,'Floor light cannot cast an opaque shadow across the car');
+ const workshopResources=new Set(),workshopDisposals=new Map();workshop.root.traverse(node=>{if(!node.isMesh)return;workshopResources.add(node.geometry);for(const material of Array.isArray(node.material)?node.material:[node.material]){workshopResources.add(material);for(const value of Object.values(material))if(value?.isTexture)workshopResources.add(value);}});
+ for(const resource of workshopResources)resource.addEventListener('dispose',()=>workshopDisposals.set(resource,(workshopDisposals.get(resource)||0)+1));
  for(const distance of[5.8,11.5,20])for(let side=0;side<8;side++){const cam=new THREE.PerspectiveCamera(33,1,.05,100);cam.position.set(Math.sin(side*Math.PI/4)*distance,2.5,Math.cos(side*Math.PI/4)*distance);cam.lookAt(0,.55,0);workshop.update(cam);assert.ok(workshop.root.children.some(c=>c.visible));}
- workshop.setQuality('low');workshop.setQuality('medium');results.push('3D workshop: '+workshopCalls+' merged draws / '+workshopTriangles+' triangles, finite PBR geometry, central 6.2 × 8.2 m bay clear, orbit visibility and quality contract.');
+ workshop.setQuality('low');workshop.setQuality('medium');results.push('3D cyan workshop: '+workshopCalls+' merged draws / '+workshopTriangles+' triangles, two articulated service arms outside the clear 6.2 × 8.2 m bay, floor-mounted cyan display rings, finite PBR geometry, orbit visibility, quality and owned-resource disposal.');
  assert.equal(q.racers.length,0,'Preview must not simulate an offline AI field');
  assert.ok(document.body.classList.contains('nv-embedded'));
 
@@ -238,6 +244,7 @@ async function main(){
  results.push('All three existing worlds switch through the public API.');
  assert.equal(errors.length,0,errors.join('\n'));
  results.unshift('SHA-256 integrity of sixteen GLBs: thirteen preserved sources, two reviewed hypercar revisions, one new Panther, and unchanged city/biome/police/fallback modules.');
- console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,expansion,fittedModels:stats.map(item=>item.id),cockpits:cockpitStats,stockRimPaint:stockPaintStats,stripes:stripeStats,warnings:warnings.slice(0,12),errors},null,2));api.dispose();
+ api.dispose();assert.equal(workshop.root.children.length,0);assert.equal(workshop.root.parent,null);for(const resource of workshopResources)assert.equal(workshopDisposals.get(resource),1,'Every owned workshop geometry/material/texture must dispose exactly once');
+ console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,expansion,fittedModels:stats.map(item=>item.id),cockpits:cockpitStats,stockRimPaint:stockPaintStats,stripes:stripeStats,warnings:warnings.slice(0,12),errors},null,2));
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

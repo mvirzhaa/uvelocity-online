@@ -1,6 +1,8 @@
 import type { CarId, Finish, VehicleStats } from '../../shared/types.js';
 import type { MediaAsset, MediaKind } from '../../shared/media.js';
 import type { VehicleThumbnail } from '../../shared/vehicle-thumbnails.js';
+import type { VehicleCategory } from '../../shared/vehicle-categories.js';
+export type { VehicleCategory } from '../../shared/vehicle-categories.js';
 
 export interface User {id:string;email:string;displayName:string;avatarId:string;role:'player'|'admin';createdAt:string}
 export type StripeId='none'|'twin-racing'|'offset'|'side-sweep'|'circuit'|'heritage';
@@ -8,8 +10,8 @@ export interface Loadout {carId:CarId;rimId:string;wheelId?:string;color:string;
 export interface VehicleAppearance extends Loadout {version:string;owned:boolean;canCustomize:boolean}
 export interface Wallet {balance:string;version:string;currency:string}
 export interface Profile {user:User;wallet:Wallet;inventory:{cars:string[];wheels:string[]};accessibleCars:string[];appearances:VehicleAppearance[];loadout:Loadout;statistics:{races:number;wins:number;rewards:string}}
-export interface CatalogItem {id:string;itemId:string;kind:'car'|'wheel'|'service';name:string;price:string;catalogVersion:number;enabled:boolean;locked?:boolean;color:string;stats?:VehicleStats;topSpeed?:number;zeroTo100?:number;handling?:number;drive?:string;tuningVersion?:string;cosmeticOnly?:boolean;modelOrigin?:string;modelNote?:string;thumbnail?:VehicleThumbnail|null}
-export interface Catalog {currency:string;currencyLabel:string;rulesetVersion:string;cars:CatalogItem[];wheels:CatalogItem[];services:CatalogItem[];tuningBounds?:Record<string,unknown>}
+export interface CatalogItem {id:string;itemId:string;kind:'car'|'wheel'|'service';name:string;price:string;catalogVersion:number;enabled:boolean;locked?:boolean;color:string;stats?:VehicleStats;topSpeed?:number;zeroTo100?:number;handling?:number;drive?:string;tuningVersion?:string;cosmeticOnly?:boolean;modelOrigin?:string;modelNote?:string;thumbnail?:VehicleThumbnail|null;categoryId?:string|null}
+export interface Catalog {currency:string;currencyLabel:string;rulesetVersion:string;categories:VehicleCategory[];cars:CatalogItem[];wheels:CatalogItem[];services:CatalogItem[];tuningBounds?:Record<string,unknown>}
 export interface AppearanceQuote {quoteId:string;carId:CarId;appearanceVersion:string;selection:Loadout;lineItems:Array<{itemId:string;name:string;price:string;catalogVersion:number}>;total:string;wallet:Wallet;affordable:boolean;noOp:boolean;expiresAt:string}
 export interface AppearanceApplication {applicationId:string|null;appearance:VehicleAppearance;loadout:Loadout;wallet:Wallet;pricePaid:string;lineItems:AppearanceQuote['lineItems'];noOp:boolean}
 export interface LedgerEntry {id:string;kind:string;delta:string;amount?:string;balanceAfter:string;reason:string;createdAt:string}

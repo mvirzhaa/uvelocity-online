@@ -99,14 +99,22 @@ const saved=id=>profile.appearances.find(item=>item.carId===id);
 const carButton=id=>{const name=catalog.cars.find(c=>c.id===id).name;const b=[...document.querySelectorAll('.car-choice')].find(x=>x.querySelector('b')?.textContent===name);assert.ok(b);return b;};
 const carNames=()=>[...document.querySelectorAll('.car-choice>b')].map(node=>node.textContent);
 const mutations=()=>calls.filter(call=>call.method!=='GET');
-const previews=[];
+const previews=[],cameraPresets=[];
+const nativeTimeout=globalThis.setTimeout,nativeClearTimeout=globalThis.clearTimeout;
+const splashTimers=new Map();let splashId=0;
+globalThis.setTimeout=(callback,delay,...args)=>{if(delay!==3000)return nativeTimeout(callback,delay,...args);const id=--splashId;splashTimers.set(id,()=>callback(...args));return id;};
+globalThis.clearTimeout=id=>{if(!splashTimers.delete(id))nativeClearTimeout(id);};
+const finishSplash=async()=>{await act(async()=>{for(const [id,callback] of [...splashTimers]){splashTimers.delete(id);callback();}});await settle();};
+
 try{
- await act(async()=>{root.render(React.createElement(App));});await settle();await clickText('Lewati intro');
+ await act(async()=>{root.render(React.createElement(App));});await settle();await finishSplash();
  assert.equal(document.querySelectorAll('.car-choice').length,2,'Garage shows permanently owned vehicles only');
- const headingActions=document.querySelector('.page-heading .garage-actions');assert.ok(headingActions,'Garage actions are next to the page heading');assert.equal(headingActions.querySelector('.primary').disabled,true,'The active saved car is not re-equipped');assert.equal([...document.querySelectorAll('button')].filter(node=>node.textContent==='Masuk ke ruang balap').length,1,'The room action has no duplicate below the preview');assert.ok(headingActions.contains(button('Masuk ke ruang balap')));
- const renderFrame=document.querySelector('iframe'),fakeGame={ready:Promise.resolve(),on(){return()=>{};},setVisible(){},setMuted(){},configure:async()=>{},preview:async loadout=>{previews.push(copy(loadout));},stopRace:async()=>{},pause:async()=>{},resume:async()=>{},focus(){}};
+ const headingActions=document.querySelector('.page-toolbar .garage-actions');assert.ok(headingActions,'Garage actions remain on the compact top toolbar');assert.equal(headingActions.querySelector('.primary').disabled,true,'The active saved car is not re-equipped');assert.equal([...document.querySelectorAll('button')].filter(node=>node.textContent==='Masuk ke ruang balap').length,1,'The room action has no duplicate below the preview');assert.ok(headingActions.contains(button('Masuk ke ruang balap')));
+ const renderFrame=document.querySelector('iframe'),fakeGame={ready:Promise.resolve(),on(){return()=>{};},setVisible(){},setMuted(){},configure:async()=>{},preview:async loadout=>{previews.push(copy(loadout));},stopRace:async()=>{},pause:async()=>{},resume:async()=>{},setCamera:async name=>{cameraPresets.push(name);},focus(){}};
  Object.defineProperty(renderFrame,'contentWindow',{value:{NVGame:fakeGame},configurable:true});await act(async()=>renderFrame.dispatchEvent(new window.Event('load')));await settle();
  assert.deepEqual(carNames(),['Subaru BRZ','BMW M4 GT4']);assert.match(document.querySelector('.vehicle-browse-navigation').textContent,/1 \/ 2/);
+ assert.ok(document.querySelector('.stage-viewport iframe'));assert.equal(document.querySelector('.stage-viewport .stage-caption'),null,'Vehicle names are outside the 3D viewport for the mobile CSS flow');await click(document.querySelector('[aria-label="Tampilan samping"]'));assert.equal(document.querySelector('[aria-label="Tampilan samping"]').getAttribute('aria-pressed'),'true');assert.equal(cameraPresets.at(-1),'side');await click(document.querySelector('[aria-label="Tampilan depan"]'));
+ console.log('PASS vehicle caption is separate from the 3D viewport and active camera presets operate the existing game API');
  assert.equal(document.querySelectorAll('.car-choice [data-car-thumbnail]').length,2);assert.equal(document.querySelector('.car-choice [data-car-thumbnail="brz"] img').getAttribute('src'),catalog.cars[0].thumbnail.url);assert.ok(document.querySelector('.car-choice [data-car-thumbnail="bmw-m4-gt4"] .vehicle-thumbnail-fallback'));
  await clickText('Sebelumnya');assert.equal(previews.at(-1).carId,'bmw-m4-gt4');assert.equal(previews.at(-1).color,'#eeeeee');assert.match(document.querySelector('.vehicle-browse-navigation').textContent,/2 \/ 2/);
  await clickText('Berikutnya');assert.equal(previews.at(-1).carId,'brz');assert.equal(profile.loadout.carId,'brz');assert.equal(mutations().length,0);
@@ -114,6 +122,28 @@ try{
  await clickText('Sebelumnya');assert.equal(previews.at(-1).carId,'jesko-absolut');await clickText('Berikutnya');assert.equal(previews.at(-1).carId,'brz');
  await click(carButton('amg-gt4'));await clickText('Garasi');assert.equal(previews.at(-1).carId,'brz');assert.deepEqual(carNames(),['Subaru BRZ','BMW M4 GT4']);assert.equal(mutations().length,0,'Browsing never equips, purchases or debits');assert.strictEqual(document.querySelector('iframe'),renderFrame);
  console.log('PASS owned-only Garage, complete Showroom, previous/next wrap, saved previews and no mutations while browsing');
+
+ assert.equal(document.querySelector('.page-heading'),null);assert.equal(document.querySelector('main>h1').className,'sr-only');
+ assert.ok(document.querySelector('.scene-tools-column>.page-tools'));assert.equal(document.querySelector('.scene-toolbar').nextElementSibling.classList.contains('content-grid'),true);
+ const compactBaseCatalog=copy(catalog),compactBaseLoadout=copy(profile.loadout),compactBefore=mutations().length;
+ const categoryOf=id=>id==='brz'||id==='skyline'?'sport':id==='bmw-m4-gt4'||id==='amg-gt4'?'race':'other';
+ catalog={...catalog,categories:[{id:'sport',name:'Sport',sortOrder:10,version:1},{id:'race',name:'Mobil balap',sortOrder:20,version:1},{id:'other',name:'Lainnya',sortOrder:30,version:1},{id:'empty',name:'SUV',sortOrder:40,version:1}],cars:[...catalog.cars,car('skyline','Nissan Skyline','#123456'),car('cinder','Cinder V8','#222222'),car('kaze','Kaze Rally','#eeeeee'),car('panther-grand-touring','Isuzu Panther Grand Touring','#19252e'),car('aventador','Lamborghini Aventador','#123456')].map(item=>({...item,categoryId:categoryOf(item.id)}))};
+ await clickText('Showroom');assert.equal(carNames().length,4);assert.match(document.querySelector('.collection-range').textContent,/1–4.*9 kendaraan/);
+ assert.equal(document.querySelector('.collection-previous').disabled,true);const previewBeforePaging=previews.length;
+ await click(document.querySelector('.collection-next'));assert.equal(carNames().length,4);assert.match(document.querySelector('.collection-range').textContent,/5–8/);assert.equal(previews.length,previewBeforePaging,'Paging cards alone cannot change the 3D selection');
+ await click(document.querySelector('.collection-next'));assert.deepEqual(carNames(),['Lamborghini Aventador']);assert.equal(document.querySelector('.collection-next').disabled,true);assert.equal(previews.length,previewBeforePaging);
+ await click(carButton('aventador'));assert.equal(previews.at(-1).carId,'aventador');assert.deepEqual(profile.loadout,compactBaseLoadout);await clickText('Sebelumnya');assert.equal(previews.at(-1).carId,'panther-grand-touring');assert.equal(carNames().length,4);assert.ok(carNames().includes('Isuzu Panther Grand Touring'),'Previous model navigation reveals the selected card page');
+ console.log('PASS compact toolbar, four-card pages, bounded arrows and selected-card synchronization without automatic equip');
+ await change(document.querySelector('#showroom-category'),'race');assert.deepEqual(carNames(),['BMW M4 GT4','Mercedes-AMG GT4']);assert.equal(previews.at(-1).carId,'bmw-m4-gt4');assert.match(document.querySelector('.category-result-count').textContent,/2 kendaraan/);assert.equal(document.querySelector('.collection-next').disabled,true);
+ await clickText('Sebelumnya');assert.equal(previews.at(-1).carId,'amg-gt4');await clickText('Berikutnya');assert.equal(previews.at(-1).carId,'bmw-m4-gt4');assert.ok([...document.querySelectorAll('.vehicle-category-label')].every(item=>item.textContent==='Mobil balap'));
+ await change(document.querySelector('#showroom-category'),'empty');assert.equal(carNames().length,0);assert.match(document.querySelector('.garage-empty').textContent,/Belum ada kendaraan di kategori ini/);assert.equal(document.querySelector('.stage-panel').classList.contains('stage-hidden'),true);assert.strictEqual(document.querySelector('iframe'),renderFrame);
+ await clickText('Lihat semua kendaraan');assert.equal(carNames().length,4);assert.equal(document.querySelector('#showroom-category').value,'all');
+ await change(document.querySelector('#showroom-category'),'race');await clickText('Garasi');assert.deepEqual(carNames(),['Subaru BRZ','BMW M4 GT4'],'Showroom category filter cannot hide owned Garage vehicles');await clickText('Showroom');assert.equal(document.querySelector('#showroom-category').value,'race');assert.equal(carNames().length,2);
+ catalog={...catalog,categories:catalog.categories.filter(item=>item.id!=='race'),cars:catalog.cars.map(item=>item.categoryId==='race'?{...item,categoryId:null}:item)};await clickText('Showroom');assert.equal(document.querySelector('#showroom-category').value,'all','A category removed by admin safely resets the filter');
+ await change(document.querySelector('#showroom-category'),'uncategorized');assert.deepEqual(carNames(),['BMW M4 GT4','Mercedes-AMG GT4']);assert.equal(mutations().length,compactBefore);assert.deepEqual(profile.loadout,compactBaseLoadout);assert.strictEqual(document.querySelector('iframe'),renderFrame);
+ catalog=compactBaseCatalog;await clickText('Showroom');await change(document.querySelector('#showroom-category'),'all');await clickText('Garasi');await click(carButton('brz'));
+ console.log('PASS category-filtered cards and model navigation, empty/unassigned categories, admin refresh, and ownership invariants');
+
  const beforePhotoRefresh=previews.length,priorOffer={price:catalog.cars[0].price,locked:catalog.cars[0].locked,catalogVersion:catalog.cars[0].catalogVersion},newPhotoId='87654321-4321-4321-8321-123456789abc';
  catalog={...catalog,cars:catalog.cars.map(item=>item.id==='brz'?{...item,thumbnail:{...item.thumbnail,id:newPhotoId,url:'/api/vehicle-thumbnails/'+newPhotoId}}:item)};await clickText('Garasi');
  assert.equal(document.querySelector('[data-car-thumbnail="brz"] img').getAttribute('src'),'/api/vehicle-thumbnails/'+newPhotoId);assert.equal(previews.length,beforePhotoRefresh,'A photo refresh cannot reset the 3D preview');assert.equal(mutations().length,0);assert.equal(profile.loadout.carId,'brz');assert.deepEqual({price:catalog.cars[0].price,locked:catalog.cars[0].locked,catalogVersion:catalog.cars[0].catalogVersion},priorOffer);
@@ -124,7 +154,7 @@ try{
  assert.equal(chargeCount,1);const retries=calls.filter(c=>c.path.endsWith('/apply'));assert.equal(retries[0].key,retries[1].key);assert.equal(document.querySelectorAll('.appearance-review').length,0);
  assert.equal(profile.wallet.balance,'990000');assert.equal(profile.loadout.color,'#a92d3b');
  console.log('PASS paid preview, explicit confirmation, lost-response retry with stable key');
- await click(carButton('bmw-m4-gt4'));assert.equal([...document.querySelectorAll('button')].filter(node=>node.textContent==='Pakai mobil ini').length,1);assert.ok(document.querySelector('.page-heading .garage-actions').contains(button('Pakai mobil ini')));await clickText('Pakai mobil ini');assert.equal(profile.loadout.carId,'bmw-m4-gt4','The heading action equips the selected saved car');await click(carButton('brz'));
+ await click(carButton('bmw-m4-gt4'));assert.equal([...document.querySelectorAll('button')].filter(node=>node.textContent==='Pakai mobil ini').length,1);assert.ok(document.querySelector('.page-toolbar .garage-actions').contains(button('Pakai mobil ini')));await clickText('Pakai mobil ini');assert.equal(profile.loadout.carId,'bmw-m4-gt4','The top toolbar action equips the selected saved car');await click(carButton('brz'));
  assert.equal(document.querySelector('[aria-label="Cat #a92d3b"]').getAttribute('aria-pressed'),'true');await clickText('Pakai mobil ini');assert.equal(chargeCount,1);
  console.log('PASS switching owned cars restores their saved paint without another payment');
  await click(carButton('bmw-m4-gt4'));const stripe=[...document.querySelectorAll('.stripe-card')].find(x=>x.querySelector('b')?.textContent==='Twin Racing');await click(stripe);await clickText('Tinjau biaya & pasang');await clickText('Bayar Rp15.000 & pasang');assert.equal(profile.loadout.stripeId,'twin-racing');assert.equal(profile.wallet.balance,'975000');
@@ -187,7 +217,7 @@ try{
  const pausedRoom={roomId:'room-ui',raceId:'race-ui',phase:'prayer_pause',serverTime:roomTime,inviteCode:'TEST12',config:{circuit:'city',laps:3,bots:1,maxHumans:2},prayerPause:pause,members:[{id:'fast',userId:user.id,name:'Pembalap',host:true,connected:true,ready:true,loadout:profile.loadout},{id:'slow',userId:'friend',name:'Teman',connected:true,ready:true,loadout:profile.loadout}]};
  await act(async()=>{controller.handlers.snapshot(pausedRoom);});await settle();
  assert.strictEqual(document.querySelector('iframe'),sameFrame,'A prayer pause must preserve the active game iframe');
- assert.equal(document.querySelector('main').hasAttribute('inert'),true);assert.equal(document.querySelector('header').hasAttribute('inert'),true);assert.equal(document.querySelector('.page-heading'),null);
+ assert.equal(document.querySelector('main').hasAttribute('inert'),true);assert.equal(document.querySelector('header').hasAttribute('inert'),true);assert.equal(document.querySelector('.page-toolbar'),null);assert.equal(document.querySelector('.scene-toolbar'),null);
  assert.ok([...document.querySelectorAll('[role="dialog"]')].some(x=>/salat/i.test(x.textContent)));
  assert.equal(resumeRequests,0,'Opening a prayer pause must never auto-consent');
  await act(async()=>{controller.handlers.snapshot({...pausedRoom,phase:'resume_countdown',serverTime:roomTime+900000,prayerPause:{...pause,readyIds:['fast','slow'],resumeAt:roomTime+903000}});});
@@ -199,4 +229,4 @@ try{
  await act(async()=>{root.render(React.createElement(compiled.exports.RacePanel,{room:{phase:'loading',inviteCode:'TEST12',config:{circuit:'city',laps:3,bots:0,maxHumans:2},members:[{id:'fast',userId:user.id,name:'Cepat',host:true,ready:true,arenaReady:true,connected:true,loadout:profile.loadout},{id:'slow',userId:'slow-driver',name:'Lambat',host:false,ready:true,arenaReady:false,connected:true,loadout:profile.loadout}]},profile,status:'Tersambung',ping:25,busy:false,modelReady:true,onLeave(){}}));});
  assert.match(document.querySelector('.arena-loading-card').textContent,/1 \/ 2 perangkat siap/);assert.equal(document.querySelector('[role="progressbar"]').getAttribute('aria-valuenow'),'1');assert.match(document.querySelector('.room-members').textContent,/Arena siap/);assert.match(document.querySelector('.room-members').textContent,/Memuat arena/);assert.ok(![...document.querySelectorAll('button')].some(b=>b.textContent==='Mulai balapan'));
  console.log('PASS loading panel distinguishes lobby readiness from arena readiness and withholds start controls');
-}finally{await act(async()=>root.unmount());await rm(temp,{recursive:true,force:true});}
+}finally{await act(async()=>root.unmount());globalThis.setTimeout=nativeTimeout;globalThis.clearTimeout=nativeClearTimeout;await rm(temp,{recursive:true,force:true});}

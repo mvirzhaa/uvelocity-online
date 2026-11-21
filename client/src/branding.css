@@ -1,5 +1,62 @@
 .splash .campus-intro {
   width: min(640px, 100%);
+  z-index: 2;
+}
+
+.splash.campus-splash {
+  isolation: isolate;
+  overflow: hidden;
+  background: #0b1510;
+}
+
+.campus-splash .splash-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.splash.campus-splash::before {
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: radial-gradient(ellipse at center, #07120dc2, #050d0ae8), linear-gradient(0deg, #06100f9c, #06100f20);
+}
+
+.campus-splash.splash-has-image::before {
+  background: radial-gradient(ellipse at center, #07120d85, #050d0acf), linear-gradient(0deg, #06100fb3, #06100f30);
+}
+
+.campus-splash .campus-identity figcaption,
+.campus-splash .campus-credit,
+.campus-splash .campus-discipline {
+  text-shadow: 0 2px 10px #000;
+}
+
+.campus-intro-progress {
+  width: 100px;
+  height: 2px;
+  margin: 28px auto 0;
+  background: #ffffff26;
+  overflow: hidden;
+}
+
+.campus-intro-progress::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #d7bc72;
+  transform-origin: left;
+  animation: campus-intro-progress 3s linear both;
+}
+
+@keyframes campus-intro-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 .campus-logos {
@@ -86,5 +143,6 @@
 @media (prefers-reduced-motion: reduce) {
   .splash .university-intro,
   .splash .velocity-intro,
-  .splash .intro-track { animation: none; }
+  .splash .intro-track,
+  .campus-intro-progress::after { animation: none; }
 }

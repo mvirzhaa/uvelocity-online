@@ -1,0 +1,143 @@
+/* Compact paddock: actions first, controls aligned with their preview panels. */
+.sr-only {
+  position:absolute!important;
+  width:1px!important;height:1px!important;
+  padding:0!important;margin:-1px!important;overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;
+}
+.brand-link,.auth-wordmark,.app-loading>img {
+  background:transparent;
+  border:0;box-shadow:none;border-radius:0;
+}
+.brand-link {padding:0;width:174px;height:54px;flex-shrink:0}
+.auth-wordmark {padding:0;width:244px}
+.wordmark>img,.app-loading>img {
+  filter:brightness(1.6) saturate(.9) drop-shadow(0 0 1px #d5e1c47a);
+}
+.app-loading>img {padding:0}
+.header-music-slot {display:flex;align-items:center;flex:none}
+.header-music-slot:empty {display:none}
+.app-header .header-right {gap:16px;min-width:0}
+.app-header .wallet-display {flex-shrink:0}
+.app-shell:not(.race-stage-active) .main-content {padding-top:calc(var(--header) + 14px)}
+.page-toolbar {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;min-width:0}
+.page-toolbar.has-actions {justify-content:flex-end}
+.page-toolbar .garage-actions {width:auto;max-width:100%;gap:8px}
+.page-toolbar .garage-actions>button {flex:none;min-height:44px;font-size:14px;padding:10px 17px}
+.showroom-category-filter {display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0;width:100%}
+.showroom-category-filter>label {margin:0;font-size:14px;color:#afbfaf;font-weight:500}
+.showroom-category-filter>select {width:auto;min-width:240px;max-width:100%;min-height:44px;padding:10px 34px 10px 13px;font-size:14px;background:#19271d;border-color:#344536}
+.category-result-count {color:var(--muted);font-size:13px;margin-left:auto;white-space:nowrap}
+.scene-toolbar {display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:20px;align-items:end;margin:0 0 12px;min-width:0}
+.scene-tools-column {display:flex;flex-direction:column;gap:10px;min-width:0}
+.scene-tools-column .page-toolbar {margin:0}
+.scene-tools-column .garage-actions {width:100%}
+.scene-tools-column .garage-actions>button {flex:1;padding:10px 8px;font-size:13px}
+.scene-toolbar .vehicle-browse-navigation {height:100%}
+.stage-viewport {position:relative;width:100%;height:100%;min-width:0;overflow:hidden}
+.stage-camera button[aria-pressed=true] {border:1px solid var(--gold);box-shadow:0 0 12px #d8b66b30;color:#f8e4b7;background:#43402d}
+.main-content .scene-toolbar .vehicle-browse-navigation {max-width:none;width:100%;margin:0;padding:4px 7px;min-width:0;align-items:center}
+.scene-toolbar .vehicle-browse-navigation>button {font-size:13px;min-height:44px;padding:10px 13px;gap:6px}
+.scene-toolbar .vehicle-browse-navigation>div {min-width:0;padding:0 6px}
+.scene-toolbar .vehicle-browse-navigation small {font-size:10px;letter-spacing:.08em;line-height:1.4;overflow-wrap:anywhere}
+.scene-toolbar .vehicle-browse-navigation b {font-size:19px;line-height:1.4}
+.scene-toolbar .page-tools {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;align-items:end;gap:8px;position:static;margin:0;max-width:100%;min-width:0}
+.scene-toolbar .page-tools>label {font-size:12px;line-height:1.4;min-width:0;letter-spacing:0;color:#a3b49f}
+.scene-toolbar .page-tools select {width:100%;min-width:0;height:44px;min-height:44px;margin-top:5px;padding:9px 24px 9px 10px;font-size:13px}
+.scene-toolbar .page-tools>.icon-button {min-width:44px;width:44px;height:44px;position:relative}
+.scene-toolbar .page-tools>.icon-button>svg {width:20px;height:20px}
+.app-shell:not(.race-stage-active) {--preview-height:clamp(340px,calc(100dvh - 250px),560px)}
+.collection-section {margin-top:24px}
+.collection-section .section-heading {margin-bottom:12px;gap:12px;align-items:center}
+.collection-section .section-heading .eyebrow {display:none}
+.collection-section .section-heading h3 {font-size:21px;margin:0;line-height:1.35}
+.collection-section .section-heading>span {font-size:12px;line-height:1.4}
+.garage-collection-note {margin-bottom:10px;gap:12px}
+.garage-collection-note p {font-size:12px;line-height:1.5}
+.vehicle-card-carousel {min-width:0}
+.collection-paging {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
+.collection-range {font-size:14px;font-weight:600;color:#e8d4a2}
+.collection-range>span {font-size:13px;font-weight:400;color:#a6b7a6}
+.collection-paging-buttons {display:flex;gap:8px}
+.collection-paging-buttons .icon-button {width:44px;min-width:44px;height:44px;touch-action:manipulation;background:#1b2b21;border-color:#42533d}
+.collection-previous>svg {transform:rotate(180deg)}
+.collection-paging-buttons button:disabled {opacity:.35}
+.vehicle-card-carousel .vehicle-card-page {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;overflow:visible;padding:0;min-width:0;animation:vehicle-cards-in .16s ease-out}
+.vehicle-card-page .car-choice {width:100%;min-width:0;flex:none;padding:12px;text-align:left;scroll-snap-align:none;min-height:0;overflow:hidden;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.vehicle-card-page .car-choice .car-choice-top {margin-bottom:12px}
+.vehicle-card-page .car-choice>b {font-size:14px;line-height:1.4;overflow-wrap:anywhere;margin:0 0 4px;min-height:2.8em}
+.vehicle-card-page .car-choice>.vehicle-category-label {overflow-wrap:anywhere;font-size:12px;line-height:1.4;color:#8fa58e;font-weight:400;margin:0 0 8px}
+.vehicle-card-page .car-choice>span:last-child {font-size:13px;line-height:1.5;margin-top:auto;overflow-wrap:anywhere}
+.vehicle-card-page .vehicle-thumbnail>img {padding:4px}
+.vehicle-card-page .thumbnail-status {right:6px;top:6px}
+@keyframes vehicle-cards-in {from{opacity:.5;transform:translateX(7px)}to{opacity:1;transform:none}}
+@media(min-width:1650px){.scene-toolbar{grid-template-columns:minmax(0,1fr) 352px;gap:25px}}
+@media(min-width:1181px){
+  :root {--sidebar:clamp(194px,15.5vw,260px)}
+  .app-shell:not(.race-stage-active) {--vehicle-panel-width:clamp(316px,26vw,480px)}
+  .app-shell:not(.race-stage-active) .content-grid,
+  .app-shell:not(.race-stage-active) .scene-toolbar {grid-template-columns:minmax(0,1fr) var(--vehicle-panel-width)}
+}
+@media(max-width:1180px){.scene-toolbar{grid-template-columns:minmax(0,1fr) 285px;gap:15px}.scene-toolbar .page-tools{gap:6px}.scene-toolbar .page-tools select{font-size:12px}.brand-link{width:154px}}
+@media(max-width:960px){.scene-toolbar{grid-template-columns:minmax(0,1fr) 264px;gap:13px}.scene-toolbar .vehicle-browse-navigation>button{font-size:12px;padding:9px 8px}.scene-toolbar .vehicle-browse-navigation small{font-size:9px}.app-header .header-right{gap:12px}.vehicle-card-page .car-choice{padding:10px}}
+@media(max-width:760px){
+  .app-shell:not(.race-stage-active) .main-content{padding-top:calc(var(--header) + 12px)}
+  .app-header{padding-left:14px;padding-right:14px;gap:10px}
+  .app-header .brand-link{width:128px;height:44px}
+  .app-header .header-right{gap:8px}
+  .app-header .wallet-display{gap:0}
+  .app-header .wallet-display>svg{display:none}
+  .app-header .wallet-display small{font-size:8px;letter-spacing:.04em}
+  .app-header .wallet-display b{font-size:13px}
+  .page-toolbar{margin-bottom:10px}
+  .page-toolbar .garage-actions{width:100%}
+  .page-toolbar .garage-actions>button{flex:1;font-size:13px;padding:10px 9px}
+  .showroom-category-filter{gap:8px}
+  .showroom-category-filter>label{font-size:13px;flex-basis:100%}
+  .showroom-category-filter>select{min-width:0;flex:1;font-size:13px}
+  .category-result-count{font-size:12px}
+  .scene-toolbar{grid-template-columns:minmax(0,1fr);gap:10px;margin-bottom:10px}
+  .scene-toolbar-spacer{display:none}
+  .scene-toolbar .vehicle-browse-navigation>button{font-size:13px;padding:9px 11px}
+  .scene-toolbar .page-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;width:100%;gap:8px}
+  .scene-toolbar .page-tools>label{font-size:12px}
+  .scene-toolbar .page-tools select{font-size:13px}
+  .app-shell:not(.race-stage-active){--preview-height:clamp(300px,40svh,390px)}
+  .app-shell:not(.race-stage-active) .stage-panel{height:auto}
+  .app-shell:not(.race-stage-active) .stage-viewport{height:var(--preview-height)}
+  .app-shell:not(.race-stage-active) .stage-caption{position:static;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid #3d5966;background:#111e2c;pointer-events:auto}
+  .app-shell:not(.race-stage-active) .stage-caption>div:first-child{min-width:0;flex:1 1 160px}
+  .app-shell:not(.race-stage-active) .stage-caption h2{font-size:16px;line-height:1.3;margin-bottom:3px;overflow-wrap:anywhere}
+  .app-shell:not(.race-stage-active) .stage-caption .eyebrow{font-size:9px;line-height:1.3;margin-bottom:3px}
+  .app-shell:not(.race-stage-active) .stage-caption p{font-size:11px;line-height:1.4}
+  .app-shell:not(.race-stage-active) .stage-camera{margin:0 0 0 auto;flex:none}
+  .app-shell:not(.race-stage-active) .stage-camera button{font-size:11px;padding:6px 8px}
+  .app-shell:not(.race-stage-active) .stage-hint{display:none}
+  .collection-section{margin-top:22px}
+  .collection-section .section-heading h3{font-size:19px}
+  .collection-section .section-heading>span{font-size:11px}
+  .vehicle-card-carousel .vehicle-card-page{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .vehicle-card-page .car-choice{min-width:0;width:100%;padding:10px}
+  .vehicle-card-page .car-choice>b{font-size:14px}
+  .garage-collection-note{align-items:flex-start;flex-wrap:wrap}
+}
+@media(max-width:420px){
+  .app-header{padding-left:10px;padding-right:10px;gap:6px}
+  .app-header .brand-link{width:106px}
+  .app-header .header-right{gap:5px;flex:1;justify-content:flex-end;min-width:0}
+  .app-header .wallet-display{flex:0 1 auto;min-width:0;max-width:115px}
+  .app-header .wallet-display>span{display:block;min-width:0;max-width:100%}
+  .app-header .wallet-display b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .app-header .profile-button{flex:none}
+  .app-header .header-right>.icon-button{min-width:28px;width:28px}
+  .app-header .wallet-display b{font-size:12px}
+  .app-header .profile-button .avatar.small{width:29px;height:29px}
+  .vehicle-card-page .car-choice{padding:8px}
+  .vehicle-card-page .car-choice>.vehicle-category-label{font-size:11px}
+  .vehicle-card-page .car-choice>span:last-child{font-size:12px}
+  .collection-range>span{font-size:12px}
+  .scene-toolbar .vehicle-browse-navigation>button{font-size:0;width:44px;min-width:44px;padding:0}
+  .scene-toolbar .vehicle-browse-navigation>button>svg{width:20px;height:20px}
+  .app-shell:not(.race-stage-active) .stage-caption h2{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){.vehicle-card-carousel .vehicle-card-page{animation:none}}

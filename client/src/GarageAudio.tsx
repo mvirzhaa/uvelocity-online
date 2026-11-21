@@ -2,7 +2,6 @@ import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import type {MediaAsset} from '../../shared/media.js';
 import {resolveUrl} from './api.js';
-import {Icon} from './icons.js';
 
 type AudioPlacement='garage'|'splash'|'auth';
 export function GarageAudio({asset,volume,eligible,muted,suspended=false,placement='garage',controlsHost,onUnmute}:{asset:MediaAsset|null;volume:number;eligible:boolean;muted:boolean;suspended?:boolean;placement?:AudioPlacement;controlsHost?:HTMLElement|null;onUnmute?:()=>void}){
@@ -70,10 +69,14 @@ export function GarageAudio({asset,volume,eligible,muted,suspended=false,placeme
     wanted.current=true;setRequested(true);play();
   }
   const activeIntent=requested&&!blocked&&!error;
+  const label=muted?(onUnmute?'Aktifkan suara':'Suara dimatikan'):activeIntent?'Jeda musik garasi':'Putar musik garasi';
+  const controlState=muted?'muted':error?'blocked':playing?'playing':activeIntent?'waiting':'paused';
   const controls=asset&&eligible?<div className={'garage-music garage-music--'+placement} aria-label="Musik garasi">
-    <Icon name="sound" size={17}/><div className="garage-music-title"><small>{placement==='garage'?'MUSIK GARASI':'MUSIK UVELOCITY'}</small><span title={asset.name}>{asset.name}</span></div>
-    <button type="button" className="text-button" data-music-toggle="true" disabled={suspended||(muted&&!onUnmute)} aria-label={muted&&onUnmute?'Aktifkan suara':activeIntent?'Jeda musik garasi':'Putar musik garasi'} aria-pressed={activeIntent&&!muted} onClick={toggle}>{muted?(onUnmute?'Aktifkan suara':'Suara dimatikan'):activeIntent?(playing?'Jeda':allowed?'Menyiapkan musik…':'Dijeda sementara'):'Putar musik garasi'}</button>
-    {error&&<p className="garage-music-error" role="status">{error}</p>}
+    <button type="button" className="music-icon-button" data-music-toggle="true" data-music-state={controlState} disabled={suspended||(muted&&!onUnmute)} aria-label={label} title={error?label+'. '+error:label} aria-pressed={activeIntent&&!muted} onClick={toggle}>
+      <svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M9 17V5l11-2v12M9 8l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2.5"/><ellipse cx="17" cy="16" rx="3" ry="2.5"/>{muted&&<path d="m3 3 18 18"/>}</svg>
+      {!muted&&<span className="music-state-mark" aria-hidden="true">{playing?<svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><path d="M1 1h2v6H1zm4 0h2v6H5z"/></svg>:<svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><path d="m2 1 5 3-5 3z"/></svg>}</span>}
+    </button>
+    {error&&<span className="garage-music-error music-control-status" role="status">{error}</span>}
   </div>:null;
   return <>
     <audio ref={audio} className="garage-audio-element" data-garage-audio="true" src={resolveUrl(asset?.url)} preload="auto" loop muted={muted} onError={()=>{if(asset)fail('Lagu belum dapat dimuat. Periksa koneksi lalu coba kembali.');}}/>

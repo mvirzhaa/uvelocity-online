@@ -37,7 +37,7 @@ before(async()=>{
  await services.admin.publishTuning(admin.id,{expectedVersion:'1',carId:'brz',topSpeed:277,zeroTo100:5.2,handling:1.25,reason:'Legacy operator tuning survives expansion'});
  await pool.query("UPDATE catalog_items SET price=165000,version=2 WHERE id='kaze'");
  legacy={wallet:(await pool.query('SELECT * FROM wallets WHERE user_id=$1',[alice.user.id])).rows[0],entries:(await pool.query('SELECT count(*)::int n FROM wallet_entries WHERE user_id=$1',[alice.user.id])).rows[0].n,loadout:(await pool.query('SELECT * FROM loadouts WHERE user_id=$1',[alice.user.id])).rows[0]};
- assert.deepEqual(await migrate(pool),['006_paid_appearances_and_car_access.sql','007_expanded_vehicle_catalog.sql','008_personal_prayer_breaks.sql','009_presentation_media.sql','010_vehicle_thumbnails.sql','011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql']);
+ assert.deepEqual(await migrate(pool),['006_paid_appearances_and_car_access.sql','007_expanded_vehicle_catalog.sql','008_personal_prayer_breaks.sql','009_presentation_media.sql','010_vehicle_thumbnails.sql','011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql']);
 });
 after(async()=>{if(pool)await pool.end();await control.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);await control.end();if(legacyDirectory)await rm(legacyDirectory,{recursive:true,force:true});});
 

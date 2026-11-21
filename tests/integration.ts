@@ -87,7 +87,7 @@ try {
     const health=await http('/health');assert.equal(health.data.application,'UVelocity');assert.equal(health.data.database,'postgresql');assert.equal(health.data.ok,true);
     assert.equal(health.response.headers.get('x-powered-by'),null);
     assert.match(health.response.headers.get('content-security-policy')??'',/frame-ancestors 'self'/);
-    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,13);
+    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,14);
     const db=await application.pool.query('SELECT version()');assert.match(db.rows[0].version,/PostgreSQL/);
   });
 

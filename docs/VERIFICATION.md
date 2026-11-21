@@ -1,6 +1,52 @@
-# Verifikasi implementasi UVelocity 1.3.1
+# Verifikasi implementasi UVelocity 1.4.0
 
-## Verifikasi pembaruan 1.3.1 — 21 November 2026
+## Verifikasi pembaruan 1.4.0 — 21 November 2026
+
+Pembaruan ini mencakup tata letak paddock ringkas, tema navy/cyan/emas mengikuti referensi pengguna, bengkel 3D futuristis, kategori kendaraan yang persisten, carousel empat kartu, ikon musik di header, splash tunggal 3 detik dengan JPEG aktif admin, serta pemindahan nama mobil dan pemilih kamera ke bawah viewport pada ponsel. Baseline adalah paket final **1.3.1**; riwayat pemeriksaan sebelumnya tetap dicatat terpisah di bawah.
+
+| Pemeriksaan | Hasil aktual |
+| --- | --- |
+| `npm run test:ui` | **20 kelompok lulus**, termasuk carousel, filter, ownership, paid cosmetics, frame arena, serta pemisahan caption dari viewport |
+| `npm run test:media-ui` | **14 kelompok lulus**, termasuk timer splash, JPEG terlambat/rusak, portal header, dan kontinuitas satu pemutar |
+| `npm run test:vehicle-categories-ui` | **5 kelompok lulus** untuk pengelolaan kategori admin, assignment, konflik, validasi, dan cleanup |
+| Tes kategori HTTP + PostgreSQL | **8 tes lulus**, autentikasi/CSRF, validasi, CAS, audit, migrasi, kategori terpakai, serta assignment/penghapusan bersamaan |
+| Regresi backend dan identitas kendaraan | **18 tes lulus** pada jalur admin/ownership yang berbagi layanan katalog |
+| `npm run test:renderer` | **16 kelompok lulus**, **0 warning / 0 error**; seluruh 16 kendaraan serta bengkel baru terperiksa |
+| `npm run typecheck` | **Lulus** setelah integrasi antarmuka akhir |
+| `npm run build` | **Lulus** setelah tema, viewport mobile, dan bengkel futuristis selesai |
+| CSS | Lima stylesheet baru/diubah berhasil diparse; cascade mobile ditelaah secara statis |
+
+### Tampilan dan interaksi
+
+Judul besar pada Garasi/Balapan/Showroom/Profil/Admin dihapus. Identitas halaman tetap tersedia bagi pembaca layar, sementara aksi Garasi berada di toolbar atas. Pada desktop lebar, navigasi kendaraan berada di kiri dan aksi/pengaturan di kanan; grid toolbar mengikuti lebar panel konfigurasi 316–480 px. Logo UVelocity memakai PNG transparan yang sama, tanpa wadah putih, dengan penyesuaian kontras dan glow CSS. Ikon musik 44 × 44 px berada di dekat kredit; nama lagu tidak tampil.
+
+Carousel memasang paling banyak empat kartu sekaligus: empat kolom desktop, dua kolom pada ponsel. Tombol halaman tidak mengganti pilihan mobil 3D, melakukan equip, atau memotong saldo. Navigasi mobil sebelumnya/berikutnya mengikuti kategori yang dipilih dan menampilkan halaman kartu yang memuat mobil terpilih. Garasi tetap berdasarkan kepemilikan permanen, tanpa terpengaruh filter showroom. Kategori kosong, kendaraan tanpa kategori, dan kategori yang dihapus admin mempunyai keadaan tampilan yang teruji. Pergantian filter tidak membuat ulang iframe arena.
+
+Pada ponsel **≤760 px**, `.stage-caption` berada di alur dokumen normal setelah `.stage-viewport`; nama mobil dan tombol kamera tidak berada di dalam area 3D. Font nama **16 px**, lalu **14 px pada ≤420 px**. Tombol kamera mempunyai keadaan aktif dan mengirim pilihan ke API kamera yang sudah ada. Viewport balapan tetap memakai aturan tinggi/safe-area sebelumnya. Header sempit membatasi teks saldo panjang dengan ellipsis; nilai penuh tersedia melalui label/tooltip dan halaman profil.
+
+Splash tetap mounted selama autentikasi dan pemuatan profil: callback selesai sekali pada 3.000 ms sejak mount pertama, bukan tiga detik tambahan setiap kali halaman berubah. JPEG aktif admin berada di belakang logo UIKA/TI dan teks `create by civitas UIKA`. Gambar yang lambat/rusak tidak memperpanjang intro. Ini terpisah dari loading arena yang tetap menunggu seluruh pemain siap. Elemen audio, sumber, dan posisi lagu tetap sama sepanjang splash/login/garasi; pilihan jeda/mute dan pembatasan autoplay browser tetap dihormati.
+
+### Kategori dan migrasi
+
+Migrasi **014_vehicle_categories.sql** menambahkan tabel kategori dan assignment terpisah, dengan delapan kategori awal dan pemetaan 16 mobil. Tidak ada migrasi lama yang diubah. Admin dapat menambah, mengganti nama/urutan, menetapkan kategori mobil, dan menghapus kategori kosong. Nama dinormalisasi dan unik; mutasi menggunakan alasan audit, otorisasi admin, CSRF, serta pemeriksaan versi. Assignment menaikkan versi katalog tanpa mengubah harga, status akses, koleksi, saldo, kosmetik, atau performa.
+
+Pengujian memakai HTTP aplikasi dan PostgreSQL native melalui `tests/with-postgres.mjs`, termasuk rollback ketika audit gagal dan penghapusan yang berkompetisi dengan assignment. Sebelum menjalankan server baru, terapkan migrasi dengan **`npm run db:migrate`** pada database yang sama. Tidak ada reset data.
+
+### Bengkel dan pelestarian aset
+
+Bengkel baru mempunyai **98 kelompok mesh/material dan 28.820 segitiga**. Guard lama tetap `<100` dan `<70.000`, tanpa dilonggarkan. Dua lengan robot setinggi 2,10 m berada di luar bay 6,2 × 8,2 m; bagian terdekat x = ±3,235 m. Tiga cincin display dan cahaya lantai berada di bawah mobil, dengan Y maksimum 0,009 m. Strip dinding/lantai cyan dan palet blue-gray merupakan geometri/material asli renderer. Pencahayaan utama 2,05 dan ambient 0,68 tetap menerangi mobil. Pemeriksaan tambahan memastikan seluruh geometri, material, dan tekstur milik workshop dilepas tepat sekali.
+
+**Seluruh 16 GLB kendaraan identik byte demi byte dengan 1.3.1**, termasuk Panther yang telah dibangun ulang. Modul kota, bioma pantai/es, polisi, dan model cadangan juga dipertahankan. `workshop.js` diberi query cache `v=1.4.0` untuk pembaruan lingkungan.
+
+Build produksi menghasilkan **108 modul**, JavaScript utama **678,38 kB / 222,63 kB gzip**, serta CSS **124,09 kB / 26,94 kB gzip**. Peringatan chunk Vite di atas 500 kB tetap ada; build keluar dengan kode 0. Peringatan `http-proxy` berasal dari konfigurasi lingkungan npm.
+
+### Batas pemeriksaan
+
+Pengujian UI memakai React DOM dengan HTTP/media terprogram, sedangkan renderer memakai geometri CPU, Canvas, dan DOM. Ini **bukan screenshot browser, pengukuran pixel, WebGL/FPS, atau pengujian speaker/sentuhan perangkat nyata**. Tema mengikuti arah visual referensi tanpa klaim identik 100%. Suite backend keseluruhan tidak diulang; jalur kategori dan regresi terkait diuji secara terarah. Paket sumber selesai, tetapi deployment ke server publik belum dilakukan dari lingkungan ini.
+
+---
+
+## Riwayat verifikasi pembaruan 1.3.1 — 21 November 2026
 
 Revisi ini membangun ulang aset Panther dari empat foto pengguna, menyelaraskan metadata dan penanda cache model, serta mempertahankan musik MP3 pilihan admin dari splash sampai login dan garasi. Lingkungan verifikasi: Linux, Node.js **24.22.3**, Three.js **r128**, serta Blender **4.3.2 / Cycles CPU**. Identitas kendaraan tetap `panther-grand-touring`; tidak ada perubahan pada katalog harga, tuning, layanan akun, ekonomi, atau migrasi database.
 

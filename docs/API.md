@@ -117,6 +117,7 @@ Public response:
     "zeroTo100":{"min":1.8,"max":15},
     "handling":{"min":0.6,"max":1.6}
   },
+  "categories": [{"id":"sport","name":"Sport","sortOrder":10,"version":1}],
   "cars": [],
   "wheels": [],
   "services": [],
@@ -124,7 +125,9 @@ Public response:
 }
 ```
 
-Each car has `id`, `itemId` (same as `id`), `kind:"car"`, `name`, `price`, `catalogVersion`, `enabled`, `locked`, `color`, `drive`, `stats:{topSpeed,zeroTo100,handling}`, the same three stats at the top level for UI compatibility, `tuningVersion`, and `thumbnail:VehicleThumbnail|null` as described under vehicle collection photos. The starter car also has `starter:true`.
+Each car has `id`, `itemId` (same as `id`), `kind:"car"`, `name`, `price`, `catalogVersion`, `enabled`, `locked`, `color`, `drive`, `stats:{topSpeed,zeroTo100,handling}`, the same three stats at the top level for UI compatibility, `tuningVersion`, `categoryId:string|null`, and `thumbnail:VehicleThumbnail|null` as described under vehicle collection photos. The starter car also has `starter:true`.
+
+Since 1.4.0, `categories` is an ordered array of `VehicleCategory` objects, defined in `shared/vehicle-categories.ts` as `{id:string,name:string,sortOrder:number,version:number}`. The server orders by `sortOrder`, case-insensitive name, then ID. `categoryId:null` means the car is unassigned. The response still contains the complete catalog; the showroom filters this list locally by all cars, a category ID, or unassigned cars. Category changes do not equip a vehicle or create a purchase. The collection renders at most four cards per page; changing pages only changes the visible card group.
 
 Each wheel has `id`, `itemId`, `kind:"wheel"`, `name`, `price`, `catalogVersion`, `enabled`, `color`, `cosmeticOnly:true`, and optional `spokes`/`starter`. Wheel selection and wheel color do not modify vehicle stats.
 
@@ -158,6 +161,19 @@ Initial catalog:
 | `mesh` | Mesh Gold | 50000 |
 
 Prices and tuning are game design values, not market prices or manufacturer performance specifications. The catalogue contains 16 cars; a race still allows at most 15 participants (14 bots). The historical `jesko-absolut` key is retained for the Regera reference update, preserving purchases, photos, appearances and race history. Migration 012 changes only the original default label; operator-custom labels survive. Panther is added by migration 013 with a new ruleset that copies existing published vehicle tuning, physics and reward policy.
+
+Migration **014_vehicle_categories.sql** adds separate category and assignment tables, without changing the existing offer rows or their versions. It seeds these editable presentation groups:
+
+| Category ID | Initial name | Assigned cars |
+| --- | --- | --- |
+| `sport` | Sport | `brz`, `skyline`, `apex` |
+| `supercar` | Supercar | `aventador`, `veloce` |
+| `hypercar` | Hypercar | `jesko-absolut`, `venom-f5` |
+| `race` | Mobil balap | `bmw-hybrid-v8`, `bmw-m4-gt4`, `amg-gt4`, `sls-amg-gt3` |
+| `rally` | Reli | `kaze` |
+| `muscle` | Muscle | `cinder` |
+| `mpv` | MPV | `panther-grand-touring` |
+| `special` | Spesial | `veyron77`, `batmobile-1989` |
 
 ### `POST /shop/purchase`
 
@@ -350,9 +366,37 @@ This adds virtual credits. It does not record or verify a real payment. The wall
 
 ### `PATCH /admin/catalog/:itemId`
 
-Body: `{price?:string, enabled?:boolean, locked?:boolean, expectedVersion:number, reason:string}`. Supply at least one changed offer field. `locked` is accepted only for cars. `locked:false` allows temporary free use but never grants inventory; `locked:true` revokes free use for players without permanent ownership. Paid owners remain entitled, and a running race retains its frozen loadout. Service items can change price/availability through the same route. Prices may be zero. A stale version returns `CATALOG_CHANGED`.
+Body: `{price?:string, enabled?:boolean, locked?:boolean, categoryId?:string|null, expectedVersion:number, reason:string}`. Supply at least one of the optional fields. `locked` and `categoryId` are accepted only for cars. `locked:false` allows temporary free use but never grants inventory; `locked:true` revokes free use for players without permanent ownership. Paid owners remain entitled, and a running race retains its frozen loadout. Service items can change price/availability through the same route. Prices may be zero. A stale version returns `409 CATALOG_CHANGED`.
 
-Response: `{item:{id,kind,name,price,enabled,locked,catalogVersion}}`. Each accepted update increments the offer version and writes an audit event.
+For category assignment, send the existing category ID or real JSON `null` to remove the assignment. Omitting `categoryId` preserves it. A category-only request does not change price, availability, global lock, ownership, appearances, or tuning. The destination category is locked against deletion until the assignment transaction finishes. An unknown category returns `404 CATEGORY_NOT_FOUND`; assigning a wheel/service returns `400 INVALID_CATEGORY`.
+
+Response: `{item:{id,kind,name,price,enabled,locked,catalogVersion,categoryId?}}`; `categoryId` is present when the request changes the assignment. Each accepted update increments the offer version and writes a `catalog.updated` audit event, including the previous/new category when applicable. Example:
+
+```json
+{"categoryId":"mpv","expectedVersion":3,"reason":"Group this family vehicle under MPV"}
+```
+
+### `GET /admin/vehicle-categories`
+
+Authenticated admin read. Returns `{categories:VehicleCategory[]}` with the same sorted category metadata as the public catalog. This endpoint does not contain player ownership or account information.
+
+### `POST /admin/vehicle-categories`
+
+Authenticated admin mutation with JSON, CSRF, exact Origin, and prayer checks. Body: `{name:string,sortOrder?:number,reason:string}`. The name is normalized to NFC, trimmed, and repeated ordinary spaces are collapsed; it must contain 2–40 characters without control characters. Names are unique case-insensitively. `sortOrder` is an integer from 0 through 9999 and defaults to 0. `reason` contains 4–500 characters.
+
+HTTP `201` returns `{category:{id,name,sortOrder,version:1}}`. The server creates a new UUID ID and records `vehicle.category.created` in the same transaction. A duplicate name returns `409 CATEGORY_NAME_TAKEN`. Creating a category does not add a vehicle or its 3D asset.
+
+### `PATCH /admin/vehicle-categories/:categoryId`
+
+Body: `{name:string,sortOrder:number,expectedVersion:number,reason:string}`. Authentication, CSRF, Origin, prayer checks, and field validation are the same as creation. Supply both the name and the order. `expectedVersion` must be a positive integer; the existing admin version parser also accepts a valid positive decimal string.
+
+The transaction locks the category, checks its current version, updates name/order, increments the version, and writes `vehicle.category.updated`. Returns `{category:VehicleCategory}`. The ID and existing vehicle assignments remain unchanged. A stale edit returns `409 CATEGORY_CHANGED`; an unknown ID returns `404 CATEGORY_NOT_FOUND`. Reload and review before submitting again; the UI does not silently retry the edit with a new version.
+
+### `DELETE /admin/vehicle-categories/:categoryId`
+
+Body: `{expectedVersion:number,reason:string}`, with the same admin mutation checks. Deletion is allowed only when no vehicle is assigned. A category still in use returns `409 CATEGORY_IN_USE`; a stale version returns `409 CATEGORY_CHANGED`; an unknown ID returns `404 CATEGORY_NOT_FOUND`.
+
+Success returns `{deleted:true,id:string}` and writes `vehicle.category.deleted` in the same transaction. The UI asks for confirmation and an audit reason. Move vehicles to another category or remove their assignment before deleting a used category. No vehicle, purchase, loadout, wallet, photo, or race record is deleted.
 
 ### `GET /admin/tuning`
 
@@ -368,7 +412,7 @@ Body:
 
 Bounds: `topSpeed` 120–450 km/h; `zeroTo100` 1.8–15 seconds; `handling` 0.6–1.6. Top speed and acceleration time are rounded to two decimal places, handling to three. These are arcade simulation settings.
 
-Publishes an immutable ruleset containing all fifteen cars. Unchanged cars are copied forward. `expectedVersion` accepts a positive integer or its decimal string. A stale version returns `RULESET_CHANGED`. Response: `{version,previousVersion,appliesTo:"new-races",car,rewardPolicy}`.
+Publishes an immutable ruleset containing all sixteen cars. Unchanged cars are copied forward. `expectedVersion` accepts a positive integer or its decimal string. A stale version returns `RULESET_CHANGED`. Response: `{version,previousVersion,appliesTo:"new-races",car,rewardPolicy}`.
 
 ### `POST /admin/rewards/publish`
 
@@ -389,9 +433,9 @@ Limits: finish and each podium bonus 0–100000; per-lap amount 0–10000; cap 0
 
 ### `GET /admin/audit?limit=50`
 
-`limit` is 1–100. Returns `{entries:[{id,actorId,actorName,action,targetId,reason,before,after,createdAt}]}`. Events include `admin.created`, `wallet.topup`, `catalog.updated`, `ruleset.published`, `media.uploaded`, `media.deleted`, `presentation.updated`, `vehicle.thumbnail.updated`, and `vehicle.thumbnail.deleted`. Audit rows are append-only.
+`limit` is 1–100. Returns `{entries:[{id,actorId,actorName,action,targetId,reason,before,after,createdAt}]}`. Events include `admin.created`, `wallet.topup`, `catalog.updated`, `ruleset.published`, `media.uploaded`, `media.deleted`, `presentation.updated`, `vehicle.thumbnail.updated`, `vehicle.thumbnail.deleted`, `vehicle.category.created`, `vehicle.category.updated`, and `vehicle.category.deleted`. Audit rows are append-only.
 
-## Garage music and loading artwork
+## Garage music, opening splash, and loading artwork
 
 Types are declared in `shared/media.ts`. Migration **009** adds `presentation_assets` and a singleton `presentation_settings` row. Upload bytes are PostgreSQL `bytea`, so the existing database volume and backup contain the actual media as well as metadata. No app-container upload directory is needed. Initial selections are `null`; there is no seeded song or mandatory loading picture.
 
@@ -422,6 +466,10 @@ interface MediaAsset {
 ```
 
 Only presentation metadata is public; uploader/account identifiers are not returned. Since 1.3.1 the client requests this configuration at application startup, before authentication completes, so the selected MP3 can start during the splash. Configuration and a single persistent audio element survive splash, login, account-loading, and garage transitions. A refresh with the same selected asset must not replace the source or reset playback position. Configuration continues to refresh outside an active race.
+
+Since 1.4.0, `loadingImage` is also the background of the single opening splash. The UI retains the UIKA and Teknik Informatika logos and `create by civitas UIKA` credit above the image. A fixed three-second timer starts when the splash mounts; late configuration/image loading does not restart it, and a missing or failed image uses the default background. The splash then reveals the existing authenticated garage/account-loading state or login screen. This timer is unrelated to the server's arena-readiness barrier. The same selected JPEG continues to serve as the race-preparation overlay until that barrier completes.
+
+Music controls use a small icon beside the game-credit display, with an accessible play/pause/unmute label and tooltip, rather than a song-title panel. Splash/login use their own compact icon placement. The asset name remains available to the administrator in the media library; this is a presentation change, not a media-metadata removal.
 
 Playback is attempted automatically when eligible, subject to browser autoplay restrictions, the user's sound preference, page visibility, race preparation, and prayer pauses. A `NotAllowedError` keeps automatic intent pending and provides an explicit play button; an allowed user gesture can retry synchronously. Explicit pause or mute remains authoritative, and a late play promise cannot resume an ineligible track. Neither the public configuration request nor media streaming requires a session, and neither changes race simulation state. Admin upload/selection mutations retain authentication, role, CSRF, Origin, and prayer checks.
 
@@ -459,6 +507,8 @@ Authenticated admin mutation, with JSON, CSRF, Origin, and prayer checks. Body:
 ```
 
 Use real JSON `null` to clear a selection. Both selection fields and the volume are required. IDs must exist and match the target media kind. Volume is finite in `[0,1]` and rounded to three decimals. `reason` contains 4–500 characters. The version check and selection/audit writes share one database transaction. A stale version returns `PRESENTATION_CHANGED`; the client must reload and review rather than silently overwrite another admin's changes. Response is the new `PresentationSettings` with an incremented numeric version.
+
+The admin UI labels `loadingImageId` as **Gambar splash & loading** under **Musik & loading**. It selects one existing JPEG for both presentation surfaces; no additional splash-upload endpoint, media kind, or duplicate binary is introduced.
 
 ### `DELETE /admin/media/:id`
 
@@ -530,6 +580,8 @@ app.use('/api', createApiRouter({services, allowedOrigins:[appOrigin], secureCoo
 ```
 
 `scripts/migrate.ts` loads `.env`, runs checksum-verified migrations under a PostgreSQL advisory transaction lock, and seeds the initial catalog/ruleset. It creates no admin account.
+
+Before starting a server upgraded to **1.4.0**, run `npm run db:migrate` against the existing database to apply **014_vehicle_categories.sql**; the Compose startup already performs migrations. Preserve `.env` and the database/volume. Migration 014 adds `vehicle_categories` and `vehicle_category_assignments` and their initial mappings without resetting accounts, balances, ownership, customization, offer prices/versions, or published rulesets.
 
 `scripts/admin-create.ts` requires explicit `ADMIN_EMAIL`, `ADMIN_DISPLAY_NAME` and `ADMIN_PASSWORD`, or prompts in a TTY with hidden password entry. It creates a new administrator and audit entry, and refuses to overwrite an existing account. Use deployment secrets rather than storing the password in a committed file.
 

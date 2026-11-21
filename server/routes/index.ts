@@ -93,6 +93,10 @@ export function createApiRouter({services,allowedOrigins,secureCookies=process.e
   router.get('/admin/tuning',authenticated,administrator,route(async(_req,res)=>{res.json(await admin.getTuning(auth(res).id));}));
   router.post('/admin/topups',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.topup(auth(res).id,req.body,req.get('idempotency-key')));}));
   router.patch('/admin/catalog/:itemId',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.updateCatalog(auth(res).id,String(req.params.itemId),req.body));}));
+  router.get('/admin/vehicle-categories',authenticated,administrator,route(async(_req,res)=>{res.json(await admin.getVehicleCategories(auth(res).id));}));
+  router.post('/admin/vehicle-categories',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.status(201).json(await admin.createVehicleCategory(auth(res).id,req.body));}));
+  router.patch('/admin/vehicle-categories/:categoryId',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.updateVehicleCategory(auth(res).id,req.params.categoryId,req.body));}));
+  router.delete('/admin/vehicle-categories/:categoryId',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.deleteVehicleCategory(auth(res).id,req.params.categoryId,req.body));}));
   router.post('/admin/tuning/publish',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.publishTuning(auth(res).id,req.body));}));
   router.post('/admin/rewards/publish',authenticated,administrator,gameplayAllowed,route(async(req,res)=>{res.json(await admin.publishTuning(auth(res).id,req.body));}));
   installMediaRoutes(router,services,{authenticated,administrator,gameplayAllowed});

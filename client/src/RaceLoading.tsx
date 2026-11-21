@@ -1,7 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
 import type {MediaAsset} from '../../shared/media.js';
-import {resolveUrl} from './api.js';
 import type {RoomSnapshot} from '../../shared/types.js';
+import {resolveUrl} from './api.js';
+
+const BASE_URL = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 
 /** Presentation only: the server's arena barrier decides when this screen ends. */
 export function RaceLoading({room,image,pending,busy,connectionStatus,error,onCancel,onLeave}:{room:RoomSnapshot;image:MediaAsset|null;pending:boolean;busy:boolean;connectionStatus:string;error?:string;onCancel:()=>void;onLeave:()=>void}){
@@ -32,7 +34,7 @@ export function RaceLoading({room,image,pending,busy,connectionStatus,error,onCa
   return <section ref={dialog} className="race-loading-screen" role="dialog" aria-modal="true" aria-labelledby="race-loading-title" aria-describedby="race-loading-description" data-start-token={room.startToken??'pending'}>
     {image&&!imageFailed&&<img className="race-loading-art" src={resolveUrl(image.url)} alt="" onError={()=>setImageFailed(true)}/>}
     <div className="race-loading-shade"/>
-    <header className="race-loading-brand"><img src={`${import.meta.env.BASE_URL || '/'}branding/uvelocity-logo.png`} alt="UVelocity"/><span>RUANG {room.inviteCode}</span></header>
+    <header className="race-loading-brand"><img src={`${BASE_URL}/branding/uvelocity-logo.png`} alt="UVelocity"/><span>RUANG {room.inviteCode}</span></header>
     <div className="race-loading-content">
       <span className="eyebrow">SEMUA PEMBALAP. SATU GARIS START.</span>
       <h1 id="race-loading-title" ref={title} tabIndex={-1}>{reconnecting?'Memulihkan sambungan.':pending?'Menyiapkan garis start.':ready===total?'Menyinkronkan pembalap.':'Masuk arena bersama.'}</h1>

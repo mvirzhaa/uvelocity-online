@@ -51,7 +51,7 @@ before(async()=>{
   assert.deepEqual(await publishedRuleRows(),legacy.rules);
   assert.deepEqual((await pool.query('SELECT row_to_json(l) AS loadout,row_to_json(w) AS wallet FROM loadouts l JOIN wallets w ON w.user_id=l.user_id ORDER BY l.user_id')).rows,beforeAccounts);
   // Upgrade the independent cosmetics schema before exercising current services.
-  assert.deepEqual(await migrate(pool),['011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql']);
+  assert.deepEqual(await migrate(pool),['011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql']);
   legacy.catalog=(await pool.query('SELECT * FROM catalog_items ORDER BY id')).rows;legacy.profile=await services.economy.getProfile(player.user.id);legacy.rules=await services.economy.getActiveRuleset();
   const app=express();app.use(express.json({limit:'32kb'}));app.use('/api',createApiRouter({services,allowedOrigins:[origin],secureCookies:false}));
   http=app.listen(0,'127.0.0.1');await once(http,'listening');const address=http.address();assert(address&&typeof address==='object');base=`http://127.0.0.1:${address.port}/api`;

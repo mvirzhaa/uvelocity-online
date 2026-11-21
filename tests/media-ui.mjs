@@ -41,6 +41,14 @@ const intervals=new Map();let intervalId=0;
 const nativeInterval=globalThis.setInterval,nativeClearInterval=globalThis.clearInterval;
 globalThis.setInterval=(callback,delay,...args)=>{const id=++intervalId;intervals.set(id,{callback,delay,args});return id;};
 globalThis.clearInterval=id=>{if(!intervals.delete(id))nativeClearInterval(id);};
+// Only the three-second intro is clock-controlled. Network deadlines and the
+// short React settling timers continue to use native timers.
+const nativeTimeout=globalThis.setTimeout,nativeClearTimeout=globalThis.clearTimeout,splashTimers=new Map();let splashClock=0,splashTimerId=0;
+globalThis.setTimeout=(callback,delay,...args)=>{
+  if(delay!==3000)return nativeTimeout(callback,delay,...args);
+  const id=--splashTimerId;splashTimers.set(id,{callback,args,at:splashClock+3000});return id;
+};
+globalThis.clearTimeout=id=>{if(!splashTimers.delete(id))nativeClearTimeout(id);};
 
 const pendingUploads=[];
 class FakeXHR{
@@ -54,10 +62,10 @@ class FakeXHR{
 }
 globalThis.XMLHttpRequest=FakeXHR;
 const React=await import('react'),{createRoot}=await import('react-dom/client'),{act}=React;
-const bundle=await build({stdin:{contents:'export {default as App} from "./client/src/App.tsx"; export {OnlineRace} from "./client/src/network.ts"; export {GarageAudio} from "./client/src/GarageAudio.tsx"; export {AdminMedia} from "./client/src/AdminMedia.tsx"; export {usePresentationMedia} from "./client/src/PresentationMedia.ts"; export {api,uploadMedia} from "./client/src/api.ts";',resolveDir:process.cwd(),sourcefile:'media-test-entry.tsx',loader:'tsx'},bundle:true,write:false,format:'cjs',platform:'node',jsx:'automatic',loader:{'.css':'empty'},external:['react','react-dom','react-dom/client'],logLevel:'silent'});
+const bundle=await build({stdin:{contents:'export {default as App} from "./client/src/App.tsx"; export {Splash} from "./client/src/Auth.tsx"; export {OnlineRace} from "./client/src/network.ts"; export {GarageAudio} from "./client/src/GarageAudio.tsx"; export {AdminMedia} from "./client/src/AdminMedia.tsx"; export {usePresentationMedia} from "./client/src/PresentationMedia.ts"; export {api,uploadMedia} from "./client/src/api.ts";',resolveDir:process.cwd(),sourcefile:'media-test-entry.tsx',loader:'tsx'},bundle:true,write:false,format:'cjs',platform:'node',jsx:'automatic',loader:{'.css':'empty'},external:['react','react-dom','react-dom/client'],logLevel:'silent'});
 const require=createRequire(resolve('package.json')),Module=require('node:module'),compiled=new Module(join(temp,'Media.cjs'));
 compiled.paths=Module._nodeModulePaths(process.cwd());compiled._compile(bundle.outputFiles[0].text,compiled.filename=join(temp,'Media.cjs'));
-const {App,OnlineRace,GarageAudio,AdminMedia,usePresentationMedia,api,uploadMedia}=compiled.exports;
+const {App,Splash,OnlineRace,GarageAudio,AdminMedia,usePresentationMedia,api,uploadMedia}=compiled.exports;
 const root=createRoot(document.getElementById('root'));
 const settle=async()=>act(async()=>{await new Promise(resolve=>setTimeout(resolve,2));});
 const render=async element=>{await act(async()=>root.render(element));await settle();};
@@ -65,6 +73,7 @@ const button=text=>{const found=[...document.querySelectorAll('button')].find(no
 const click=async node=>{assert.ok(node&&!node.disabled,'Button must be enabled: '+node?.textContent);await act(async()=>{node.dispatchEvent(new window.Event('click',{bubbles:true}));await new Promise(resolve=>setTimeout(resolve,2));});};
 const gesture=async(type='pointerup',target=document.body)=>{await act(async()=>{const event=new window.Event(type,{bubbles:true});if(type==='keydown')Object.defineProperty(event,'key',{value:'Enter'});target.dispatchEvent(event);await new Promise(resolve=>setTimeout(resolve,2));});};
 const musicButton=()=>{const found=document.querySelector('.garage-music button');assert.ok(found,'Music control must be available');return found;};
+const advanceSplash=async(ms=3000)=>{await act(async()=>{splashClock+=ms;for(const [id,timer] of [...splashTimers])if(timer.at<=splashClock){splashTimers.delete(id);timer.callback(...timer.args);}await new Promise(resolve=>nativeTimeout(resolve,2));});};
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
 const change=async(node,value)=>{await act(async()=>{let prototype=Object.getPrototypeOf(node),descriptor;while(prototype&&!descriptor){descriptor=Object.getOwnPropertyDescriptor(prototype,'value');prototype=Object.getPrototypeOf(prototype);}if(descriptor?.set)descriptor.set.call(node,value);else node.value=value;node.dispatchEvent(new window.Event('input',{bubbles:true}));node.dispatchEvent(new window.Event('change',{bubbles:true}));});};
 const submit=async form=>{await act(async()=>{form.dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await new Promise(resolve=>setTimeout(resolve,2));});};
@@ -109,8 +118,28 @@ globalThis.fetch=async(url,options={})=>{
 let controller;OnlineRace.prototype.restore=async function(){controller=this;return false;};
 const writes=()=>requests.filter(item=>item.path==='/admin/presentation');
 try{
+  let firstDone=0,latestDone=0;
+  await render(React.createElement(Splash,{done:()=>firstDone++}));
+  assert.equal(splashTimers.size,1);const originalSplashTimer=[...splashTimers.keys()][0];
+  assert.equal(document.querySelectorAll('.campus-logo').length,2);assert.equal(document.querySelector('.campus-credit').textContent,'create by civitas UIKA');
+  assert.equal(document.querySelector('.splash-background'),null,'Missing admin JPEG uses the theme fallback');
+  assert.equal(document.querySelector('.splash button'),null,'The first splash lasts its full three seconds');
+  await advanceSplash(1000);
+  await render(React.createElement(Splash,{done:()=>latestDone++,image:jpeg}));
+  assert.equal(document.querySelector('.splash-background').getAttribute('src'),jpeg.url);assert.equal(document.querySelector('.splash-background').getAttribute('alt'),'');
+  assert.deepEqual([...splashTimers.keys()],[originalSplashTimer],'A late public JPEG or new callback cannot restart the intro timer');
+  await act(async()=>document.querySelector('.splash-background').dispatchEvent(new window.Event('error')));
+  assert.equal(document.querySelector('.splash-background'),null,'A broken admin JPEG falls back without blocking the intro');assert.equal(document.querySelectorAll('.campus-logo').length,2);
+  await advanceSplash(1999);assert.equal(latestDone,0,'The intro cannot end before three seconds');
+  await advanceSplash(1);assert.equal(latestDone,1);assert.equal(firstDone,0,'Completion uses the current callback');
+  await advanceSplash(3000);assert.equal(latestDone,1,'Completion runs once');
+  await render(React.createElement('div'));assert.equal(splashTimers.size,0);
+  console.log('PASS three-second single splash retains campus logos, uses the active admin JPEG, tolerates failure and never restarts on late media');
+
   const musicProps={asset:music,volume:.35,eligible:true,muted:false};
   await render(React.createElement(GarageAudio,musicProps));const sameAudio=document.querySelector('audio');
+  assert.equal(musicButton().textContent,'','Music control is icon-only');assert.equal(musicButton().getAttribute('title'),'Jeda musik garasi');assert.ok(musicButton().querySelector('svg'));
+  assert.ok(!document.querySelector('.garage-music').textContent.includes(music.name),'The compact control does not show a song title');
   assert.equal(audioState(sameAudio).plays,1,'Active admin music attempts autoplay as soon as it is eligible');
   assert.equal(audioState(sameAudio).paused,false);assert.equal(sameAudio.volume,.35);sameAudio.currentTime=34.25;
   const sourceAssignments=audioState(sameAudio).sourceAssignments;
@@ -212,22 +241,37 @@ try{
     assert.equal(audioState(introAudio).sourceAssignments,introSourceAssignments,label+' cannot reassign the source');
     assert.equal(audioState(introAudio).plays,1,label+' cannot restart playback');assert.equal(audioState(introAudio).pauses,introPauses,label+' cannot interrupt playback');assert.equal(audioState(introAudio).paused,false);
   };
-  await click(button('Lewati intro'));assertContinuousMusic('Closing splash while auth is pending');
+  assert.equal(document.querySelector('.splash-background').getAttribute('src'),jpeg.url,'The first App splash receives the active admin image');
+  await advanceSplash();assert.equal(document.querySelector('.splash'),null);assertContinuousMusic('Closing splash while auth is pending');
   await act(async()=>authBoot.resolve(response({user:null,csrfToken:'anonymous-media-csrf'})));await settle();assert.ok(document.querySelector('.auth-layout'));assertContinuousMusic('Anonymous login screen');
   await change(document.querySelector('.auth-card input[type="email"]'),'driver@example.test');await change(document.querySelector('.auth-card input[type="password"]'),'media-test-password');
   await submit(document.querySelector('.auth-card form'));assert.ok(document.querySelector('.app-loading'),'A successful login can still be waiting for the account');assertContinuousMusic('Account loader');
-  await act(async()=>accountBoot.resolve(response(profile)));await settle();assert.match(document.querySelector('.page-heading h1').textContent,/Garasi Anda/);assertContinuousMusic('Garage after login');
+  await act(async()=>accountBoot.resolve(response(profile)));await settle();assert.match(document.querySelector('.sidebar button.active').textContent,/Garasi/);assertContinuousMusic('Garage after login');
+  assert.ok(musicButton().closest('.header-right'),'Compact music control appears by the game credit in the shared header');
   console.log('PASS one continuous soundtrack through pending auth splash, anonymous login, successful login/account loading and garage without rewind or duplicate audio');
+
+  await render(React.createElement('div'));
+  const returningAuth=deferred(),returningProfile=deferred();authResponse=()=>returningAuth.promise;profileResponse=()=>returningProfile.promise;
+  await render(React.createElement(App));const returningSplash=document.querySelector('.splash'),returningAudio=document.querySelector('[data-garage-audio]'),returningTimer=[...splashTimers.keys()][0];
+  returningAudio.currentTime=9.5;
+  await advanceSplash(1000);await act(async()=>returningAuth.resolve(response({user,csrfToken:'returning-media-csrf'})));await settle();
+  assert.ok(document.querySelector('.app-loading'));assert.strictEqual(document.querySelector('.splash'),returningSplash,'Auth-to-account-loader keeps the mounted splash');assert.deepEqual([...splashTimers.keys()],[returningTimer]);
+  await advanceSplash(1000);await act(async()=>returningProfile.resolve(response(profile)));await settle();
+  assert.ok(document.querySelector('.app-header'));assert.strictEqual(document.querySelector('.splash'),returningSplash,'Account-loader-to-garage keeps the mounted splash');assert.deepEqual([...splashTimers.keys()],[returningTimer]);
+  assert.strictEqual(document.querySelector('[data-garage-audio]'),returningAudio);assert.equal(returningAudio.currentTime,9.5);assert.equal(audioState(returningAudio).plays,1);
+  await advanceSplash(999);assert.ok(document.querySelector('.splash'));
+  await advanceSplash(1);assert.equal(document.querySelector('.splash'),null);assert.ok(musicButton().closest('.header-right'));
+  console.log('PASS returning-session auth and account transitions preserve the original three-second splash deadline and playing audio');
 
   await render(React.createElement('div'));authResponse=()=>response({user,csrfToken:'media-ui-csrf'});profileResponse=()=>response(profile);
   local.set('uvelocity:preferences',JSON.stringify({muted:true,quality:'medium',timeOfDay:'dusk'}));
   await render(React.createElement(App));const mutedIntroAudio=document.querySelector('[data-garage-audio]');assert.ok(document.querySelector('.splash'));assert.equal(audioState(mutedIntroAudio).plays,0,'Stored mute is applied before any splash autoplay attempt');
-  await click(button('Lewati intro'));assert.equal(audioState(mutedIntroAudio).plays,0);await click(document.querySelector('[aria-label="Aktifkan suara"]'));assert.equal(audioState(mutedIntroAudio).plays,1);assert.equal(audioState(mutedIntroAudio).paused,false);
+  await advanceSplash();assert.equal(audioState(mutedIntroAudio).plays,0);await click(musicButton());assert.equal(audioState(mutedIntroAudio).plays,1);assert.equal(audioState(mutedIntroAudio).paused,false);
   await render(React.createElement('div'));local.delete('uvelocity:preferences');
   console.log('PASS saved mute prevents initial autoplay and explicit unmute starts the existing player');
 
   playResults.push(blocked,blocked);await render(React.createElement(App));const blockedAppAudio=document.querySelector('[data-garage-audio]');
-  await click(button('Lewati intro'));assert.equal(audioState(blockedAppAudio).plays,2);assert.equal(audioState(blockedAppAudio).paused,true);assert.match(musicButton().getAttribute('aria-label'),/^Putar/);
+  await advanceSplash();await gesture();assert.equal(audioState(blockedAppAudio).plays,2);assert.equal(audioState(blockedAppAudio).paused,true);assert.match(musicButton().getAttribute('aria-label'),/^Putar/);
   const beforeMute=audioState(blockedAppAudio).plays;
   await click(document.querySelector('.page-tools [aria-label="Matikan suara"]'));
   assert.equal(audioState(blockedAppAudio).plays,beforeMute,'Muting blocked autoplay must not first trigger the capture-phase gesture retry');assert.equal(blockedAppAudio.muted,true);assert.equal(audioState(blockedAppAudio).paused,true);
@@ -240,7 +284,7 @@ try{
   await render(React.createElement('div'));local.delete('uvelocity:preferences');
   console.log('PASS main mute bypasses blocked gesture retry and both unmute controls preserve deliberate music pause');
 
-  await render(React.createElement(App));await click(button('Lewati intro'));assert.ok(controller);
+  await render(React.createElement(App));await advanceSplash();assert.ok(controller);
   const iframe=document.querySelector('iframe'),visibility=[],engineMutes=[];let previews=0,stops=0,starts=0,cancels=0,focusTransfers=0;
   const game={ready:Promise.resolve(),on(){return()=>{};},setVisible:value=>visibility.push(value),setMuted:value=>engineMutes.push(value),configure:async()=>{},preview:async()=>{previews++;},stopRace:async()=>{stops++;},pause:async()=>{},resume:async()=>{},unlockAudio(){},focus(){focusTransfers++;iframe.focus();},setCamera(){}};
   Object.defineProperty(iframe,'contentWindow',{configurable:true,value:{NVGame:game}});await act(async()=>iframe.dispatchEvent(new window.Event('load')));await settle();
@@ -275,9 +319,9 @@ try{
   assert.strictEqual(returnButton.closest('.results-heading'),resultsCard.firstElementChild,'Return action must be in the first results header, before metrics and the ranking table');
   assert.equal([...resultsCard.querySelectorAll('button')].filter(node=>node.textContent==='Kembali ke garasi').length,1,'Results expose one return action');
   let resultsLeaves=0;controller.leave=async()=>{resultsLeaves++;controller.handlers.left();};
-  await click(returnButton);await settle();assert.equal(resultsLeaves,1);assert.equal(document.querySelector('.results-overlay'),null);assert.match(document.querySelector('.page-heading h1').textContent,/Garasi Anda/);assert.strictEqual(document.querySelector('iframe'),iframe);
+  await click(returnButton);await settle();assert.equal(resultsLeaves,1);assert.equal(document.querySelector('.results-overlay'),null);assert.match(document.querySelector('.sidebar button.active').textContent,/Garasi/);assert.strictEqual(document.querySelector('iframe'),iframe);
   console.log('PASS timeout/disconnect stay behind server authority, cancellation, replacement token, retained iframe, prayer precedence, finish renderer retention and top return action');
 }finally{
-  await act(async()=>root.unmount());globalThis.setInterval=nativeInterval;globalThis.clearInterval=nativeClearInterval;
+  await act(async()=>root.unmount());globalThis.setInterval=nativeInterval;globalThis.clearInterval=nativeClearInterval;globalThis.setTimeout=nativeTimeout;globalThis.clearTimeout=nativeClearTimeout;
   await rm(temp,{recursive:true,force:true});
 }

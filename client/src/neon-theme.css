@@ -1,0 +1,404 @@
+/* Futuristic UVelocity skin. Geometry and responsive layout remain owned by
+   styles.css / compact-layout.css; these rules change visual surfaces only. */
+:root {
+  --surface:#142231;
+  --surface-raised:#1b2d3e;
+  --line:#36576c;
+  --muted:#a0b4c1;
+  --gold:#e8c27b;
+  --green:#61d7b2;
+  --cream:#eef7fb;
+  --neon-cyan:#45d9f0;
+  --neon-border:#3b627b;
+  --neon-panel:linear-gradient(135deg,#192b3ce8,#101c2ae8);
+  color:#e9f2f7;
+  background:#0c1420;
+}
+body {
+  background:radial-gradient(ellipse at 25% 0,#18364a35,transparent 46%),#0c1420;
+}
+label {color:#d4e2eb}
+input:not([type=color]):not([type=checkbox]):not([type=radio]),select,textarea {
+  color:#edf7fb;
+  background:#0c1a28;
+  border-color:#3e5f74;
+  box-shadow:inset 0 1px 6px #020a1238;
+}
+input::placeholder,textarea::placeholder {color:#819bab}
+input:focus,select:focus,textarea:focus {
+  outline-color:#64c7df;
+  border-color:#69c9e4;
+}
+select option,select optgroup {background:#122333;color:#e9f3fa}
+:focus-visible {outline-color:#e8c27b}
+.hint,.model-origin,.garage-collection-note p {color:#9eb5c3}
+.primary {
+  color:#14222b;
+  background:linear-gradient(110deg,#e6bc72,#f1d59a);
+  border-color:#eac98a;
+  box-shadow:inset 0 1px 0 #fff5,0 3px 14px #d5ad5520;
+}
+.primary:hover:not(:disabled) {
+  background:linear-gradient(110deg,#f0cd8d,#f7e1af);
+  border-color:#ffe6af;
+  box-shadow:0 0 17px #eac06b35;
+}
+.secondary {
+  color:#d4e6ef;
+  background:linear-gradient(120deg,#1d3447d9,#142435e6);
+  border-color:#42647d;
+  box-shadow:inset 0 1px 0 #b4e7ff0e;
+}
+.secondary:hover:not(:disabled) {
+  background:linear-gradient(120deg,#23485bd9,#173247ee);
+  border-color:#66b3d2;
+  box-shadow:inset 0 0 15px #38bcdf0d,0 0 12px #2abada15;
+}
+.text-button {color:#cde3ec}
+.text-button:hover:not(:disabled) {color:#78e6f5}
+.icon-button {
+  color:#a9dcea;
+  background:#10223266;
+  border-color:#375a72;
+}
+.icon-button:hover:not(:disabled) {color:#d5f9ff;background:#1b3c50;border-color:#64bbd5}
+.pill {background:#162b3b88;border-color:#45687b;color:#c6dce8}
+.pill.success {background:#153d374d;border-color:#398d7d;color:#86e5be}
+.positive {color:#8be7bc}
+.spinner {border-color:#2e5267;border-right-color:var(--neon-cyan)}
+kbd {background:#142c3d;border-color:#426379;color:#d4eaf5}
+pre {background:#0b1723;color:#c6dcea}
+
+/* Header, navigation, and the transparent original wordmark. */
+.app-header,.race-live .app-header {
+  background:linear-gradient(180deg,#101a27f7,#0c1420f7);
+  border-bottom-color:#355266;
+  box-shadow:0 1px 0 #7cb9d212,0 5px 28px #02091440;
+  backdrop-filter:blur(10px);
+}
+.wordmark>img,.app-loading>img {
+  filter:brightness(1.75) saturate(.9) drop-shadow(0 0 1px #a3e8f6a0) drop-shadow(0 0 7px #2bb6ca45);
+}
+.app-header .brand-link,.auth-wordmark {background:transparent;box-shadow:none}
+.edition,.nav-label {color:#9baebd}
+.app-header .wallet-display {color:#edc582}
+.app-header .wallet-display>svg {color:#40d4ed;filter:drop-shadow(0 0 5px #25bddb65)}
+.app-header .wallet-display small {color:#9caeba}
+.profile-button {color:#e3edf4}
+.app-header .avatar {
+  box-shadow:inset 0 0 0 1px #79e9f6a8,0 0 0 2px #102436,0 0 0 3px #32ccdd,0 0 13px #25d4dd36;
+}
+.sidebar {
+  background:linear-gradient(170deg,#192838f5,#101e2df7 72%);
+  border-color:#345368;
+  box-shadow:inset -1px 0 0 #88c7e512;
+}
+.sidebar nav button {
+  position:relative;
+  color:#b9cdd9;
+  border-color:#3b6078;
+  background:linear-gradient(110deg,#1f3e52a8,#142335c7 70%);
+  box-shadow:inset 0 1px 0 #a7ddff13;
+}
+.sidebar nav button>svg {color:#80d4f7;filter:drop-shadow(0 0 5px #55b8e755)}
+.sidebar nav button::after {
+  content:'';
+  position:absolute;
+  right:9px;bottom:6px;width:24px;height:3px;
+  background:repeating-linear-gradient(120deg,#56d9eb88 0 1px,transparent 1px 4px);
+  pointer-events:none;
+}
+.sidebar nav button:hover {
+  color:#e6f8ff;
+  border-color:#72bdd5;
+  background:linear-gradient(110deg,#245266b5,#1a3046de);
+}
+.sidebar nav button.active {
+  color:#f2d99f;
+  border-color:#ecd08a;
+  background:linear-gradient(110deg,#155548b8,#283e3de6 64%,#45443080);
+  box-shadow:inset 0 0 0 1px #edd79a30,inset 0 0 24px #4ee8bb12,0 0 13px #dfc27930;
+}
+.sidebar nav button.active>svg {color:#f2d694;filter:drop-shadow(0 0 5px #edce7860)}
+.sidebar nav button.active::after {background:#e5ca8c80}
+.nav-indicator {background:#59e2ed;box-shadow:0 0 6px #29cedc88}
+.mini-garage {border-color:#34556d}
+.mini-garage small,.sidebar-bottom p {color:#8ca5b6}
+.mini-garage b {color:#e3eff6}
+.mini-garage span,.sidebar-bottom .text-button {color:#a6c0cf}
+
+/* Shared blue surfaces, including account and administration pages. */
+.panel,.modal-card {
+  color:#e5eff5;
+  background:var(--neon-panel);
+  border-color:var(--neon-border);
+  box-shadow:inset 0 1px 0 #afdef512,0 9px 28px #02081124;
+}
+.panel h2,.panel h3,.modal-card h2 {color:#eaf7fb}
+.section-heading>span,.profile-numbers span,.data-table th,.data-table td small,
+.admin-view .data-table td span,.admin-view dt {color:#9eb7c7}
+.data-table th,.data-table td {border-bottom-color:#2a465b}
+.compact-table-scroll .data-table thead th,.results-heading {background:#162838;border-color:#385b70}
+.highlight-row {background:#244150a8}
+.profile-numbers svg {color:#75dcf1;filter:drop-shadow(0 0 5px #3bbfd94d)}
+.profile-numbers b,.profile-hero h2 {color:#edf8ff}
+.avatar-options button.selected {border-color:#77d9ed;box-shadow:0 0 10px #3ec0dc38}
+.admin-view dd {color:#d9eaf3}
+.admin-toolbar>.pill {color:#7cd9ed;border-color:#3e778e;background:#122b3a}
+.admin-toolbar .admin-section-nav .secondary>svg {color:#80d9ef}
+.modal-backdrop {background:#050c16e8}
+.dialog-close {color:#b6d5e4}
+.dialog-close:hover {background:#254556}
+.help-grid>div>span {color:#b7cdda}
+.form-error,.vehicle-category-removal,.media-removal,.vehicle-image-removal {
+  background:#30232be8;border-color:#8d5b57;color:#f6c5b6;
+}
+.form-error button,.media-removal p {color:#f6cfb8}
+.toast-message {background:#153744f5;border-color:#5596a8;color:#dff5fc;box-shadow:0 8px 32px #0007}
+.toast-message>svg {color:#6ee6df}
+.toast-message.error {background:#3b2630f5;border-color:#ab726d}
+
+/* The showroom controls and four-card collection retain their compact grid. */
+.vehicle-browse-navigation {
+  background:linear-gradient(105deg,#29475bd9,#162739e8 48%,#263341ed);
+  border-color:#54758a;
+  box-shadow:inset 0 1px 0 #bce8ff35,inset 4px 0 18px #4fc4e21c,0 4px 16px #02091640;
+}
+.scene-toolbar .vehicle-browse-navigation small {color:#acbecb}
+.scene-toolbar .vehicle-browse-navigation b {color:#efd097;text-shadow:0 0 12px #e1bd5530}
+.scene-toolbar .vehicle-browse-navigation b span {color:#829aab}
+.scene-toolbar .vehicle-browse-navigation>button {background:#14253566;border-color:#4a657a;color:#c6d8e4}
+.scene-toolbar .vehicle-browse-navigation>button:hover:not(:disabled) {background:#23495d;border-color:#66bfd9;color:#e5fbff}
+.scene-toolbar .page-tools>label,.showroom-category-filter>label {color:#a9c4d2}
+.scene-toolbar .page-tools select,.showroom-category-filter>select {
+  background:#122536;border-color:#3d637b;color:#e5f4fb;
+}
+.scene-toolbar .page-tools>.icon-button {background:#122536;border-color:#3d637b;color:#8edfee}
+.collection-range {color:#e8ce92}
+.collection-range>span,.collection-section .section-heading>span {color:#9fb9ca}
+.collection-paging-buttons .icon-button {background:#142d40;border-color:#47748e;color:#8ad8ef}
+.car-choice,.wheel-card,.stripe-card {
+  color:#e3eef6;
+  background:linear-gradient(145deg,#1c3042e6,#122232f2);
+  border-color:#3a5d74;
+  box-shadow:inset 0 1px 0 #94c7e11a;
+}
+.car-choice:hover,.wheel-card:hover,.stripe-card:hover {
+  background:linear-gradient(145deg,#24495ae8,#173044f2);
+  border-color:#69b2cb;
+}
+.car-choice.selected,.wheel-card.selected,.stripe-card.selected {
+  background:linear-gradient(135deg,#284447ed,#1b3441f2 65%,#303a36ee);
+  border-color:#e9c57f;
+  box-shadow:inset 0 0 0 1px #e3c38425,0 0 13px #51bad71c;
+}
+.car-choice-top,.car-choice-top>span {color:#a6d1e2}
+.vehicle-card-page .car-choice>b,.wheel-card b,.stripe-card b {color:#edf6fb}
+.vehicle-card-page .car-choice>.vehicle-category-label,.wheel-card>span,.stripe-card small {color:#9ab8ca}
+.vehicle-card-page .car-choice>span:last-child {color:#b1cbd9}
+.vehicle-card-page .car-choice.selected>span:last-child,.stripe-card>span {color:#ead39b}
+.vehicle-thumbnail {
+  color:#96bfd3;border-color:#355c72;
+  background:radial-gradient(ellipse at 50% 85%,#3b71845c,transparent 70%),#0b1926;
+}
+.thumbnail-top .vehicle-thumbnail {border-color:#3a6177}
+.car-choice-top.thumbnail-top>.thumbnail-status {background:#122b3be8;border-color:#58869b8c;color:#c0e3ed}
+.vehicle-thumbnail-fallback,.vehicle-thumbnail-fallback small {color:#89b1c7}
+.garage-empty,.media-empty {background:#122637;border-color:#4b7689;color:#9ed6e6}
+.garage-empty h3,.media-empty b {color:#e3f3fa}
+
+/* Vehicle preview and configuration: light comes from the workshop itself. */
+.app-shell:not(.race-stage-active) .stage-panel {
+  background:#102131;border-color:#486d82;
+  box-shadow:inset 0 0 0 1px #86cee91a,0 6px 28px #02081048;
+}
+.stage-topline .pill {background:#123147c9;border-color:#71bfd9a3;color:#e2f7ff;box-shadow:0 0 14px #37b9d516}
+.stage-topline>span:last-child {color:#c8eaf5}
+.stage-caption {background:linear-gradient(transparent,#0b1725d9)}
+.stage-caption h2 {color:#edfcff;text-shadow:0 0 18px #4de0ef46}
+.stage-caption .eyebrow {color:#e6ca91}
+.stage-caption p,.stage-hint {color:#a8c6d2;text-shadow:0 1px 3px #07101a}
+.stage-camera {background:#14283be6;border-color:#497187;box-shadow:inset 0 1px 0 #b0d8ee14}
+.stage-camera button {color:#c9dfea}
+.stage-camera button:hover,.stage-camera button:focus-visible {background:#254e60;color:#f0fcff;box-shadow:inset 0 0 0 1px #76c9dd60}
+.stage-camera button[aria-pressed=true] {background:linear-gradient(120deg,#24424d,#39423b);color:#f4dfaa;box-shadow:inset 0 0 0 1px #dfc58a,0 0 8px #cdb97020}
+.vehicle-panel {
+  background:linear-gradient(90deg,#28d2e9,#49dbedb3 76%,transparent 76%) left top/100% 3px no-repeat,
+    radial-gradient(ellipse at 0 0,#1ba4ba26,transparent 46%),linear-gradient(145deg,#182b3bea,#101d2cf2);
+  border-color:#4e7890;
+  box-shadow:inset 0 1px 0 #92e5f536,0 0 22px #1fb4cf0c;
+  scrollbar-color:#467b94 #102332;
+}
+.vehicle-panel h2 {color:#eeffff;text-shadow:0 0 15px #40d5dd40}
+.vehicle-panel>.eyebrow {color:#ebcc91}
+.performance-stats {border-color:#33596f}
+.performance-stats b {color:#eff8fc}
+.performance-stats b small,.performance-stats span {color:#9bb6c7}
+.vehicle-panel>label {color:#d5e7f0}
+.vehicle-panel>label>select {background:#102535;border-color:#40677e}
+.engine-preview {border-color:#315367}
+.engine-preview small,.purchase-box>span,.current-stripe span {color:#94b6c8}
+.engine-preview b,.current-stripe b {color:#d4e7f0}
+.access-status {background:#142b3a;border-color:#416c7d;color:#b9d7e5}
+.access-status.permanent {
+  color:#7be4ae;border-color:#35b78d;
+  background:linear-gradient(110deg,#124c3b70,#112d3150);
+  box-shadow:inset 0 0 12px #44e3ac0d,0 0 11px #3bc89720;
+}
+.access-status.temporary {color:#edce94;border-color:#9b8356;background:#30332680}
+.access-status.locked {color:#a7c0cf;background:#102231;border-color:#3b5f73}
+.paint-swatches>button {box-shadow:0 0 0 1px #89c1dd20,0 2px 5px #0007}
+.paint-swatches>button.selected {outline-color:#eed294;box-shadow:0 0 11px #e3c67b65}
+.custom-paint {background:#163247;border-color:#78aabe;color:#bde9f7}
+.color-control {background:#0f2434;border-color:#40697b}
+.color-control span {color:#bbd5e3}
+.customization-cost {background:#152b3999;border-left-color:#bda36d;color:#a5c2d3}
+.free-access-tag {color:#ecd39d;background:#293b3b;border-color:#8b805d}
+.stripe-options,.stripe-color-studio,.appearance-summary,.quote-wallet {
+  background:#122a3a;border-color:#3e6479;
+}
+.stripe-color-fee,.stripe-color-studio>small,.appearance-summary small,.quote-wallet span {color:#a8c6d5}
+.appearance-summary b,.quote-total span,.quote-wallet b {color:#e1f0f8}
+.quote-lines .quote-total,.rim-color-studio,.current-stripe {border-color:#36586c}
+.detail-color-heading>span,.appearance-summary span,.stripe-color-fee b {color:#dfca98}
+.detail-color-swatches button[aria-pressed=true] {outline-color:#ead08f;box-shadow:0 0 10px #4dd8e339}
+
+/* Uploads, categories, pricing, and other admin surfaces. */
+.admin-color-fees,.media-upload-card,.media-settings-form,.media-library>li,
+.media-preview,.vehicle-image-current,.vehicle-image-candidate,.vehicle-image-preview-fallback,
+.vehicle-access-field,.access-option {
+  background:#132838;border-color:#3b6279;
+}
+.admin-color-fee-grid button {background:#102434;border-color:#3e657c;color:#d0e4ef}
+.admin-color-fee-grid button[aria-pressed=true] {background:#23434a;border-color:#e3c17e;box-shadow:inset 0 0 0 1px #d6c18235}
+.admin-color-fees p,.admin-color-fee-grid button>p,.media-upload-card p,.media-upload-card small,
+.media-settings-actions span,.media-library-meta span,.vehicle-image-details>span:first-child,
+.vehicle-image-filename,.access-option small {color:#9fbdce}
+.media-library-kind {background:#193a4d;border-color:#477187;color:#9fe4f0}
+.media-library-meta small,.media-selected-file {color:#e4cf98}
+.admin-media input[type=file]::file-selector-button,.vehicle-image-upload input::file-selector-button {
+  background:#214358;border-color:#4a829c;color:#def4fc;
+}
+.vehicle-image-upload input[type=file],.media-preview img,.vehicle-image-candidate>img {background:#0c1b29}
+.vehicle-image-current>.vehicle-thumbnail {border-color:#3b6a80}
+.media-upload-progress,.vehicle-image-progress {background:#193a48;border-color:#5d97a6;color:#d1eef6}
+.vehicle-image-status,.prayer-location-notice {background:#173b3b;border-color:#3e8d7a;color:#a0e6c7}
+.vehicle-image-status>span,.vehicle-image-progress>span {color:#b9d9e6}
+.access-option:has(input:checked) {border-color:#c5b17b;background:#244039}
+.access-option span,.vehicle-access-field legend {color:#cce1ec}
+.access-change-note {background:#34352a;border-left-color:#c9ae75;color:#e9d29d!important}
+
+/* Rooms and results are themed without moving the arena or its controls. */
+.segmented {background:#0e2233;border-color:#3a6077}
+.segmented button {color:#9dbbcd}
+.segmented button.active {color:#efdbac;background:#2c4650}
+.circuit-option {background:#132a3b;border-color:#355b72}
+.circuit-option.selected {background:#23404a;border-color:#c7b37c}
+.circuit-option small,.room-member small {color:#99b8ca}
+.invite-code {background:#153342;border-color:#5d96a3}
+.invite-code small {color:#a7ceda}
+.invite-code strong {color:#ead39c;text-shadow:0 0 13px #43c9d120}
+.connection {color:#9adbc9}
+.connection i {background:#4addb6;box-shadow:0 0 5px #48dab440}
+.arena-loading-card,.arena-preparation-banner {background:#102c3bea;border-color:#52879a;color:#d9f1f9}
+.arena-loading-card p,.arena-loading-card>small,.arena-preparation-banner div>span {color:#a7c5d5}
+.arena-ready-meter,.prayer-ready-track {background:#0a1a29}
+.arena-ready-meter>span,.prayer-ready-track>span {background:linear-gradient(90deg,#2fb8d2,#7ce2de)}
+.race-live .online-ribbon {background:#102534ee;border-color:#54849b;color:#a2c8da}
+.app-shell.race-stage-active .online-ribbon {background:#102534;border-bottom-color:#426d83}
+.app-shell.race-stage-active .online-ribbon>b {color:#9fc1d3}
+.online-ribbon span {color:#e3ca92}
+.online-ribbon button {background:#274d5b;color:#e0f5ff}
+.result-metrics {background:#0e2232}
+.result-metrics small {color:#95b5c8}
+.result-metrics b {color:#ecf8fc}
+.result-metrics .gold {color:var(--gold)}
+.settlement-status {background:#12303fef;border-color:#51899d}
+
+/* Entry, splash, and loading preserve the uploaded image and campus logos. */
+.auth-layout,.auth-form-side,.app-loading {background:#0c1623}
+.auth-story {
+  background:radial-gradient(ellipse at 75% 70%,#1d73815c,transparent 62%),linear-gradient(140deg,#132c3e,#0d1d2d);
+}
+.auth-copy h1 {color:#edfaff}
+.auth-copy h1 em {color:#80c4db}
+.auth-copy p,.auth-note,.auth-story footer {color:#a5c3d3}
+.auth-copy .eyebrow,.auth-tracks span {color:#e4cc94}
+.auth-road {background:#0b2231;border-color:#4295ae;box-shadow:0 -22px 0 #47b9d00a,0 22px 0 #47b9d00a}
+.auth-road:before,.auth-road:after {background:repeating-linear-gradient(90deg,#7ac3d7 0,#7ac3d7 55px,transparent 55px,transparent 85px)}
+.auth-road div {border-color:#3c6b83}
+.auth-road i {background:linear-gradient(90deg,#315a75,#83c5df,#183d54);box-shadow:-70px 0 50px #4ccfe522}
+.auth-road b {color:#5db1cb1f}
+.auth-tag,.university-signature {color:#8bbacc}
+.auth-card h2 {color:#e3f5ff}
+.boot-loader {background:#183344;border:1px solid #47768a;color:#d5edf7}
+.splash.campus-splash {background:#0c1522}
+.splash.campus-splash::before {background:radial-gradient(ellipse at center,#0b2538bd,#050d19ed)}
+.campus-splash.splash-has-image::before {background:radial-gradient(ellipse at center,#091c2f80,#050d19d6),linear-gradient(0deg,#071724a8,#07172424)}
+.campus-splash .campus-identity figcaption {color:#d5e9f4}
+.campus-splash .campus-identity figcaption span,.splash .campus-discipline {color:#9dbfce}
+.campus-divider {background:linear-gradient(transparent,#6bc5db77,transparent)}
+.campus-intro-progress {background:#8dbbcd26}
+.campus-intro-progress::after {background:linear-gradient(90deg,#3ecde2,#e9c987)}
+.race-loading-screen {background:#0b1725;color:#eef9ff}
+.race-loading-screen:before {background:radial-gradient(ellipse at 83% 20%,#285970,transparent 50%),linear-gradient(132deg,#0a1b2c 12%,#17394b 55%,#0a1420 95%)}
+.race-loading-screen:after {background:linear-gradient(123deg,transparent 53%,#70d5e822 53.1%,#70d5e822 53.2%,transparent 53.3%,transparent 67%,#7cc7df12 67.1%,transparent 67.4%)}
+.race-loading-art {background:#0a1623}
+.race-loading-shade {background:linear-gradient(90deg,#071623ed 0%,#091b2dce 43%,#091b2d30 100%),linear-gradient(0deg,#071524df,transparent 75%)}
+.race-loading-brand img {background:transparent;border-radius:0;filter:brightness(1.75) saturate(.9) drop-shadow(0 0 6px #2bb6ca45)}
+.race-loading-brand>span,.race-loading-content>.eyebrow {color:#e3cb95}
+.race-loading-content>p,.race-loading-content>.race-loading-note {color:#b1cdda}
+.race-loading-progress-label {color:#daeff8}
+.race-loading-progress-label small {color:#9ebdce}
+.race-loading-progress {background:#83bdd522}
+.race-loading-progress>span {background:linear-gradient(90deg,#2cc1d8,#85e9ed)}
+.race-loading-members>li {background:#1e40532b;border-color:#59849b42;color:#c1dce8}
+.race-loading-members small {color:#a3bdcb}
+.race-loading-members .is-ready {background:#26756c24;border-color:#5eb5a35b}
+.race-loading-members .is-ready small {color:#8de7ca}
+.race-loading-actions .secondary {background:#17394caa;border-color:#5c8aa2;color:#e2f5ff}
+
+/* A quiet version of the same palette during prayer intermission. */
+.prayer-location-settings,.prayer-location-settings.compact {background:#142738;border-color:#3c637a}
+.prayer-location-icon {background:#1a3547;border-color:#46748a;color:#e4c888}
+.prayer-location-current,.prayer-times>div,.prayer-readiness,.prayer-trigger-list>span {background:#102535;border-color:#3e6276}
+.prayer-location-current b,.prayer-times time,.prayer-readiness b {color:#deeff6}
+.prayer-location-current>span,.prayer-location-current>small,.prayer-source small,
+.prayer-times>div>span,.prayer-intro,.prayer-place small,.prayer-timer-label,
+.prayer-time-detail span,.prayer-calculation,.prayer-pause-footer,.prayer-retained,
+.prayer-readiness>div:first-child>span,.prayer-participant-list li>span:last-child,
+.prayer-connection-status,.prayer-pause-card>.hint {color:#9dbbc9}
+.prayer-times>div.current {background:#2b4347;border-color:#b8a97b}
+.prayer-pause-layer {background:radial-gradient(ellipse at 50% 5%,#24526a55,transparent 58%),#0d1927}
+.prayer-pause-layer:before {background-image:linear-gradient(90deg,transparent calc(50% - .5px),#80bcd208 50%,transparent calc(50% + .5px))}
+.room-prayer-layer {background:linear-gradient(180deg,#102738df,#071420f2)}
+.prayer-pause-card {background:linear-gradient(160deg,#1b3747f2,#122534f5);border-color:#486d80}
+.prayer-pause-card h1,.prayer-place>span,.prayer-time-detail b {color:#e9f5fa}
+.prayer-trigger-list b {color:#c8e0eb}
+.prayer-trigger-list i {color:#88abba}
+.prayer-time-detail,.prayer-time-detail>div+div,.prayer-footer-actions {border-color:#40627455}
+.prayer-ready-dot {background:#152b3a;border-color:#476d7d;color:#96b7c6}
+.prayer-participant-list li.ready .prayer-ready-dot {background:#72d7b2;border-color:#72d7b2;color:#102b2f}
+.prayer-participant-list li.ready>span:last-child {color:#99e1c6}
+
+/* Compact controls keep their established hit areas and layout. */
+.music-icon-button,.garage-music--splash .music-icon-button,.garage-music--auth .music-icon-button {
+  background:#112d40e8;border-color:#4d8ba1;color:#90d6e8;
+}
+.music-icon-button[data-music-state=playing] {background:#173c46;border-color:#60cee0;color:#a2f1ef;box-shadow:0 0 11px #22b9d326}
+.music-icon-button[data-music-state=muted] {background:#142737;color:#8cabbc;border-color:#456476;box-shadow:none}
+.music-icon-button:hover:not(:disabled) {background:#22495a;border-color:#80dbe8;color:#e0fbff}
+.music-state-mark {background:#0b2030;border-color:#3e7085}
+.muted-slash {background:#e4c695}
+
+@media(max-width:760px) {
+  .sidebar {background:linear-gradient(180deg,#172b3df7,#102334fa);border-top-color:#42677c;backdrop-filter:blur(8px)}
+  .sidebar nav button::after {display:none}
+  .sidebar nav button {box-shadow:none}
+  .sidebar nav button.active {background:linear-gradient(135deg,#1b514c,#243c42);border-color:#d0b67b;box-shadow:inset 0 0 8px #63d8d00e}
+  .app-shell:not(.race-stage-active) .stage-caption {background:linear-gradient(105deg,#112a3c,#0d1f2e);border-top-color:#365d74}
+  .race-loading-shade {background:linear-gradient(0deg,#071524f5 0%,#0a2032dc 55%,#0a203270 100%)}
+}
+@media(prefers-reduced-motion:reduce) {
+  .sidebar nav button,.music-icon-button,.car-choice,.wheel-card,.stripe-card {transition:none}
+}

@@ -9,6 +9,7 @@ import { idempotent } from './idempotency.js';
 import { mutateWallet } from './wallet.js';
 import {AppearanceService} from './appearance.js';
 import {catalogThumbnails} from './vehicle-thumbnails.js';
+import {listVehicleCategories} from './vehicle-categories.js';
 export {WHEEL_IDS} from './appearance.js';
 import * as v from './validation.js';
 
@@ -41,11 +42,11 @@ export class EconomyService {
   }
 
   async getCatalog() {
-    const [ruleset,result,thumbnails]=await Promise.all([this.getActiveRuleset(),this.pool.query('SELECT * FROM catalog_items ORDER BY kind,price,id'),catalogThumbnails(this.pool)]);
-    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,...(row.kind==='car'?{locked:row.locked,thumbnail:thumbnails.get(row.id)??null}:{}),
+    const [ruleset,result,thumbnails,categories]=await Promise.all([this.getActiveRuleset(),this.pool.query('SELECT c.*,a.category_id FROM catalog_items c LEFT JOIN vehicle_category_assignments a ON a.car_id=c.id ORDER BY c.kind,c.price,c.id'),catalogThumbnails(this.pool),listVehicleCategories(this.pool)]);
+    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,...(row.kind==='car'?{locked:row.locked,thumbnail:thumbnails.get(row.id)??null,categoryId:row.category_id??null}:{}),
       ...(row.kind==='car'?{stats:ruleset.cars[row.id as CarId],...ruleset.cars[row.id as CarId],tuningVersion:ruleset.version}:{cosmeticOnly:true}),
       ...(RECONSTRUCTED_CAR_IDS.includes(row.id)?{modelOrigin:'reference-reconstruction',modelNote:'Rekonstruksi 3D berdasarkan referensi'}:{})}));
-    return {currency:'RP_GAME',currencyLabel:'Rp · kredit game',rulesetVersion:ruleset.version,tuningBounds:TUNING_BOUNDS,cars:items.filter(x=>x.kind==='car'),wheels:items.filter(x=>x.kind==='wheel'),services:items.filter(x=>x.kind==='service'),stripes:items.filter(x=>x.kind==='service'&&x.service==='stripe-install')};
+    return {currency:'RP_GAME',currencyLabel:'Rp · kredit game',rulesetVersion:ruleset.version,tuningBounds:TUNING_BOUNDS,categories,cars:items.filter(x=>x.kind==='car'),wheels:items.filter(x=>x.kind==='wheel'),services:items.filter(x=>x.kind==='service'),stripes:items.filter(x=>x.kind==='service'&&x.service==='stripe-install')};
   }
 
   async getProfile(userId: string) {

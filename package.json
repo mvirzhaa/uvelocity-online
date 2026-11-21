@@ -1,6 +1,6 @@
 {
   "name": "uvelocity",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "description": "UVelocity — multiplayer 3D racing with PostgreSQL accounts, virtual Rupiah, garage and administration.",
@@ -23,7 +23,8 @@
     "test:ui": "node tests/workshop-ui.mjs",
     "test:prayer-ui": "node tests/prayer-ui.mjs",
     "test:media-ui": "node tests/media-ui.mjs",
-    "test:vehicle-images-ui": "node tests/vehicle-images-ui.mjs"
+    "test:vehicle-images-ui": "node tests/vehicle-images-ui.mjs",
+    "test:vehicle-categories-ui": "node tests/vehicle-categories-ui.mjs"
   },
   "dependencies": {
     "@colyseus/core": "0.18.29",

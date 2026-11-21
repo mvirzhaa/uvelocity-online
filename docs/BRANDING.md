@@ -5,11 +5,11 @@ Splash pertama menampilkan dua identitas kampus dengan latar transparan:
 - `public/branding/uika-logo-transparent.png`: lambang Universitas Ibn Khaldun Bogor, hasil penghapusan latar kotak-kotak dari gambar UIKA yang sebelumnya diberikan pengguna.
 - `public/branding/informatika-uika-logo.png`: logo Teknik Informatika UIKA yang diunggah pengguna sebagai `logo TI besar.png`. Berkas disalin tanpa perubahan piksel; alpha transparan sudah tersedia pada sumber.
 
-Tulisan di bawah kedua logo adalah **`create by civitas UIKA`**, sesuai permintaan. Nama institusi tersedia sebagai teks terpisah agar tetap terbaca pada layar kecil. Tidak ada pelat putih, latar kotak-kotak, atau sudut kotak pada elemen logo. Warna hijau berasal dari latar halaman splash, bukan bagian tambahan pada berkas logo.
+Tulisan di bawah kedua logo adalah **`create by civitas UIKA`**, sesuai permintaan. Nama institusi tersedia sebagai teks terpisah agar tetap terbaca pada layar kecil. Tidak ada pelat putih, latar kotak-kotak, atau sudut kotak pada elemen logo. Latar memakai JPEG aktif dari admin dengan lapisan gelap biru-navy, atau warna bawaan bila gambar tidak tersedia; latar tersebut bukan bagian dari berkas logo.
 
-Tahap kampus tampil selama 2,8 detik, kemudian logo game tersendiri `public/branding/uvelocity-logo.png` tampil selama 1,8 detik. Tombol **Lewati intro** tersedia di kedua tahap. Preferensi gerakan minimal meniadakan animasi; intro tetap bisa dilewati. Logo UVelocity dari paket sebelumnya tidak diubah.
+Mulai versi **1.4.0**, splash kampus merupakan satu layar selama **3.000 ms**, tanpa tahap kedua atau tombol lewati. Timer tidak diulang ketika gambar atau autentikasi selesai dimuat. Setelah itu pengguna menuju login, pemuatan akun bila masih diperlukan, atau garasi sesuai sesi. Preferensi gerakan minimal meniadakan animasi indikator. Logo UVelocity `public/branding/uvelocity-logo.png` sudah memiliki alpha transparan; kotak putih pada komponennya dihapus melalui CSS, dengan brightness dan glow ringan agar tetap jelas pada tema navy/cyan/emas. Piksel logo asli tetap dipertahankan.
 
-Komponen: `client/src/Auth.tsx`. Tata letak tambahan: `client/src/branding.css`. Gambar memakai `object-fit: contain` dan susunan responsif agar lambang tidak terpotong.
+Komponen: `client/src/Auth.tsx`. Tata letak tambahan: `client/src/branding.css`, `client/src/compact-layout.css`, dan `client/src/neon-theme.css`. Gambar memakai `object-fit: contain` dan susunan responsif agar lambang tidak terpotong.
 
 ## Sumber dan proses logo UIKA
 
@@ -21,7 +21,7 @@ Prompt penyuntingan lengkap:
 
 > Edit the supplied UIKA university crest by removing ONLY the entire baked-in grey-and-white checkerboard background outside the pentagonal crest. Produce one clean high-resolution RGBA PNG cutout on a truly transparent alpha background, with just a little clear padding around the complete crest. Preserve the original crest exactly: its tall pentagonal silhouette, gold bevel outer border, teal and green inner shading, gold and white rice ornaments, torch and flame, star, and lettering. The top lettering must remain exactly 'UNIVERSITAS IBN KHALDUN' following the original arc; the bottom banner must remain exactly 'BOGOR'. Do not redesign, restyle, recolor, simplify, rotate, crop, replace text, or add anything. Keep all portions INSIDE the crest opaque, including all white/gold shapes. Remove the checkerboard and the exterior drop shadow cleanly right up to the outer edge. There must be NO painted checkerboard, NO square plate, NO solid background, and NO added label. This is a precise background-removal edit for use as the original university logo on a dark green splash screen.
 
-Identitas kampus dan nama game tetap terpisah. Media yang diunggah admin untuk halaman loading balapan tidak mengganti splash identitas ini.
+Identitas kampus tetap tampil di atas gambar admin. Pilihan **Admin → Musik & loading → Gambar splash & loading** memakai JPEG yang sama untuk latar splash awal dan persiapan arena. Persiapan arena tetap menunggu kesiapan semua pemain; durasinya tidak dibatasi timer splash 3 detik. Gambar gagal dimuat menggunakan latar bawaan tanpa menunda pembuka.
 
 ## Ilustrasi halaman loading siap unggah
 

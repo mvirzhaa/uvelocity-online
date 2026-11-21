@@ -4,8 +4,9 @@
   'use strict';
   function build({THREE,scene}) {
     const root=new THREE.Group();root.name='UVelocity Workshop';scene.add(root);
+    const previousBackground=scene.background,workshopBackground=new THREE.Color(0x101b29);scene.background=workshopBackground;
     const textures=[],geometries=new Set(),materials=new Set(),occluders=[],qualityDetails=[];
-    const stats={name:'UVelocity Performance Workshop',drawCalls:0,triangles:0,clearBay:{width:6.2,length:8.2},features:['textured concrete','industrial envelope','service door','tool cabinets','tyre rack','vehicle lift','floor jack','work lights','daylight windows']};
+    const stats={name:'UVelocity Performance Workshop',drawCalls:0,triangles:0,clearBay:{width:6.2,length:8.2},features:['textured concrete','industrial envelope','service door','tool cabinets','tyre rack','vehicle lift','floor jack','work lights','daylight windows','blue gray workshop','cyan light strips','concentric display rings','articulated service arms']};
     let seed=74031,disposed=false;
     const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
     const makeMat=(name,parameters)=>{const m=new THREE.MeshStandardMaterial(parameters);m.name=name;materials.add(m);return m;};
@@ -30,21 +31,23 @@
       for(const t of[map,rough,normal]){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(12,12);}return {map,rough,normal};
     }
     const maps=concreteMaps();
-    const concrete=makeMat('Workshop concrete',{color:0x9caaa0,map:maps.map,roughnessMap:maps.rough,normalMap:maps.normal,normalScale:new THREE.Vector2(.18,.18),roughness:.94,metalness:.025,envMapIntensity:.18});
-    const wallTexture=canvasTex(256,256,(c,n)=>{c.fillStyle='#8c9187';c.fillRect(0,0,n,n);for(let i=0;i<9000;i++){c.fillStyle=rand()>.5?'rgba(255,255,240,.045)':'rgba(17,22,17,.045)';c.fillRect(rand()*n,rand()*n,1+rand()*2,1+rand()*3);}});wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;wallTexture.repeat.set(4,2);
-    const wall=makeMat('Painted masonry',{color:0xa4afa3,map:wallTexture,roughness:.93,metalness:0,envMapIntensity:.12});
-    const dark=makeMat('Charcoal powder coated steel',{color:0x202b28,roughness:.57,metalness:.55});
-    const green=makeMat('Workshop forest green',{color:0x1e4d39,roughness:.4,metalness:.52});
-    const greenDark=makeMat('Workshop dark green',{color:0x19362b,roughness:.7,metalness:.25});
+    const concrete=makeMat('Workshop concrete',{color:0x7893aa,map:maps.map,roughnessMap:maps.rough,normalMap:maps.normal,normalScale:new THREE.Vector2(.18,.18),roughness:.82,metalness:.06,envMapIntensity:.25});
+    const wallTexture=canvasTex(256,256,(c,n)=>{c.fillStyle='#647d90';c.fillRect(0,0,n,n);for(let i=0;i<9000;i++){c.fillStyle=rand()>.5?'rgba(224,244,255,.045)':'rgba(10,18,29,.045)';c.fillRect(rand()*n,rand()*n,1+rand()*2,1+rand()*3);}});wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;wallTexture.repeat.set(4,2);
+    const wall=makeMat('Painted masonry',{color:0x7b91a4,map:wallTexture,roughness:.85,metalness:.06,envMapIntensity:.18});
+    const dark=makeMat('Charcoal powder coated steel',{color:0x172330,roughness:.54,metalness:.55});
+    const green=makeMat('Workshop blue gray enamel',{color:0x2a526a,roughness:.4,metalness:.52});
+    const greenDark=makeMat('Workshop deep blue panels',{color:0x1b3447,roughness:.64,metalness:.3});
     const gold=makeMat('Brushed warm brass',{color:0xb39453,roughness:.42,metalness:.72});
-    const steel=makeMat('Brushed steel',{color:0x86938c,roughness:.39,metalness:.85});
-    const rubber=makeMat('Workshop rubber',{color:0x171d1a,roughness:.94,metalness:0,envMapIntensity:.14});
-    const pale=makeMat('Warm painted metal',{color:0xc0c5b8,roughness:.6,metalness:.35});
+    const steel=makeMat('Brushed steel',{color:0x92a8b8,roughness:.39,metalness:.85});
+    const rubber=makeMat('Workshop rubber',{color:0x141b22,roughness:.94,metalness:0,envMapIntensity:.14});
+    const pale=makeMat('Cool painted metal',{color:0x9bacba,roughness:.48,metalness:.45});
     const red=makeMat('Safety equipment enamel',{color:0x8b332b,roughness:.48,metalness:.45});
     const wood=makeMat('Oiled workbench top',{color:0x8c7553,roughness:.78,metalness:0});
-    const glass=makeMat('Frosted daylight glazing',{color:0xb1c4c6,roughness:.26,metalness:.12,emissive:0x647d88,emissiveIntensity:.31,envMapIntensity:.6});
-    const light=new THREE.MeshBasicMaterial({name:'Warm practical diffuser',color:new THREE.Color(0xfff2d8).multiplyScalar(2.3),toneMapped:false});materials.add(light);
-    const whiteLine=makeMat('Floor bay marking',{color:0xb9bca1,roughness:.92,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+    const glass=makeMat('Frosted daylight glazing',{color:0xb8d9ee,roughness:.26,metalness:.12,emissive:0x6188a1,emissiveIntensity:.31,envMapIntensity:.6});
+    const light=new THREE.MeshBasicMaterial({name:'Cool practical diffuser',color:new THREE.Color(0xe2f5ff).multiplyScalar(2.1),toneMapped:false});light.userData.workshopGlow=true;materials.add(light);
+    const cyan=new THREE.MeshBasicMaterial({name:'Cyan workshop light core',color:new THREE.Color(0x43dfff).multiplyScalar(1.7),toneMapped:false});cyan.userData.workshopGlow=true;materials.add(cyan);
+    const cyanHalo=new THREE.MeshBasicMaterial({name:'Cyan floor light spill',color:0x39cdea,transparent:true,opacity:.16,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,side:THREE.DoubleSide});cyanHalo.userData.workshopGlow=true;materials.add(cyanHalo);
+    const whiteLine=makeMat('Floor bay marking',{color:0xa8bac6,roughness:.92,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
 
     // Static equipment is merged by material inside each movable visibility group.
     class Batch {
@@ -58,14 +61,14 @@
         for(const [mat,parts]of this.parts){const p=[],n=[],uv=[];
           for(const source of parts){const g=source.index?source.toNonIndexed():source,a=g.attributes.position,b=g.attributes.normal,t=g.attributes.uv;for(let i=0;i<a.count;i++){p.push(a.getX(i),a.getY(i),a.getZ(i));n.push(b?b.getX(i):0,b?b.getY(i):1,b?b.getZ(i):0);uv.push(t?t.getX(i):0,t?t.getY(i):0);}if(g!==source)g.dispose();source.dispose();}
           const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(n,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.computeBoundingSphere();geometries.add(g);
-          const mesh=new THREE.Mesh(g,mat);mesh.name=this.group.name+' / '+mat.name;mesh.castShadow=true;mesh.receiveShadow=true;this.group.add(mesh);stats.drawCalls++;stats.triangles+=p.length/9;
+          const mesh=new THREE.Mesh(g,mat);mesh.name=this.group.name+' / '+mat.name;mesh.castShadow=!mat.userData.workshopGlow;mesh.receiveShadow=!mat.userData.workshopGlow;this.group.add(mesh);stats.drawCalls++;stats.triangles+=p.length/9;
         }this.parts.clear();return this.group;
       }
     }
     function plane(parent,name,w,h,mat,x,y,z,rx=0,ry=0){const g=new THREE.PlaneGeometry(w,h),mesh=new THREE.Mesh(g,mat);mesh.name=name;mesh.position.set(x,y,z);mesh.rotation.set(rx,ry,0);mesh.receiveShadow=true;parent.add(mesh);geometries.add(g);stats.drawCalls++;stats.triangles+=2;return mesh;}
     function label(parent,text,sub,x,y,z,width,height,ry=0){
-      const tex=canvasTex(1024,256,(c,w,h)=>{c.fillStyle='#172d23';c.fillRect(0,0,w,h);c.fillStyle='#bba16a';c.fillRect(0,h-9,w,9);c.fillStyle='#edf0e5';c.font='700 108px Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,w/2,h*.40);c.fillStyle='#c8c9b9';c.font='400 28px Arial, sans-serif';c.fillText(sub,w/2,h*.79);});
-      const m=makeMat(text+' sign',{map:tex,roughness:.67,metalness:.15,emissive:0x30362d,emissiveMap:tex,emissiveIntensity:.16});return plane(parent,text+' sign',width,height,m,x,y,z,0,ry);
+      const tex=canvasTex(1024,256,(c,w,h)=>{c.fillStyle='#132c3e';c.fillRect(0,0,w,h);c.fillStyle='#49daef';c.fillRect(0,h-7,w,7);c.fillStyle='#e7f8ff';c.font='700 108px Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,w/2,h*.40);c.fillStyle='#9fc5d6';c.font='400 28px Arial, sans-serif';c.fillText(sub,w/2,h*.79);});
+      const m=makeMat(text+' sign',{map:tex,roughness:.54,metalness:.2,emissive:0x23506a,emissiveMap:tex,emissiveIntensity:.28});return plane(parent,text+' sign',width,height,m,x,y,z,0,ry);
     }
     function equipment(name,x,z,radius,buildFn){const batch=new Batch(root,name);buildFn(batch);const group=batch.finish();group.position.set(x,0,z);occluders.push({group,x,z,radius});return group;}
 
@@ -80,6 +83,22 @@
     floor.box(dark,-3.35,-.01,.6,.28,.008,4.8);for(let z=-1.75;z<3;z+=.085)floor.box(steel,-3.35,-.002,z,.26,.01,.018);
     floor.finish();
 
+    // Floor-mounted light guides: actual geometry below the tyres, with no
+    // floating overlay or obstruction inside the 6.2 × 8.2 metre working bay.
+    const display=new Batch(root,'Cyan concentric vehicle display rings');
+    for(const [radius,width,start,arc]of[[2.42,.035,0,Math.PI*2],[2.62,.022,.12,Math.PI*1.68],[2.83,.018,Math.PI*.42,Math.PI*1.58]]){
+      const ring=new THREE.RingGeometry(radius-width,radius,128,1,start,arc);ring.scale(1,1.35,1);display.add(ring,cyan,0,.006,0,-Math.PI/2);
+      const spill=new THREE.RingGeometry(radius-.09,radius+.07,128,1,start,arc);spill.scale(1,1.35,1);display.add(spill,cyanHalo,0,.004,0,-Math.PI/2);
+    }
+    for(const side of[-1,1]){
+      display.box(cyan,side*2.99,.003,0,.018,.006,8.0);
+      display.box(cyan,side*6.4,.003,1.7,.025,.006,17.0);
+      display.box(cyan,side*5.8,.003,-4.85,5.5,.006,.025);
+      display.box(cyanHalo,side*2.99,.002,0,.10,.003,8.0);
+      for(let index=0;index<7;index++)display.box(cyan,side*2.69,.006,-3.3+index*.11,.28,.006,.027);
+    }
+    const displayGroup=display.finish();displayGroup.userData.displayRings=3;displayGroup.userData.floorMounted=true;
+
     const walls={};
     for(const side of['back','front','left','right']){
       const batch=new Batch(root,'Workshop '+side+' wall'),back=side==='back',front=side==='front',left=side==='left';
@@ -90,6 +109,13 @@
       plane(batch.group,'Workshop lower wall protection',w,1.1,greenDark,px+(left?.018:side==='right'?-.018:0),.54,pz+(back?.018:front?-.018:0),0,ry);
       if(back||front){for(let x=-12;x<=12;x+=4){batch.box(dark,x,3.3,pz+(back?.09:-.09),.16,6.6,.18);batch.box(steel,x,.05,pz+(back?.11:-.11),.33,.09,.32);}batch.box(gold,0,1.12,pz+(back?.035:-.035),26,.035,.025);}
       else{for(let z=-10;z<=14;z+=4){batch.box(dark,px+(left?.09:-.09),3.3,z,.18,6.6,.16);batch.box(steel,px+(left?.11:-.11),.05,z,.32,.09,.33);}batch.box(gold,px+(left?.035:-.035),1.12,2,.025,.035,24);}
+      if(back||front){
+        const face=pz+(back?.22:-.22);
+        for(const edge of[-1,1]){batch.box(cyan,edge*8.15,1.58,face,8.7,.028,.018);batch.bar(cyan,[edge*11.5,1.6,face],[edge*8.8,4.8,face],.024,.018);batch.bar(cyan,[edge*8.8,1.6,face],[edge*11.5,4.8,face],.024,.018);}
+      }else{
+        const face=px+(left?.22:-.22);batch.box(cyan,face,1.58,2,.018,.028,24);
+        for(const z of[-7,1,9])batch.bar(cyan,[face,1.62,z-1.35],[face,4.7,z+1.35],.024,.018);
+      }
       walls[side]=batch.finish();
     }
     const rear=new Batch(walls.back,'Roller service door');
@@ -119,14 +145,16 @@
       roof.box(dark,x,5.5,z,2.65,.12,.46);roof.box(light,x,5.427,z,2.5,.016,.34);
       for(const dx of[-1,1])roof.bar(steel,[x+dx,5.57,z],[x+dx,6.34,z],.018);
     }
-    const roofGroup=roof.finish();plane(roofGroup,'Workshop acoustic ceiling',26,24,makeMat('Ceiling panels',{color:0x39433d,roughness:1}),0,6.65,2,Math.PI/2);
+    const roofGroup=roof.finish();plane(roofGroup,'Workshop acoustic ceiling',26,24,makeMat('Ceiling panels',{color:0x293a4b,roughness:1}),0,6.65,2,Math.PI/2);
 
     equipment('Fitted workbench and tool cabinet',-6.7,-8.8,2.8,b=>{
       b.box(green,0,.46,0,4.6,.88,.82);b.box(dark,0,.06,.01,4.7,.10,.86);b.box(wood,0,.95,.02,4.85,.09,.96);
       for(let col=0;col<5;col++)for(let row=0;row<4;row++){const x=-1.84+col*.92,y=.18+row*.18;b.box(greenDark,x,y,.425,.86,.151,.045);b.box(steel,x,y+.045,.459,.64,.018,.025);}
-      const peg=canvasTex(256,256,(c,n)=>{c.fillStyle='#404d43';c.fillRect(0,0,n,n);c.fillStyle='#121b17';for(let y=8;y<n;y+=16)for(let x=8;x<n;x+=16){c.beginPath();c.arc(x,y,1.5,0,Math.PI*2);c.fill();}});
-      const pegmat=makeMat('Perforated tool board',{map:peg,color:0xabb5a8,roughness:.7,metalness:.45});b.box(pegmat,0,2.0,-.16,4.6,1.5,.07);
+      const peg=canvasTex(256,256,(c,n)=>{c.fillStyle='#344b5c';c.fillRect(0,0,n,n);c.fillStyle='#0d1722';for(let y=8;y<n;y+=16)for(let x=8;x<n;x+=16){c.beginPath();c.arc(x,y,1.5,0,Math.PI*2);c.fill();}});
+      const pegmat=makeMat('Perforated tool board',{map:peg,color:0xa2b7c6,roughness:.7,metalness:.45});b.box(pegmat,0,2.0,-.16,4.6,1.5,.07);
       b.box(greenDark,0,2.65,.12,3.46,.91,.04);
+      b.box(cyan,0,3.115,.16,3.5,.022,.016);b.box(cyan,0,2.185,.16,3.5,.022,.016);
+      for(const x of[-1.75,1.75])b.box(cyan,x,2.65,.16,.022,.95,.016);
       for(let i=0;i<12;i++){
         const x=-2.05+i*.37,y=1.6+(i%3)*.14;b.box(steel,x,y,-.09,.025,.39,.025);b.torus(steel,x,y+.22,-.07,.047,.012,0,0,12);b.box(i%3?rubber:gold,x,y-.24,-.07,.055,.15,.035);
       }
@@ -181,11 +209,38 @@
       for(let i=0;i<6;i++){b.cylinder(i%2?red:pale,-.4+i*.24,.8,-.6,.075,.32,0,0,12);b.cylinder(dark,-.4+i*.24,.98,-.6,.041,.055,0,0,10);}
     });qualityDetails.push(detail);
 
-    const hemi=new THREE.HemisphereLight(0xd4e4e8,0x394638,.68);hemi.name='Workshop ambient daylight';root.add(hemi);
-    const key=new THREE.DirectionalLight(0xffedce,2.05);key.name='Workshop bay key light';key.position.set(3.8,7.5,4.8);key.castShadow=true;key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-6.5,right:6.5,top:6.5,bottom:-6.5,near:.1,far:25});key.shadow.bias=-.00035;key.shadow.normalBias=.021;key.shadow.radius=3;key.target.position.set(0,.4,0);root.add(key,key.target);
-    const daylight=new THREE.DirectionalLight(0xd5e4eb,1.12);daylight.name='Window soft daylight';daylight.position.set(-9,5,4);root.add(daylight);
-    const rim=new THREE.DirectionalLight(0xe3d6af,.68);rim.position.set(1,4,-8);rim.name='Workshop rear bounce';root.add(rim);
-    for(const x of[-3.3,3.3]){const lamp=new THREE.SpotLight(0xffefd3,.65,18,.85,1,1.6);lamp.name='Practical overhead work light';lamp.position.set(x,5.3,0);lamp.target.position.set(x*.2,0,0);root.add(lamp,lamp.target);}
+    // Two parked articulated service arms flank the display. All links, joints
+    // and gripper tips remain outside x ±3.1 m so every existing vehicle fits.
+    for(const side of[-1,1]){
+      const arm=equipment(side<0?'Left articulated service arm':'Right articulated service arm',side*4.1,-1.65,1.05,b=>{
+        b.box(dark,0,.07,0,.96,.14,.86);b.cylinder(pale,0,.30,0,.34,.42,0,0,24);
+        b.cylinder(dark,0,.55,0,.30,.09,0,0,24);b.cylinder(steel,0,.63,0,.245,.08,0,0,24);
+        for(const x of[-.37,.37])for(const z of[-.31,.31]){b.cylinder(steel,x,.16,z,.055,.06,0,0,10);b.cylinder(gold,x,.195,z,.026,.018,0,0,8);}
+        const shoulder=[0,.86,0],elbow=[side*.38,1.88,-.13],wrist=[-side*.50,1.62,.18],tool=[-side*.72,1.28,.44];
+        b.bar(pale,shoulder,elbow,.27,.31);b.bar(pale,elbow,wrist,.22,.26);b.bar(steel,wrist,tool,.14,.18);
+        b.bar(dark,[side*.18,.91,.18],[side*.47,1.73,.08],.075);b.bar(steel,[side*.47,1.73,.08],[-side*.36,1.56,.32],.052);
+        b.bar(cyan,[side*.07,1.02,.165],[side*.30,1.73,.035],.019,.014);
+        b.bar(cyan,[side*.24,1.87,.035],[-side*.40,1.67,.345],.018,.014);
+        for(const [point,radius]of[[shoulder,.235],[elbow,.22],[wrist,.155]]){
+          const [x,y,z]=point;b.cylinder(dark,x,y,z,radius,.38,Math.PI/2,0,24);
+          b.cylinder(steel,x,y,z+.205,radius*.70,.045,Math.PI/2,0,20);
+          b.cylinder(gold,x,y,z+.235,radius*.28,.022,Math.PI/2,0,16);
+          b.torus(cyan,x,y,z+.247,radius*.79,.012,0,0,24);
+        }
+        b.box(dark,tool[0],tool[1]-.04,tool[2],.22,.20,.25);
+        for(const z of[tool[2]-.13,tool[2]+.13]){
+          b.bar(steel,[tool[0],tool[1]-.06,z],[-side*.82,tool[1]-.30,z],.044,.052);
+          b.box(dark,-side*.82,tool[1]-.30,z,.09,.045,.10);
+        }
+        b.box(cyan,0,.32,.345,.18,.032,.016);
+      });arm.userData.serviceRobot=true;arm.userData.articulatedJoints=3;
+    }
+
+    const hemi=new THREE.HemisphereLight(0xc3e2f3,0x1c2c3d,.68);hemi.name='Workshop ambient daylight';root.add(hemi);
+    const key=new THREE.DirectionalLight(0xe6f4ff,2.05);key.name='Workshop bay key light';key.position.set(3.8,7.5,4.8);key.castShadow=true;key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-6.5,right:6.5,top:6.5,bottom:-6.5,near:.1,far:25});key.shadow.bias=-.00035;key.shadow.normalBias=.021;key.shadow.radius=3;key.target.position.set(0,.4,0);root.add(key,key.target);
+    const daylight=new THREE.DirectionalLight(0xadddf5,1.12);daylight.name='Window soft daylight';daylight.position.set(-9,5,4);root.add(daylight);
+    const rim=new THREE.DirectionalLight(0x59d2f3,.75);rim.position.set(1,4,-8);rim.name='Workshop cyan rear bounce';root.add(rim);
+    for(const x of[-3.3,3.3]){const lamp=new THREE.SpotLight(0xe1f5ff,.65,18,.85,1,1.6);lamp.name='Practical overhead work light';lamp.position.set(x,5.3,0);lamp.target.position.set(x*.2,0,0);root.add(lamp,lamp.target);}
     root.userData.summary=stats;root.userData.workshop=true;root.userData.clearBay=stats.clearBay;
     function update(camera){
       const c=camera.position,target=new THREE.Vector3(0,.55,0),line=target.clone().sub(c),lengthSq=line.lengthSq();
@@ -198,7 +253,7 @@
     }
     let currentQuality='medium';
     function setQuality(value){currentQuality=['low','medium','high'].includes(value)?value:'medium';for(const group of qualityDetails)group.visible=currentQuality!=='low';}
-    function dispose(){if(disposed)return;disposed=true;geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());key.shadow.map?.dispose();if(root.parent)root.parent.remove(root);root.clear();}
+    function dispose(){if(disposed)return;disposed=true;geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());key.shadow.map?.dispose();if(scene.background===workshopBackground)scene.background=previousBackground;if(root.parent)root.parent.remove(root);root.clear();}
     return {root,key,stats,update,setQuality,dispose};
   }
   global.NVWorkshop={build};

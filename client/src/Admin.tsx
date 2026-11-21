@@ -5,6 +5,7 @@ import type { Catalog } from './api.js';
 import { Icon } from './icons.js';
 import { AdminMedia } from './AdminMedia.js';
 import { VehicleImageEditor } from './VehicleImages.js';
+import { AdminVehicleCategories } from './AdminVehicleCategories.js';
 import type { PresentationSettings } from '../../shared/media.js';
 
 type AdminUser={id:string;userId:string;email:string;displayName:string;avatarId:string;role:string;status:string;balance:string;walletVersion:string;createdAt:string};
@@ -12,12 +13,12 @@ type AuditEntry={id:string;actorId:string|null;actorName:string|null;action:stri
 type RewardPolicy={version?:number;finish:string;perLap:string;podium:string[];minimumDurationMs:number;maximum:string};
 type Tuning={version:string;bounds:Record<'topSpeed'|'zeroTo100'|'handling',{min:number;max:number}>;cars:Array<{carId:string;topSpeed:number;zeroTo100:number;handling:number}>;rewardPolicy:RewardPolicy;physics:unknown};
 type GrantReview={user:AdminUser;amount:string;reference:string;reason:string;key:string};
-type Tab='accounts'|'tuning'|'offers'|'rewards'|'media'|'vehicle-images'|'audit';
+type Tab='accounts'|'tuning'|'offers'|'rewards'|'media'|'vehicle-images'|'categories'|'audit';
 const control:CSSProperties={fontSize:14};
 const actions:CSSProperties={display:'flex',flexWrap:'wrap',alignItems:'center',gap:10};
 const sections:CSSProperties={display:'grid',gap:20};
-const actionNames:Record<string,string>={'admin.created':'Admin dibuat','wallet.topup':'Kredit ditambahkan','catalog.updated':'Penawaran diubah','ruleset.published':'Aturan diterbitkan','media.uploaded':'Media diunggah','media.deleted':'Media dihapus','presentation.updated':'Musik & loading diubah','vehicle.thumbnail.updated':'Foto kendaraan diperbarui','vehicle.thumbnail.deleted':'Foto kendaraan dihapus'};
-const tabs:Array<{id:Tab;label:string;icon:string}>=[{id:'accounts',label:'Pemain & kredit',icon:'user'},{id:'tuning',label:'Performa mobil',icon:'settings'},{id:'offers',label:'Harga & toko',icon:'wallet'},{id:'rewards',label:'Hadiah balapan',icon:'trophy'},{id:'media',label:'Musik & loading',icon:'sound'},{id:'vehicle-images',label:'Foto kendaraan',icon:'car'},{id:'audit',label:'Riwayat admin',icon:'shield'}];
+const actionNames:Record<string,string>={'admin.created':'Admin dibuat','wallet.topup':'Kredit ditambahkan','catalog.updated':'Penawaran diubah','ruleset.published':'Aturan diterbitkan','media.uploaded':'Media diunggah','media.deleted':'Media dihapus','presentation.updated':'Musik & loading diubah','vehicle.thumbnail.updated':'Foto kendaraan diperbarui','vehicle.thumbnail.deleted':'Foto kendaraan dihapus','vehicle.category.created':'Kategori ditambahkan','vehicle.category.updated':'Kategori diperbarui','vehicle.category.deleted':'Kategori dihapus'};
+const tabs:Array<{id:Tab;label:string;icon:string}>=[{id:'accounts',label:'Pemain & kredit',icon:'user'},{id:'tuning',label:'Performa mobil',icon:'settings'},{id:'offers',label:'Harga & toko',icon:'wallet'},{id:'rewards',label:'Hadiah balapan',icon:'trophy'},{id:'media',label:'Musik & loading',icon:'sound'},{id:'vehicle-images',label:'Foto kendaraan',icon:'car'},{id:'categories',label:'Kategori kendaraan',icon:'garage'},{id:'audit',label:'Riwayat admin',icon:'shield'}];
 const colorServices=[{id:'paint-body',label:'Warna bodi',description:'Warna dan lapisan cat bodi.'},{id:'paint-rims',label:'Warna pelek',description:'Pelek standar, paket pelek, dan pengembalian finishing pabrik.'},{id:'stripe-paint',label:'Warna striping',description:'Mengganti warna pada desain striping yang sudah terpasang.'}];
 function message(error:unknown):string{return error instanceof Error?error.message:'Permintaan belum berhasil. Coba lagi.';}
 function nonce(prefix:string):string {
@@ -143,10 +144,10 @@ export function Admin({catalog,onChange,onNotice,onMediaChange,mediaMuted=false,
   }
 
   return <section className="admin-view" style={{...sections,fontSize:14}} aria-label="Panel administrator">
-    <header className="section-heading"><div><span className="pill"><Icon name="shield" size={16}/> ADMIN</span><h1>Ruang kendali</h1><p>Kelola kredit virtual, isi garasi, dan aturan balapan UVelocity.</p></div></header>
-    <nav aria-label="Bagian administrator" style={actions}>
+    <header className="admin-toolbar"><span className="pill"><Icon name="shield" size={16}/> ADMIN</span>
+    <nav className="admin-section-nav" aria-label="Bagian administrator">
       {tabs.map(item=><button key={item.id} type="button" style={control} className={tab===item.id?'primary':'secondary'} aria-pressed={tab===item.id} onClick={()=>setTab(item.id)}><Icon name={item.icon} size={18}/>{item.label}</button>)}
-    </nav>
+    </nav></header>
 
     {tab==='accounts'&&<div style={sections}>
       <section className="panel">
@@ -223,6 +224,7 @@ export function Admin({catalog,onChange,onNotice,onMediaChange,mediaMuted=false,
 
     {tab==='media'&&<AdminMedia onChange={settings=>{onMediaChange?.(settings);void loadAudit();}} onNotice={onNotice} muted={mediaMuted} suspended={mediaSuspended}/>}
     {tab==='vehicle-images'&&<VehicleImageEditor cars={catalog.cars} onSaved={async()=>{await callbacks.current.onChange();await loadAudit();}} onNotice={onNotice}/>}
+    {tab==='categories'&&<AdminVehicleCategories catalog={catalog} onSaved={async()=>{await callbacks.current.onChange();await loadAudit();}} onNotice={onNotice}/>}
 
     {tab==='audit'&&<section className="panel">
       <div className="section-heading"><div><h2>Riwayat administrator</h2><p>50 tindakan terbaru, termasuk kredit, katalog, dan aturan balapan.</p></div><button type="button" className="text-button" style={control} disabled={auditLoading} onClick={()=>void loadAudit()}><Icon name="refresh" size={18}/> Muat ulang</button></div>
