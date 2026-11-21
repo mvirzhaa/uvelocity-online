@@ -168,8 +168,12 @@ test('active media cannot be deleted; deselection and deletion are auditable',as
   assert.equal(audit.before_data.id,asset.id);assert.deepEqual(audit.after_data,{deleted:true});assert.deepEqual(await services.media.getPresentation(),current);
 });
 
-test('public audio GET/HEAD serves complete and byte-range payloads without private metadata',async()=>{
-  const {asset}=await upload(),bytes=await services.media.read(asset.id,0,asset.bytes-1),path=`/media/${asset.id}`;
+test('public selected music config and audio GET/HEAD work before login with complete and byte-range payloads',async()=>{
+  const {asset}=await upload(),bytes=await services.media.read(asset.id,0,asset.bytes-1);
+  const selected=await services.media.updatePresentation(operator.user.id,update(await services.media.getPresentation(),{garageMusicId:asset.id,musicVolume:0.42}));
+  const config=await request('/presentation',{user:null,origin:null});assert.equal(config.status,200);assert.equal(config.headers.get('cache-control'),'no-store');assert.equal(config.headers.get('set-cookie'),null);
+  const publicSettings=await config.json() as PresentationSettings;assert.deepEqual(publicSettings,selected);assert(publicSettings.garageMusic);
+  const path=publicSettings.garageMusic.url.replace(/^\/api/,'');assert.equal(path,`/media/${asset.id}`);
   const full=await request(path,{user:null,origin:null});assert.equal(full.status,200);assert.equal(full.headers.get('content-type'),'audio/mpeg');assert.equal(full.headers.get('content-length'),String(bytes.length));assert.equal(full.headers.get('accept-ranges'),'bytes');assert.equal(full.headers.get('x-content-type-options'),'nosniff');assert.match(full.headers.get('cache-control')!,/immutable/);assert.deepEqual(Buffer.from(await full.arrayBuffer()),bytes);
   const etag=full.headers.get('etag')!;
   const head=await request(path,{method:'HEAD',user:null});assert.equal(head.status,200);assert.equal(head.headers.get('content-length'),String(bytes.length));assert.equal((await head.arrayBuffer()).byteLength,0);

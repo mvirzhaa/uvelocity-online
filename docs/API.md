@@ -421,7 +421,9 @@ interface MediaAsset {
 }
 ```
 
-Only presentation metadata is public; uploader/account identifiers are not returned. The client refreshes configuration outside an active race. Music playback observes browser autoplay restrictions, the user's sound preference, page visibility, race preparation, and prayer pauses. An audio rejection presents a user-action button rather than claiming playback succeeded. No media request changes race simulation state.
+Only presentation metadata is public; uploader/account identifiers are not returned. Since 1.3.1 the client requests this configuration at application startup, before authentication completes, so the selected MP3 can start during the splash. Configuration and a single persistent audio element survive splash, login, account-loading, and garage transitions. A refresh with the same selected asset must not replace the source or reset playback position. Configuration continues to refresh outside an active race.
+
+Playback is attempted automatically when eligible, subject to browser autoplay restrictions, the user's sound preference, page visibility, race preparation, and prayer pauses. A `NotAllowedError` keeps automatic intent pending and provides an explicit play button; an allowed user gesture can retry synchronously. Explicit pause or mute remains authoritative, and a late play promise cannot resume an ineligible track. Neither the public configuration request nor media streaming requires a session, and neither changes race simulation state. Admin upload/selection mutations retain authentication, role, CSRF, Origin, and prayer checks.
 
 ### `GET /admin/media`
 

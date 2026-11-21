@@ -1,11 +1,13 @@
-# Pratinjau aset kendaraan 1.3.0
+# Pratinjau aset kendaraan
 
 Gambar ini adalah render inspeksi GLB yang disertakan dalam paket, menggunakan Blender 4.3.2 / Cycles CPU. Ini bukan tangkapan layar gameplay Three.js. Pencahayaan studio dipakai untuk memeriksa bentuk dan sambungan panel; suasana bengkel/game mengikuti renderer aplikasi.
 
-Regera dan Venom dirender dengan cat silver serta posisi kamera yang sama supaya bentuk kabin, lampu, intake, sayap dan pelek dapat dibandingkan. Nama berkas Regera tetap memakai `jesko-absolut` agar sama dengan identitas kendaraan yang dipertahankan pada database. Panther dirender dengan cat gelap bawaan sesuai foto referensi.
+Regera dan Venom dirender dengan cat silver serta posisi kamera yang sama supaya bentuk kabin, lampu, intake, sayap dan pelek dapat dibandingkan. Kedua model dan gambarnya dipertahankan dari versi **1.3.0**. Nama berkas Regera tetap memakai `jesko-absolut` agar sama dengan identitas kendaraan yang dipertahankan pada database.
+
+Panther memakai rebuild **1.3.1**, ditinjau terhadap foto depan-samping kendaraan gelap serta tiga foto tambahan kendaraan putih dari depan, belakang dan belakang-samping. Render memakai cat gelap bawaan. Tampilan depan/belakang dari sudut tiga perempat memperlihatkan sambungan panel, sedangkan tampilan samping membantu menilai proporsi kabin, kap, roda dan pintu.
 
 - `jesko-absolut-front.png` dan `jesko-absolut-rear.png`: Koenigsegg Regera.
 - `venom-f5-front.png` dan `venom-f5-rear.png`: Hennessey Venom F5 mengikuti referensi kokpit terbuka.
-- `panther-grand-touring-front.png`, `panther-grand-touring-side.png`, dan `panther-grand-touring-rear.png`: Isuzu Panther Grand Touring.
+- `panther-grand-touring-front.png`, `panther-grand-touring-side.png`, dan `panther-grand-touring-rear.png`: Isuzu Panther Grand Touring, rebuild 1.3.1 berdasarkan rujukan 21 November 2026.
 
 Semua model tambahan adalah rekonstruksi geometri buatan UVelocity berdasarkan gambar pengguna, bukan hasil scan atau CAD pabrikan.

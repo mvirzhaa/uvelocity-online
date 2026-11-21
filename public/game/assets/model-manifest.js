@@ -15,7 +15,7 @@ window.NV_MODEL_URLS = {
   "batmobile-1989": "./assets/cars/batmobile-1989.glb",
   "jesko-absolut": "./assets/cars/jesko-absolut.glb?v=26abbff38c7d",
   "venom-f5": "./assets/cars/venom-f5.glb?v=740d181a6835",
-  "panther-grand-touring": "./assets/cars/panther-grand-touring.glb?v=e079ead361d2"
+  "panther-grand-touring": "./assets/cars/panther-grand-touring.glb?v=9deeff82a24b"
 };
 
 /* Dimensions and effect anchors belong to these authored game meshes. */
@@ -252,32 +252,33 @@ window.NV_MODEL_METADATA = {
     "bodyStyle": "venom-f5-reference-roadster"
   },
   "panther-grand-touring": {
-    "length": 4.8507630825042725,
+    "length": 4.731774568557739,
     "wheelRadius": 0.377,
     "headlightPositions": [
       [
-        -0.64,
-        0.907,
-        2.32
+        -0.713,
+        0.917,
+        2.1295715417491485
       ],
       [
-        0.64,
-        0.907,
-        2.32
+        0.713,
+        0.917,
+        2.1295715417491485
       ]
     ],
     "exhaustPositions": [
       [
-        -0.66,
-        0.3,
-        -2.37
+        0.52,
+        0.275,
+        -2.38
       ]
     ],
-    "tail": -2.37,
-    "exhaustX": 0.66,
-    "exhaustY": 0.3,
-    "source": "Original UVelocity reference-based recreation from the user-supplied Isuzu Panther Grand Touring photograph; not a manufacturer mesh or scan.",
+    "tail": -2.38,
+    "exhaustX": 0.52,
+    "exhaustY": 0.275,
+    "source": "Original UVelocity photo-reference recreation of Isuzu Panther Grand Touring, rebuilt from the four supplied 21 November 2026 images; not manufacturer CAD or a scan.",
     "representation": "reference-recreation",
-    "displayName": "Isuzu Panther Grand Touring"
+    "displayName": "Isuzu Panther Grand Touring",
+    "modelRevision": "photo-rebuild-1.3.1"
   }
 };

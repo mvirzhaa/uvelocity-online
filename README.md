@@ -1,10 +1,26 @@
 # UVelocity
 
-Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, ekonomi rupiah virtual, pembelian mobil dan pelek, cat/striping berbayar, pengaturan akses kendaraan oleh administrator, serta jeda salat bersama berdasarkan lokasi pemain. Pembaruan **1.3.0** merapikan tampilan ponsel, kontrol sentuh, dan akses tombol utama tanpa scroll panjang; memperbarui bentuk 3D Koenigsegg Regera serta Hennessey Venom F5 sesuai referensi terbaru; dan menambahkan Isuzu Panther Grand Touring sebagai kendaraan ke-16. Fitur versi **1.2.0** tetap mencakup media garasi/loading dan foto kendaraan yang dikelola admin, kamera dashboard, koleksi Garasi khusus kendaraan milik pemain, navigasi Sebelumnya/Berikutnya, penyelesaian balapan tanpa menunggu bot, serta cat pelek bawaan dan tarif warna striping tersendiri yang dapat diatur admin.
+Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, ekonomi rupiah virtual, pembelian mobil dan pelek, cat/striping berbayar, pengaturan akses kendaraan oleh administrator, serta jeda salat bersama berdasarkan lokasi pemain. Pembaruan **1.3.1** membangun ulang model Isuzu Panther Grand Touring berdasarkan foto samping, depan, dan belakang yang diberikan pengguna, serta memulai musik MP3 pilihan admin sejak splash dan mempertahankannya sampai login dan garasi. Versi **1.3.0** merapikan tampilan ponsel, kontrol sentuh, dan akses tombol utama tanpa scroll panjang; memperbarui bentuk 3D Koenigsegg Regera serta Hennessey Venom F5; dan menambahkan Panther sebagai kendaraan ke-16. Fitur versi **1.2.0** tetap mencakup media garasi/loading dan foto kendaraan yang dikelola admin, kamera dashboard, koleksi Garasi khusus kendaraan milik pemain, navigasi Sebelumnya/Berikutnya, penyelesaian balapan tanpa menunggu bot, serta cat pelek bawaan dan tarif warna striping tersendiri yang dapat diatur admin.
 
 **Identitas:** splash pertama memakai logo Universitas Ibn Khaldun Bogor dengan alpha transparan tanpa latar kotak-kotak, bersama logo **Teknik Informatika UIKA** yang diberikan pengguna. Teks **`create by civitas UIKA`** tetap ditampilkan. Setelah itu tampil logo UVelocity tersendiri. Aset mobil dan lingkungan dari versi sebelumnya tetap digunakan. Detail sumber logo ada di [docs/BRANDING.md](docs/BRANDING.md).
 
-## Pembaruan 1.3.0
+## Pembaruan 1.3.1
+
+### Bentuk Panther Grand Touring
+
+Model Panther dibentuk ulang pada geometri bodi dan kabinnya, dengan kap serta sudut depan lebih melengkung, lampu reflektor besar mengikuti sudut bodi, gril krom berbentuk trapezoid, dan bumper dengan rumah fog lamp yang menyatu. Kaca samping memiliki sudut membulat, fender memakai cetakan yang lebih berisi, serta pelek, spion, roof rail, dan pijakan samping ditinjau kembali terhadap foto.
+
+Foto tambahan depan dan belakang menjadi rujukan untuk susunan gril/lampu, lekukan dudukan pelat pada pintu bagasi, garnish krom, lampu belakang yang membungkus sudut, wiper, spoiler atap, serta bumper belakang berpijakan. Gambar inspeksi model yang benar-benar diekspor tersedia pada `docs/previews/`; pencahayaannya memakai studio Blender, bukan tangkapan layar permainan.
+
+Panther tetap memakai ID `panther-grand-touring` sehingga pembelian, akses admin, foto kendaraan, dan modifikasi yang sudah tersimpan terhubung ke kendaraan yang sama. Pembaruan ini tidak menambahkan migrasi, tidak mengubah harga atau performa, dan mempertahankan 15 GLB kendaraan lainnya. URL aset Panther mempunyai penanda cache baru. Untuk instalasi yang sudah menggunakan 1.3.0, ganti sumber aplikasi dan bangun ulang dengan database serta `.env` yang sama.
+
+### Musik dari splash sampai garasi
+
+Lagu MP3 aktif serta volume pilihan admin dibaca sejak aplikasi dibuka, tanpa menunggu pemain login. Pemutar mencoba memulai lagu pada splash screen. Elemen audio yang sama dipertahankan saat intro selesai, formulir login muncul, akun disiapkan, dan garasi dibuka, sehingga perpindahan tersebut tidak mengulang lagu dari awal.
+
+Browser dapat menolak autoplay bersuara sebelum interaksi pengguna. Dalam keadaan itu, pemutar menunggu sentuhan/klik atau tombol keyboard pertama yang diizinkan browser dan menyediakan tombol **Putar musik garasi**. Tombol jeda dan pilihan mute tetap dihormati; interaksi halaman berikutnya tidak membatalkan keputusan pemain untuk menjeda. Musik mengikuti volume admin dan tetap dijeda selama persiapan/balapan, jeda salat, atau saat halaman tersembunyi. Tidak ada lagu yang dimainkan jika admin belum memilih MP3 aktif.
+
+## Riwayat pembaruan 1.3.0
 
 - **Aksi Garasi di atas:** tombol **Pakai mobil ini** dan **Masuk ke ruang balap** berada pada area judul **Garasi Anda**, dengan susunan yang membungkus pada layar sempit. Penggunaan konfigurasi tersimpan tidak dikenai biaya ulang; perubahan kosmetik tetap melalui **Tinjau biaya & pasang**.
 - **Hasil pertandingan:** **Kembali ke garasi** berada di header hasil, sebelum statistik dan daftar peserta.
@@ -141,7 +157,7 @@ Untuk mobil yang belum dimiliki, buka **Showroom**, lalu klik **Beli akses perma
 
 Tiga sirkuit: **Neon City**, **Azure Coast**, dan **Frostpeak Pass**. Masing-masing mempertahankan geometri lintasan, lingkungan kota/pantai/pegunungan es, serta pilihan suasana senja dan malam. Detail grafis dapat dipilih Ringan, Seimbang, atau Tinggi.
 
-Harga dapat berbeda jika administrator mengubah katalog. Delapan model tambahan merupakan rekonstruksi 3D khusus berdasarkan referensi pengguna; bukan mesh pabrikan, hasil scan, atau salinan aset game lain. BMW M4 memakai bentuk F82, Batmobile mengikuti versi 1989, Koenigsegg mengikuti bentuk Regera pada foto terbaru, Venom F5 memakai kokpit terbuka serta roda emas sesuai foto, dan Panther mengikuti foto MPV gelap dengan trim krom. Delapan aset kendaraan sebelumnya dipertahankan tanpa perubahan berkas GLB. Angka performa adalah parameter simulasi arcade, bukan klaim spesifikasi mobil asli. Varian Polisi 77 adalah desain fiktif untuk game.
+Harga dapat berbeda jika administrator mengubah katalog. Delapan model tambahan merupakan rekonstruksi 3D khusus berdasarkan referensi pengguna; bukan mesh pabrikan, hasil scan, atau salinan aset game lain. BMW M4 memakai bentuk F82, Batmobile mengikuti versi 1989, Koenigsegg mengikuti bentuk Regera pada foto terbaru, Venom F5 memakai kokpit terbuka serta roda emas sesuai foto, dan Panther mengikuti foto MPV gelap beserta foto detail depan/belakang kendaraan putih. Warna bawaan Panther tetap gelap; warna tersimpan pemain diterapkan oleh renderer. Delapan aset kendaraan World Tour dipertahankan tanpa perubahan berkas GLB. Angka performa adalah parameter simulasi arcade, bukan klaim spesifikasi mobil asli. Varian Polisi 77 adalah desain fiktif untuk game.
 
 ### Batas ruang
 
@@ -244,7 +260,7 @@ Masuk melalui halaman login yang sama menggunakan akun admin. Menu **Admin** mun
 - **Performa mobil:** atur kecepatan maksimum, waktu 0–100, dan handling dalam rentang yang diizinkan. Publikasikan versi baru dengan alasan perubahan.
 - **Harga & toko:** pilih kendaraan untuk membuka/mengunci akses gratis, mengatur harga pembelian permanen, dan mengaktifkan/menonaktifkan penjualan. Tarif **cat bodi/lapisan**, **warna pelek**, dan **warna striping** dapat diatur terpisah, bersama biaya setiap desain striping dan pelepasannya. Admin juga dapat mengaktifkan/menonaktifkan layanan. Setiap perubahan memerlukan alasan dan tercatat di audit. Kunci admin tidak mencabut kepemilikan permanen.
 - **Hadiah balapan:** atur hadiah finish, per lap, podium, durasi minimum, dan batas hadiah.
-- **Musik & loading:** unggah MP3 untuk musik garasi atau JPEG untuk gambar loading balapan; pratinjau, pilih media aktif, atur volume, lalu simpan dengan alasan perubahan. Unggahan baru tidak otomatis mengganti media aktif.
+- **Musik & loading:** unggah MP3 untuk musik splash/login/garasi atau JPEG untuk gambar loading balapan; pratinjau, pilih media aktif, atur volume, lalu simpan dengan alasan perubahan. Unggahan baru tidak otomatis mengganti media aktif.
 - **Foto kendaraan:** pilih model, unggah foto JPEG/PNG/WebP, periksa pratinjau, isi alasan, lalu simpan. Foto kecil tampil pada kartu koleksi Garasi dan Showroom. Foto dapat diganti atau dihapus per kendaraan.
 - **Riwayat admin:** lihat operator, waktu, alasan, serta nilai sebelum/sesudah perubahan.
 
@@ -256,7 +272,7 @@ Gunakan menu media di panel admin untuk mengunggah berkas sendiri. Batas MP3 ada
 
 Pilih satu lagu dan satu gambar aktif, atau kosongkan pilihan untuk menonaktifkannya. Simpan perubahan secara eksplisit. Jika admin lain menyimpan pengaturan lebih dulu, muat ulang dan tinjau pilihan agar perubahan tidak tertimpa diam-diam. Media yang masih aktif harus dilepas dan pengaturannya disimpan sebelum berkas dapat dihapus. Unggahan, perubahan, dan penghapusan masuk ke riwayat admin.
 
-Musik digunakan di garasi, showroom, bengkel, serta lobi; berhenti saat persiapan, countdown, balapan, hasil, atau jeda salat. Kontrol suara utama juga membisukannya. Browser dapat meminta klik tombol pemutaran sebelum audio pertama. Aplikasi tidak menyertakan lagu komersial atau gambar loading wajib; tanpa JPEG aktif, loading tetap berfungsi dengan latar bawaan.
+Musik mulai dicoba secara otomatis pada splash, lalu berlanjut melewati login ke garasi menggunakan satu pemutar. Musik juga digunakan di showroom, bengkel, serta lobi; dijeda saat persiapan, countdown, balapan, hasil, jeda salat, atau halaman tersembunyi. Kontrol suara utama membisukannya dan tombol jeda menghentikan niat pemutaran otomatis. Browser yang membatasi autoplay dapat memerlukan interaksi pertama atau tombol **Putar musik garasi** sebelum suara terdengar. Aplikasi tidak menyertakan lagu komersial atau gambar loading wajib; tanpa JPEG aktif, loading tetap berfungsi dengan latar bawaan.
 
 **Contoh gambar siap unggah:** `examples/media/uvelocity_loading.jpg` (1672 × 941 piksel, sekitar 600 KiB). Ilustrasi sinematik ini menempatkan mobil di sisi kanan dan ruang teks di kiri. Di **Admin → Musik & loading**, pilih berkas pada **Tambahkan gambar JPEG**, klik **Unggah JPEG**, pilih hasilnya di **Gambar halaman loading**, isi alasan, lalu klik **Simpan pengaturan media**. Gambar contoh tidak diaktifkan otomatis dan dapat diganti dengan JPEG Anda sendiri. Logo serta progress/kesiapan pemain tetap ditampilkan oleh UI game di atas gambar.
 

@@ -2,9 +2,9 @@
 
 ## Yang dipertahankan
 
-UVelocity mempertahankan delapan model kendaraan dan tiga lingkungan dari versi World Tour. Versi 1.1 menambahkan tujuh rekonstruksi kendaraan; versi **1.3.0** memperbarui dua di antaranya sesuai foto terbaru (Koenigsegg Regera dan Hennessey Venom F5) serta menambahkan **Isuzu Panther Grand Touring**. Total katalog kini **16 model 3D**, dengan jumlah berkas GLB sekitar **60,0 MB** sebelum kompresi HTTP. Semua GLB disajikan sebagai aset statis terpisah di `public/game/assets/cars/`.
+UVelocity mempertahankan delapan model kendaraan dan tiga lingkungan dari versi World Tour. Versi 1.1 menambahkan tujuh rekonstruksi kendaraan; versi **1.3.0** memperbarui dua di antaranya sesuai foto terbaru (Koenigsegg Regera dan Hennessey Venom F5) serta menambahkan **Isuzu Panther Grand Touring**. Versi **1.3.1** membangun ulang geometri Panther berdasarkan empat foto pengguna. Total katalog tetap **16 model 3D**, dengan jumlah berkas GLB **63.484.360 byte** (sekitar **63,5 MB**) sebelum kompresi transfer. Semua GLB disajikan sebagai aset statis terpisah di `public/game/assets/cars/`.
 
-**Tiga belas GLB dari paket 1.2.0 dipertahankan byte demi byte:** delapan model World Tour (Veloce R, Apex GT, Cinder V8, Kaze Rally, Aventador, Skyline R34, BRZ, Veyron Polisi 77), empat model BMW/Mercedes, dan Batmobile. Modul arsitektur kota, bioma pantai dan gunung es, aksesori Polisi 77, serta model cadangan juga tetap identik. Dua hypercar menerima geometri yang ditinjau ulang; Panther memakai aset baru. `tests/renderer/asset-hashes.json` membedakan aset yang dipertahankan dengan perubahan yang disengaja, sehingga revisi ini tidak menjadi alasan mengganti model lainnya.
+**Lima belas GLB dari paket 1.3.0 dipertahankan byte demi byte.** Revisi 1.3.1 mengganti hanya model Panther. Modul arsitektur kota, bioma pantai dan gunung es, aksesori Polisi 77, serta model cadangan juga tetap identik. Sebagai riwayat, revisi 1.3.0 mempertahankan 13 GLB dari 1.2.0: delapan model World Tour (Veloce R, Apex GT, Cinder V8, Kaze Rally, Aventador, Skyline R34, BRZ, Veyron Polisi 77), empat model BMW/Mercedes, dan Batmobile; dua hypercar direvisi dan Panther ditambahkan pada versi tersebut. `tests/renderer/asset-hashes.json` mencatat identitas seluruh aset.
 
 Three.js r128 dan GLTFLoader disajikan dari `public/game/vendor/`. Tidak ada CDN yang diperlukan saat menjalankan renderer. Aset model dimuat melalui `NV_MODEL_URLS`, sehingga browser dapat menyimpan GLB dalam cache tanpa mem-parsing ulang puluhan megabita base64 dari halaman HTML. Sintesis mesin dan delapan profil suara lama tetap menggunakan kode sebelumnya. Delapan profil tambahan memakai parameter sintesis sendiri; Batmobile memakai karakter turbin fiksi, dan Panther memakai karakter diesel empat silinder dengan rentang RPM lebih rendah serta turbo lembut. Suara tambahan bukan rekaman mesin asli, dan parameter RPM, perpindahan gigi, serta resonansinya merupakan penyetelan permainan.
 
@@ -23,7 +23,7 @@ Delapan model berikut dibuat dari geometri asli untuk UVelocity dengan mengacu p
 | `batmobile-1989` | Batmobile 1989 | Intake turbin bundar, bodi memanjang, kanopi dan sirip belakang |
 | `jesko-absolut` | Koenigsegg Regera | Kanopi tertutup melengkung, lampu tetesan, intake samping panjang, sayap belakang melintang |
 | `venom-f5` | Hennessey Venom F5 | Fender depan tinggi, lampu memanjang, bukaan depan besar, kokpit terbuka, scoop dan sayap sesuai foto ungu |
-| `panther-grand-touring` | Isuzu Panther Grand Touring | Kabin MPV tinggi dengan tiga bidang kaca samping, gril krom, lampu reflektor, roof rail, cladding dan pijakan samping |
+| `panther-grand-touring` | Isuzu Panther Grand Touring | Kap dan sudut bodi melengkung, lampu reflektor besar, gril trapezoid krom, tiga kaca samping bersudut bulat, pintu bagasi berlekuk, lampu belakang melingkupi sudut, roof rail dan pijakan samping |
 
 **Kompatibilitas Koenigsegg:** foto terbaru mengarah ke Regera. Nama tampilannya diselaraskan, tetapi ID historis `jesko-absolut` tetap digunakan supaya inventory, foto admin, tampilan berbayar, dan riwayat balapan lama tetap terhubung. Nama operator yang sudah dikustomisasi tidak ditimpa. Parameter performa lama juga tidak direset hanya karena bentuk dan label diperbarui.
 
@@ -32,6 +32,26 @@ Geometri dibangun menggunakan helper pada `scripts/modeling-kit.cjs` dan script 
 Empat roda dan dua pivot kemudi diekspor sebagai node terpisah. Roda kustom tetap diukur dari ban model masing-masing; kaliper belakang pada model tambahan disimpan pada axle yang tidak ikut body roll. Titik lampu dan exhaust berasal dari metadata model, termasuk exhaust tengah tunggal untuk model yang memerlukannya. Jarak kamera bengkel dan thumbnail bertambah untuk model panjang; framing delapan model lama tetap sama.
 
 Ukuran, top speed, akselerasi, dan handling dalam aplikasi merupakan data visual atau keseimbangan permainan. Angka performa tersebut tidak disajikan sebagai pengukuran kendaraan produksi atau homologasi balap.
+
+## Rebuild Panther 1.3.1
+
+Rujukan terdiri dari foto kendaraan gelap dari depan-samping, serta kendaraan putih dari depan, belakang, dan belakang-samping. Perbedaan warna dipakai untuk membaca bentuk dan sambungan panel. Cat bawaan tetap `#19252e`; material cat dan pelek tetap mengikuti konfigurasi tersimpan pemain.
+
+| Bagian | Perubahan geometri |
+| --- | --- |
+| Bodi dan kabin | Kap cembung halus yang mengalir ke fender, hidung melengkung, atap dan kemiringan kaca ditinjau kembali, bukaan roda tetap nyata |
+| Lampu depan dan gril | Housing trapezoid mengikuti sudut bodi, beberapa mangkuk reflektor, lensa terpisah, bingkai gril krom miring dan palang tengah |
+| Bumper depan | Permukaan cetakan melengkung, rumah fog lamp diagonal, lampu bundar dalam lekukan |
+| Kaca dan sisi bodi | Tiga bukaan kaca dengan sudut membulat, kaca kuarter inset, panel pilar, moulding dan fender lebih berisi, gagang krom kecil |
+| Pelek dan aksesori | Bukaan alloy membulat, hub dan baut, spion persegi membulat, roof rail rendah, running board bertapak |
+| Bagasi dan lampu belakang | Dudukan pelat hitam yang masuk ke panel bagasi, garnish krom, lampu vertikal bening/merah melingkupi sudut bodi |
+| Bagian belakang lainnya | Kaca trapezoid membulat, wiper, spoiler atap, bumper dua warna dengan pijakan dan reflektor bawah |
+
+Builder berada di `scripts/build-panther.cjs`. Titik roda, lampu, exhaust, serta batas model disimpan bersama GLB dalam metadata. Identitas `panther-grand-touring` dan slot cat/pelek dipertahankan; tidak ada kendaraan baru, migrasi tambahan, atau perubahan tuning dalam revisi ini.
+
+Ekspor Panther akhir berukuran **7.949.596 byte / 7,58 MiB**, dengan **236.843 segitiga, 35 mesh, dan 44 node**. Empat roda dan dua pivot kemudi tetap terpisah. Ukuran tersebut mencatat aset yang diekspor dan bukan benchmark FPS. Detail tambahan menaikkan ukuran Panther dibanding aset 1.3.0; hasil pada perangkat sasaran perlu diperiksa dengan pilihan kualitas game yang sesuai.
+
+Render inspeksi menggunakan GLB hasil ekspor, termasuk tampilan samping untuk memeriksa siluet. Pencahayaan studio dan posisi kamera tidak sama dengan garasi Three.js. Bentuk ini merupakan rekonstruksi dari foto, bukan pengukuran CAD atau jaminan kesamaan seluruh detail yang tidak tampak pada rujukan.
 
 ## Striping yang mengikuti panel bodi
 
@@ -197,7 +217,7 @@ Pengujian hanya membaca aset yang disertakan dalam proyek. Tidak memerlukan berk
 
 Kasus yang diperiksa meliputi:
 
-1. Identitas SHA-256 16 GLB: 13 aset yang dipertahankan, dua revisi hypercar, satu Panther baru, serta modul lingkungan yang dipertahankan.
+1. Identitas SHA-256 16 GLB: 15 aset dipertahankan dari versi 1.3.0, satu Panther dibangun ulang pada 1.3.1, serta modul lingkungan yang dipertahankan.
 2. Geometri serta parameter material bengkel yang finite, jumlah kelompok/segitiga, area tengah yang bebas, dan kontrak visibilitas kamera.
 3. Enam belas kendaraan dengan tiga paket roda, seluruh tingkat detail, batas ban sumber, serta pemulihan geometri dan visibilitas roda asli.
 4. Pratinjau, sudut kamera, kualitas yang tidak berubah tanpa permintaan, suasana, kredit, dan barrier pemuatan model.
@@ -220,7 +240,7 @@ Suite `test:prayer-ui` menggunakan React dan LinkeDOM dengan batas HTTP terprogr
 
 ### Batas verifikasi
 
-Model tambahan juga diperiksa melalui render Blender Cycles di CPU untuk melihat siluet, bukaan roda, penempatan lampu, dan bentuk panel. Gambar tersebut adalah render inspeksi aset, bukan tangkapan layar renderer Three.js atau bukti tampilan persis di browser. Hasil depan/belakang tiga model yang diperbarui, serta sisi Panther, disertakan di `docs/previews/`.
+Model tambahan juga diperiksa melalui render Blender Cycles di CPU untuk melihat siluet, bukaan roda, penempatan lampu, dan bentuk panel. Gambar tersebut adalah render inspeksi aset, bukan tangkapan layar renderer Three.js atau bukti tampilan persis di browser. `docs/previews/` berisi render Panther 1.3.1 dari depan/samping/belakang, serta render Regera dan Venom yang dipertahankan dari 1.3.0.
 
 Harness mengganti `WebGLRenderer` dan `PMREMGenerator` dengan pencatat keadaan. Pengujian ini **bukan pengujian GPU**, bukan tangkapan layar permainan, dan bukan bukti frame rate pada perangkat tertentu. Kompilasi shader oleh driver, hasil akhir pencahayaan/refleksi, antialiasing, kualitas bayangan, audio yang benar-benar terdengar, dan kelancaran 15 kendaraan perlu diperiksa pada browser/perangkat sasaran.
 

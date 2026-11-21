@@ -1,4 +1,60 @@
-# Verifikasi implementasi UVelocity 1.3.0
+# Verifikasi implementasi UVelocity 1.3.1
+
+## Verifikasi pembaruan 1.3.1 — 21 November 2026
+
+Revisi ini membangun ulang aset Panther dari empat foto pengguna, menyelaraskan metadata dan penanda cache model, serta mempertahankan musik MP3 pilihan admin dari splash sampai login dan garasi. Lingkungan verifikasi: Linux, Node.js **24.22.3**, Three.js **r128**, serta Blender **4.3.2 / Cycles CPU**. Identitas kendaraan tetap `panther-grand-touring`; tidak ada perubahan pada katalog harga, tuning, layanan akun, ekonomi, atau migrasi database.
+
+| Pemeriksaan | Hasil aktual |
+| --- | --- |
+| `npm run test:renderer` | **16 kelompok lulus**, **0 warning / 0 error**; memakai harness geometri CPU, Canvas 2D, dan DOM |
+| `npm run test:media-ui` | **12 kelompok lulus** setelah perubahan musik terakhir; React DOM dengan respons HTTP dan media terprogram |
+| `npm run test:ui` | **17 kelompok lulus** setelah perubahan klien terakhir; koleksi, pembayaran kosmetik, kontrol admin, serta retensi arena/loading |
+| `npm run typecheck` | **Lulus** untuk keseluruhan proyek |
+| `npm run build` | **Lulus**; Vite menghasilkan klien produksi dan TypeScript mengompilasi server |
+| Aset dalam hasil build | GLB Panther di `dist/client/game/assets/cars/` identik byte demi byte dengan GLB sumber yang disetujui |
+| Kompatibilitas sumber 1.3.0 | **15 GLB kendaraan lain, 4 modul lingkungan/fallback, dan 13 migrasi identik**; kode produksi server dan shared juga identik. Perubahan klien terbatas pada alur musik splash/login/garasi |
+| Struktur model | Semua komponen float yang diperiksa finite; bounds menyentuh ground pada Y praktis nol; empat roda dan dua pivot kemudi tetap tersedia |
+| Integrasi metadata | Panjang, radius roda, lampu, serta knalpot mengikuti metadata ekspor; URL Panther memakai digest baru `9deeff82a24b` |
+
+Suite penuh memeriksa tiga paket pelek pada seluruh 16 kendaraan, lima pola striping per kendaraan, cat pelek bawaan dan pemulihan material pabrik, framing garasi, posisi kamera dashboard kanan, arah kemudi, garis pandang kaca depan, readiness arena, jeda salat, serta perlambatan setelah finis. Logika tes dan guard tinggi Panther yang sudah ada tidak diubah untuk meloloskan model baru.
+
+Ekspor akhir Panther berukuran **7.949.596 byte (7,58 MiB)**, dengan **236.843 segitiga, 35 mesh, dan 44 node**. Batas model adalah **2,276 × 1,880497 × 4,731775 meter**, termasuk bagian seperti spion dan roof rail; ini ukuran geometri permainan, bukan pengukuran spesifikasi kendaraan pabrikan. SHA-256:
+
+```text
+9deeff82a24b19758a7128e2bca13ddee4f6992fa7e545411ed0f612214b6b51
+```
+
+Pemeriksaan visual menggunakan GLB sebenarnya dari depan, samping, serta belakang. Iterasi inspeksi memperbaiki reflektor lampu yang tertutup backing, pelek yang tertutup cakram rem, sambungan atap/bumper, proporsi pintu, dan bagian bening lampu belakang. Satu scene inspeksi memakai cat putih sementara untuk membaca sambungan panel terhadap foto putih; warna di GLB tetap cat gelap bawaan. Tiga gambar akhir pada `docs/previews/` dirender dari GLB final yang sama pada **128 samples**, tanpa penggantian material atau normal model.
+
+Build akhir setelah perubahan musik menghasilkan JavaScript utama **665,26 kB / 219,29 kB gzip** dan CSS **90,21 kB / 19,17 kB gzip**. Peringatan ukuran chunk Vite di atas 500 kB tetap ada. Peringatan konfigurasi `http-proxy` berasal dari lingkungan npm; proses build tetap keluar dengan kode 0.
+
+Suite backend dan multiplayer server penuh tidak dijalankan ulang karena kode produksinya tidak berubah; jalur publik media diperiksa secara terarah seperti catatan berikut. Hasil versi sebelumnya dicatat secara terpisah di bawah. Render Blender membuktikan bentuk GLB yang diekspor, sedangkan harness memeriksa kontrak renderer. Keduanya **bukan pengujian shader WebGL, FPS, atau sentuhan perangkat nyata**. Pemasangan pada server publik juga belum dilakukan dari lingkungan ini.
+
+### Musik sebelum login: HTTP dan PostgreSQL
+
+Satu tes terarah memakai server aplikasi, HTTP nyata, serta PostgreSQL native melalui pembungkus yang sudah tersedia:
+
+```bash
+node tests/with-postgres.mjs --test --test-name-pattern='public selected music config' server/services/__tests__/media.integration.test.ts
+```
+
+Hasil: **1 lulus, 0 gagal**. Admin memilih MP3 dan volume, lalu klien anonim tanpa cookie, Origin, atau CSRF membaca `/api/presentation` dan mengikuti URL MP3 yang dikembalikan. Metadata memakai `no-store` dan tidak membuat session. Full GET, HEAD, empat variasi range, partial HEAD, ETag/304, serta If-Range diperiksa. Rute media, service, CSP, dan migrasi produksi tetap sama; satu tes yang sudah ada diperluas untuk membuktikan konfigurasi MP3 aktif sebelum login.
+
+### Kontinuitas musik: antarmuka dan interaksi
+
+`npm run test:media-ui` menjalankan **12 kelompok lulus**. Pengujian memakai komponen React sebenarnya dengan DOM dan perilaku media yang dikendalikan; mock sumber audio meniru reset posisi ketika `src` berubah atau `load()` dipanggil.
+
+- Konfigurasi publik sudah dimuat dan `play()` dicoba saat splash masih tampil serta respons autentikasi belum selesai.
+- **Elemen audio, URL, `currentTime`, dan jumlah pemanggilan play/pause tetap sama** melewati splash, login anonim, pemuatan profil setelah login, dan garasi.
+- Penolakan autoplay menampilkan tombol pemutaran; pointer, keyboard, dan tombol tersebut dapat mencoba lagi tanpa pemutaran ganda.
+- Klik **Matikan suara** tidak didahului percobaan play dari handler gesture capture. Preferensi mute yang tersimpan diterapkan sejak awal; kontrol unmute dapat mengaktifkan intent yang masih berjalan.
+- Jeda eksplisit bertahan melalui gesture lain, mute/unmute dari kedua kontrol, serta penggantian lagu admin. Promise play yang terlambat tidak dapat membuka kembali audio ketika balapan menahannya.
+- Konfigurasi tanpa MP3 tetap senyap; aktivasi berikutnya memakai pemutar yang sama. Config bertahan melewati perubahan akun dan tidak dapat ditimpa oleh respons polling yang lebih lama.
+- Gate lama untuk unggahan, konflik versi admin, loading bersama, prioritas salat, retensi iframe, hasil, serta tombol kembali tetap lulus.
+
+Kontrol musik garasi tetap berada di slot halaman yang sama melalui portal, sedangkan splash/login menggunakan kontrol ringkas. Stylesheet berhasil diparse; aturan safe-area dan ruang bawah konten ditelaah. Ini bukan pengukuran pixel browser. Kebijakan autoplay nyata, decoding MP3 melalui browser, dan suara speaker masih bergantung pada browser/perangkat; pemutar selalu menangani penolakan autoplay dengan interaksi pengguna yang eksplisit.
+
+## Riwayat verifikasi 1.3.0
 
 Tanggal verifikasi: **20 November 2026**. Lingkungan pengujian: Linux, Node.js **24.22.3**, PostgreSQL native **18.7**, TypeScript, SDK Colyseus **0.18.10**, serta Three.js **r128** untuk geometri renderer.
 

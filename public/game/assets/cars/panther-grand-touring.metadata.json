@@ -1,100 +1,101 @@
 {
   "id": "panther-grand-touring",
   "file": "/game/assets/cars/panther-grand-touring.glb",
-  "bytes": 4502444,
-  "triangles": 119212,
+  "bytes": 7949596,
+  "triangles": 236843,
   "meshCount": 35,
   "nodeCount": 44,
   "materials": [
     "tire_rubber",
     "rim_paint",
     "dark_metal",
-    "metal",
+    "panther_chrome",
     "brake_caliper",
     "paint_body",
-    "carbon",
-    "glass",
     "panther_window_rubber",
-    "panther_chrome",
-    "panther_satin_cladding",
-    "light_amber",
-    "lamp_reflector",
+    "glass",
+    "panther_moulded_cladding",
+    "panther_reflector_shadow",
+    "panther_headlight_reflector",
     "light_front",
-    "plate_white",
+    "panther_clear_headlamp_lens",
+    "light_amber",
+    "panther_plate",
     "light_rear",
-    "glass_lamp_cover",
+    "panther_clear_tail_reflector",
     "interior_seat"
   ],
   "bounds": {
     "min": [
-      -1.1349999904632568,
+      -1.1380000114440918,
       -4.053115842950206e-9,
-      -2.4000000953674316
+      -2.38100004196167
     ],
     "max": [
-      1.1349999904632568,
-      1.9945356845855713,
-      2.450762987136841
+      1.1380000114440918,
+      1.8804969787597656,
+      2.3507745265960693
     ]
   },
   "dimensions": [
-    2.2699999809265137,
-    1.9945356886386871,
-    4.8507630825042725
+    2.2760000228881836,
+    1.8804969828128815,
+    4.731774568557739
   ],
-  "provenance": "Original UVelocity reference-based recreation from the user-supplied Isuzu Panther Grand Touring photograph; not a manufacturer mesh or scan.",
+  "provenance": "Original UVelocity photo-reference recreation of Isuzu Panther Grand Touring, rebuilt from the four supplied 21 November 2026 images; not manufacturer CAD or a scan.",
   "author": "UVelocity original mesh authoring",
   "source": "scripts/build-panther.cjs",
   "referenceBased": true,
   "officialManufacturerAsset": false,
   "representation": "original-reference-recreation",
   "displayName": "Isuzu Panther Grand Touring",
+  "revision": "photo-rebuild-1.3.1",
   "wheelRadius": 0.377,
-  "wheelWidth": 0.235,
+  "wheelWidth": 0.245,
   "wheelCenters": {
     "FL": [
-      0.75,
+      0.755,
       0.377,
-      1.4849999999999999
+      1.4249999999999998
     ],
     "FR": [
-      -0.75,
+      -0.755,
       0.377,
-      1.4849999999999999
+      1.4249999999999998
     ],
     "RL": [
-      0.75,
+      0.755,
       0.377,
       -1.335
     ],
     "RR": [
-      -0.75,
+      -0.755,
       0.377,
       -1.335
     ]
   },
   "headlightPositions": [
     [
-      -0.64,
-      0.907,
-      2.32
+      -0.713,
+      0.917,
+      2.1295715417491485
     ],
     [
-      0.64,
-      0.907,
-      2.32
+      0.713,
+      0.917,
+      2.1295715417491485
     ]
   ],
   "exhaustPositions": [
     [
-      -0.66,
-      0.3,
-      -2.37
+      0.52,
+      0.275,
+      -2.38
     ]
   ],
-  "tail": -2.37,
-  "exhaustX": 0.66,
-  "exhaustY": 0.3,
+  "tail": -2.38,
+  "exhaustX": 0.52,
+  "exhaustY": 0.275,
   "up": "+Y",
   "forward": "+Z",
   "units": "metres",
@@ -102,5 +103,5 @@
     "paint_body",
     "paint_aero"
   ],
-  "length": 4.8507630825042725
+  "length": 4.731774568557739
 }
