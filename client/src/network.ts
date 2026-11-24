@@ -308,7 +308,7 @@ export class OnlineRace {
   const timer=setTimeout(()=>abort.abort(new Error('Waktu memuat model habis. Periksa koneksi lalu coba lagi.')),45000);
   try{await this.enqueueRenderer(async()=>{
     if(!current())return;await abortable(game.ready,abort.signal);if(!current())return;
-    const snapshot=this.latest!,required=[...snapshot.members.map(m=>m.loadout.carId),...Array.from({length:snapshot.config.bots},(_,i)=>CAR_IDS[i%CAR_IDS.length]!)];
+    const snapshot=this.latest!,allowed=snapshot.vehicleRestriction?.allowedCarIds??CAR_IDS,required=[...snapshot.members.map(m=>m.loadout.carId),...Array.from({length:snapshot.config.bots},(_,i)=>allowed[i%allowed.length]!)];
     await abortable(this.ensureModels(game,required),abort.signal);if(!current())return;
     await abortable(game.configure({circuit:snapshot.config.circuit,previewOnly:true,online:true}),abort.signal);
     if(current()&&this.connected)room.send('ready',{ready:true,assetsLoaded:true});

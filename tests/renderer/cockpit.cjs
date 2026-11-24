@@ -8,9 +8,9 @@ function verifyCockpitGeometry(THREE,car,Cockpit){
  assert.match(rig.profile.origin,/procedural/);assert.equal(rig.profile.vehicleId,car.modelId);
  assert.ok(rig.eye.y>.7&&rig.eye.y<Math.max(1.3,(car.dimensions?.[1]||1.36)*.88),'Driver eye should sit inside the cabin');
  assert.ok(Math.abs(rig.eye.x)<rig.profile.width*.40);
- if(car.modelId==='panther-grand-touring'){
+ if(['panther-grand-touring','honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner','toyota-innova-zenix'].includes(car.modelId)){
   assert.ok(rig.eye.y>1.35&&rig.eye.y<1.65,'MPV viewpoint should follow the higher driver seat');
-  assert.ok(rig.eye.x<0,'Panther cockpit should put the driver on the right');
+  assert.ok(rig.eye.x<0,'Family vehicle cockpit should put the driver on the right');
   const header=rig.root.getObjectByName('Windshield roof header');
   assert.ok(header.position.y>rig.eye.y&&header.position.y<1.9,'MPV header must fit below the exterior roof rails');
  }

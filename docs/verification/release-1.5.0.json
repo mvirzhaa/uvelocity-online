@@ -1,0 +1,54 @@
+{
+  "release": "1.5.0",
+  "date": "2026-11-23",
+  "base_release": "1.4.0",
+  "track_id": "drag-2km",
+  "track_version": "nv-courses-2",
+  "track_length_metres": 2000,
+  "runout_metres": 700,
+  "checks": {
+    "typecheck": "passed",
+    "production_build": "passed",
+    "race_unit_tests": 69,
+    "backend_postgresql_tests": 89,
+    "production_integration_steps": 11,
+    "workshop_ui_groups": 24,
+    "media_ui_groups": 14,
+    "photo_ui_groups": 7,
+    "all_model_renderer_groups": 17,
+    "final_asset_renderer_groups": 12
+  },
+  "browser_pixel_or_fps_test": false,
+  "original_glbs_preserved": 16,
+  "old_migrations_preserved": "001–014",
+  "models": [
+    {
+      "id": "honda-crv-rs",
+      "bytes": 6028536,
+      "triangles": 143852,
+      "meshes": 40,
+      "sha256": "3ac700ef14c747fc0b0bed386f600ffcea428a55532eccc11eae6e5792754f90"
+    },
+    {
+      "id": "mitsubishi-pajero-sport",
+      "bytes": 6086088,
+      "triangles": 155597,
+      "meshes": 40,
+      "sha256": "2dafeb957cc0e0505e928fdc83bdca1dcdd99fd150f1b8670de9706143b3230a"
+    },
+    {
+      "id": "toyota-fortuner",
+      "bytes": 4160200,
+      "triangles": 131908,
+      "meshes": 43,
+      "sha256": "2b769416354e19b46822a7d55a575e42acd59338cfecb4af591e5d730547cc0c"
+    },
+    {
+      "id": "toyota-innova-zenix",
+      "bytes": 4831352,
+      "triangles": 126080,
+      "meshes": 39,
+      "sha256": "93c285543d65a31a59ac8d17875ecc899ab3a8a540443acb1fdb671c9c66158e"
+    }
+  ]
+}

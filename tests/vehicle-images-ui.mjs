@@ -75,6 +75,26 @@ try{
   const css=await readFile('client/src/vehicle-images.css','utf8');assert.match(css,/aspect-ratio:16\/9/);assert.match(css,/object-fit:contain/);
   console.log('PASS small lazy model-labelled thumbnail, fixed contain frame, failed/new-source fallback and same-origin URL restriction');
 
+  const addedCars=[['honda-crv-rs','Honda CR-V RS'],['mitsubishi-pajero-sport','Mitsubishi Pajero Sport'],['toyota-fortuner','Toyota Fortuner'],['toyota-innova-zenix','Toyota Kijang Innova Zenix Hybrid']];
+  for(const [id,name] of addedCars){
+    const car={id,name,thumbnail:null},photo=`./vehicle-photos/${id}.png`;
+    const bytes=await readFile(`public/vehicle-photos/${id}.png`);
+    assert.equal(bytes.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Bundled reference is a real PNG');
+    await render(React.createElement(CarThumbnail,{car}));
+    assert.equal(document.querySelector('img').getAttribute('src'),photo);
+    assert.equal(document.querySelector('img').getAttribute('alt'),'Foto '+name);
+    await render(React.createElement(CarThumbnail,{car:{...car,thumbnail:thumb(60)}}));
+    assert.equal(document.querySelector('img').getAttribute('src'),thumb(60).url,'Admin photo takes priority');
+    await render(React.createElement(CarThumbnail,{car}));
+    assert.equal(document.querySelector('img').getAttribute('src'),photo,'Removing the admin photo restores the reference');
+    await render(React.createElement(CarThumbnail,{car:{...car,thumbnail:{...thumb(60),url:'https://external.example/vehicle.png'}}}));
+    assert.equal(document.querySelector('img'),null,'Bundled defaults never bypass admin URL validation');
+    await render(React.createElement(CarThumbnail,{car}));
+    await act(async()=>document.querySelector('img').dispatchEvent(new window.Event('error',{bubbles:true})));
+    assert.equal(document.querySelector('img'),null,'Broken bundled photos have an accessible fallback');
+  }
+  console.log('PASS all four bundled reference photos, admin override/removal, URL validation and image failure fallback');
+
   await render(React.createElement(VehicleImageEditor,props));assert.equal(document.querySelector('.vehicle-image-current img').getAttribute('src'),thumb(1).url);
   await choose(new File(['<svg/>'],'bad.svg',{type:'image/svg+xml'}));assert.match(document.querySelector('[role=alert]').textContent,/JPEG, PNG, atau WebP/);assert.equal(uploads.length,0);assert.equal(created.size,0,'Rejected file never gets a preview URL');
   await choose(new File([new Uint8Array(limits.inputBytes+1)],'huge.jpg',{type:'image/jpeg'}));assert.match(document.querySelector('[role=alert]').textContent,/4 MB/);assert.equal(uploads.length,0);
@@ -117,6 +137,18 @@ try{
   assert.ok(uploads.every(item=>new URL(item.url,location.origin).pathname.startsWith('/api/admin/vehicle-thumbnails/')));
   assert.equal(cars[0].price,'0');assert.equal(cars[1].locked,true);assert.equal(cars[1].price,'9999999');
   console.log('PASS upload network errors, unmount abort, stale reads, external car removal clears drafts/reviews, preview cleanup and isolated photo-only writes');
+
+  const crv={...cars[1],id:'honda-crv-rs',name:'Honda CR-V RS',thumbnail:thumb(70)};
+  slots.push({carId:crv.id,version:1,thumbnail:thumb(70)});
+  await render(React.createElement(VehicleImageEditor,{...props,cars:[crv],key:'reference-removal'}));
+  assert.equal(document.querySelector('.vehicle-image-current img').getAttribute('src'),thumb(70).url);
+  await click(button('Hapus foto'));await change(document.querySelector('.vehicle-image-removal input'),'Gunakan kembali foto referensi CR-V');
+  await submit(document.querySelector('.vehicle-image-removal'));
+  assert.equal(document.querySelector('.vehicle-image-current img').getAttribute('src'),'./vehicle-photos/honda-crv-rs.png');
+  assert.match(document.querySelector('[role=status]').textContent,/referensi/i);
+  assert.equal(button('Hapus foto').disabled,true,'Bundled references are not deletable admin uploads');
+  assert.equal(saved.at(-1).find(slot=>slot.carId===crv.id).thumbnail,null);
+  console.log('PASS real editor deletion restores the bundled reference and reports its unchanged provenance');
 }finally{
   await act(async()=>root.unmount());URL.createObjectURL=nativeCreate;URL.revokeObjectURL=nativeRevoke;await rm(temp,{recursive:true,force:true});
 }

@@ -1,0 +1,126 @@
+{
+  "id": "toyota-fortuner",
+  "file": "/game/assets/cars/toyota-fortuner.glb",
+  "bytes": 4160200,
+  "triangles": 131908,
+  "meshCount": 43,
+  "nodeCount": 52,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "metal",
+    "brake_caliper",
+    "paint_body",
+    "fortuner_cladding",
+    "fortuner_window_rubber",
+    "paint_aero",
+    "fortuner_satin_chrome",
+    "fortuner_reflector",
+    "light_front",
+    "glass",
+    "fortuner_demister_0",
+    "fortuner_demister_1",
+    "fortuner_demister_2",
+    "fortuner_demister_3",
+    "fortuner_demister_4",
+    "fortuner_demister_5",
+    "fortuner_demister_6",
+    "fortuner_demister_7",
+    "light_rear",
+    "fortuner_grille",
+    "fortuner_lamp_lens",
+    "fortuner_plate",
+    "fortuner_lettering",
+    "interior_seat"
+  ],
+  "bounds": {
+    "min": [
+      -1.097000002861023,
+      -5.960464455334602e-9,
+      -2.45438289642334
+    ],
+    "max": [
+      1.097000002861023,
+      1.971237301826477,
+      2.4701647758483887
+    ]
+  },
+  "dimensions": [
+    2.194000005722046,
+    1.9712373077869416,
+    4.9245476722717285
+  ],
+  "provenance": "Original UVelocity Toyota Fortuner GR Sport recreation from the three user-supplied 23 November 2026 photos; approximate game geometry, not a scan or manufacturer model.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-fortuner.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "displayName": "Toyota Fortuner GR Sport",
+  "revision": "photo-rebuild-1.5.0",
+  "wheelRadius": 0.4,
+  "wheelWidth": 0.265,
+  "wheelCenters": {
+    "FL": [
+      0.8,
+      0.4,
+      1.435
+    ],
+    "FR": [
+      -0.8,
+      0.4,
+      1.435
+    ],
+    "RL": [
+      0.8,
+      0.4,
+      -1.315
+    ],
+    "RR": [
+      -0.8,
+      0.4,
+      -1.315
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.72,
+      1.17,
+      2.43
+    ],
+    [
+      0.72,
+      1.17,
+      2.43
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      0.62,
+      0.31,
+      -2.425
+    ]
+  ],
+  "tail": -2.425,
+  "exhaustX": 0.62,
+  "exhaustY": 0.31,
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "referenceFeatures": [
+    "GR Sport two-tier grille",
+    "swept horizontal LED headlamps",
+    "satin diagonal front bumper blades",
+    "raised rear quarter window line",
+    "long horizontal two-piece rear lights",
+    "sculpted long SUV cabin",
+    "six-spoke dark wheels",
+    "roof rails and side steps"
+  ],
+  "length": 4.9245476722717285
+}

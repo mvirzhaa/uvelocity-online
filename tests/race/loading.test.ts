@@ -1,3 +1,4 @@
+import {CAR_IDS} from '../../shared/types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -26,7 +27,8 @@ test('Authoritative arena barrier waits for every frozen participant and safely 
   async authenticate(headers){const id=headers.cookie?.slice(4);return id&&!revoked.has(id)?{id,displayName:id}:null;},
   async gameplayAccess(){return allowedPrayerStatus();},
   async resolveLoadout(_id,selection,version='1'){return{...selection,rimId:selection.rimId??'stock',stats:DEFAULT_VEHICLE_STATS[selection.carId],tuningVersion:version};},
-  async getActiveRuleset(){return{version:'1',cars:DEFAULT_VEHICLE_STATS,physics:{...DEFAULT_PHYSICS}};},
+  async resolveVehicleRestriction(categoryId){if(categoryId)throw new Error('Fixture category unavailable');return{categoryId:null,categoryName:null,allowedCarIds:[...CAR_IDS]};},
+    async getActiveRuleset(){return{version:'1',cars:DEFAULT_VEHICLE_STATS,physics:{...DEFAULT_PHYSICS}};},
   async beginRace(input){beginCalls.set(input.raceId,(beginCalls.get(input.raceId)??0)+1);const gate=beginGate;if(gate)await gate.promise;begun.set(input.raceId,input);},
   async finalizeRace(result){assert(begun.has(result.raceId));settlements.add(result.raceId);return{raceId:result.raceId,rewards:[]};},
   async abortRace(id){aborts.set(id,(aborts.get(id)??0)+1);},

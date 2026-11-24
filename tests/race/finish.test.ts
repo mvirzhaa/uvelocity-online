@@ -1,3 +1,4 @@
+import {CAR_IDS} from '../../shared/types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -94,6 +95,7 @@ test('real rooms settle without waiting for bots, preserve disconnect grace and 
     async authenticate(headers){const id=headers.cookie?.slice(4);return id?{id,displayName:id}:null;},
     async gameplayAccess(id){const status=allowedPrayerStatus();if(id!==blockedUser)return status;const event={eventId:'finish-pause',prayer:'dhuhr' as const,name:'Zuhur',startedAt:new Date(prayerStart).toISOString(),resumesAt:new Date(prayerStart+900000).toISOString()};return{...status,allowed:false,paused:true,pauseEndsAt:event.resumesAt,currentPrayer:event,dailyTimes:[event]};},
     async resolveLoadout(_id,selection,version='v1'){return{...selection,rimId:selection.rimId??'stock',stats:DEFAULT_VEHICLE_STATS[selection.carId],tuningVersion:version};},
+    async resolveVehicleRestriction(categoryId){if(categoryId)throw new Error('Fixture category unavailable');return{categoryId:null,categoryName:null,allowedCarIds:[...CAR_IDS]};},
     async getActiveRuleset(){return{version:'v1',cars:DEFAULT_VEHICLE_STATS,physics:{...DEFAULT_PHYSICS}};},
     async beginRace(){},
     async finalizeRace(result){

@@ -7,7 +7,7 @@ export const DEFAULT_PHYSICS: Readonly<PhysicsConfig> = Object.freeze({
   reverseSpeed:18, resetCooldownMs:3000,
 });
 export const DEFAULT_ROOM_CONFIG: Readonly<RoomConfig> = Object.freeze({
-  circuit:'city',laps:3,bots:3,maxHumans:4,difficulty:'normal',collisionMode:'solid',
+  circuit:'city',laps:3,bots:3,maxHumans:4,difficulty:'normal',collisionMode:'solid',vehicleCategoryId:null,
 });
 export function clamp(value:number,min:number,max:number):number{return Math.max(min,Math.min(max,value));}
 function integer(value:unknown,min:number,max:number,name:string):number {
@@ -21,6 +21,9 @@ export function validateRoomConfig(input:Partial<RoomConfig>={}):RoomConfig {
   if(config.bots+config.maxHumans>MAX_RACERS)throw new Error('Humans and bots together cannot exceed15 racers');
   if(!['easy','normal','hard'].includes(config.difficulty))throw new Error('Unknown difficulty');
   if(!['solid','ghost'].includes(config.collisionMode))throw new Error('Unknown collision mode');
+  if(config.vehicleCategoryId!==null&&config.vehicleCategoryId!==undefined&&(typeof config.vehicleCategoryId!=='string'||!/^[a-z0-9][a-z0-9-]{0,63}$/.test(config.vehicleCategoryId)))throw new Error('Invalid vehicle category');
+  config.vehicleCategoryId=config.vehicleCategoryId??null;
+  if(config.circuit==='drag-2km')config.laps=1;
   return Object.freeze(config);
 }
 export function validateStats(stats:VehicleStats):VehicleStats {

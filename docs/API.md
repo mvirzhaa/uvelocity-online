@@ -131,7 +131,7 @@ Since 1.4.0, `categories` is an ordered array of `VehicleCategory` objects, defi
 
 Each wheel has `id`, `itemId`, `kind:"wheel"`, `name`, `price`, `catalogVersion`, `enabled`, `color`, `cosmeticOnly:true`, and optional `spokes`/`starter`. Wheel selection and wheel color do not modify vehicle stats.
 
-`locked` controls free use independently of `enabled` (sale availability). Permanent ownership always grants use, even when locked or not for sale. `services` contains paid paint and stripe services; `stripes` is the five install-service subset. The seven new reference-based models also expose `modelOrigin` and `modelNote`.
+`locked` controls free use independently of `enabled` (sale availability). Permanent ownership always grants use, even when locked or not for sale. `services` contains paid paint and stripe services; `stripes` is the five install-service subset. The twelve reference-based models also expose `modelOrigin` and `modelNote`.
 
 Disabled offers remain in the catalog with `enabled:false` so existing owners can still render and use their assets. Purchases of disabled offers fail.
 
@@ -155,12 +155,16 @@ Initial catalog:
 | `jesko-absolut` | Koenigsegg Regera | 2400000 |
 | `venom-f5` | Hennessey Venom F5 | 2200000 |
 | `panther-grand-touring` | Isuzu Panther Grand Touring | 150000 |
+| `honda-crv-rs` | Honda CR-V RS e:HEV | 280000 |
+| `mitsubishi-pajero-sport` | Mitsubishi Pajero Sport | 320000 |
+| `toyota-fortuner` | Toyota Fortuner GR Sport | 340000 |
+| `toyota-innova-zenix` | Toyota Kijang Innova Zenix Hybrid | 345000 |
 | `stock` | Roda bawaan | 0; starter |
 | `six-spoke` | Six Spoke | 20000 |
 | `multi-spoke` | Multi Spoke | 35000 |
 | `mesh` | Mesh Gold | 50000 |
 
-Prices and tuning are game design values, not market prices or manufacturer performance specifications. The catalogue contains 16 cars; a race still allows at most 15 participants (14 bots). The historical `jesko-absolut` key is retained for the Regera reference update, preserving purchases, photos, appearances and race history. Migration 012 changes only the original default label; operator-custom labels survive. Panther is added by migration 013 with a new ruleset that copies existing published vehicle tuning, physics and reward policy.
+Prices and tuning are game design values, not market prices or manufacturer performance specifications. The catalogue contains 20 cars; a race still allows at most 15 participants (14 bots). The historical `jesko-absolut` key is retained for the Regera reference update, preserving purchases, photos, appearances and race history. Migration 012 changes only the original default label; operator-custom labels survive. Panther is added by migration 013 with a new ruleset that copies existing published vehicle tuning, physics and reward policy.
 
 Migration **014_vehicle_categories.sql** adds separate category and assignment tables, without changing the existing offer rows or their versions. It seeds these editable presentation groups:
 
@@ -172,8 +176,11 @@ Migration **014_vehicle_categories.sql** adds separate category and assignment t
 | `race` | Mobil balap | `bmw-hybrid-v8`, `bmw-m4-gt4`, `amg-gt4`, `sls-amg-gt3` |
 | `rally` | Reli | `kaze` |
 | `muscle` | Muscle | `cinder` |
-| `mpv` | MPV | `panther-grand-touring` |
+| `mpv` | MPV | `panther-grand-touring`, `toyota-innova-zenix` (1.5.0) |
+| `suv` | SUV (1.5.0) | `honda-crv-rs`, `mitsubishi-pajero-sport`, `toyota-fortuner` |
 | `special` | Spesial | `veyron77`, `batmobile-1989` |
+
+Migration **015_suv_catalog.sql** adds the four purchasable family vehicles, thumbnail slots, SUV/MPV assignments, and a new immutable ruleset copied from the previous active publication. Existing prices, ownership, appearances, category edits, physics and rewards are retained. An existing category named SUV is reused; a conflicting custom slug is not renamed. These initial prices put CR-V, Pajero, Fortuner and Zenix together in that order under the existing price sort. Operator price edits can change their order.
 
 ### `POST /shop/purchase`
 
@@ -234,6 +241,39 @@ Entries are returned newest first. Purchases have negative deltas. Wallet ledger
 ### `POST /race/ticket`
 
 Authenticated, with CSRF; body `{}`. Returns `{ticket, expiresAt}`. The opaque ticket expires after **60 seconds**, is usable **once**, and is bound to the same HttpOnly session. Send it as the realtime join payload, never in a URL. A newly issued ticket is required for a fresh join attempt after one has been consumed.
+
+### `GET /rooms/:code`
+
+Authenticated, throttled invite preflight. Returns `{roomId,inviteCode,phase,config,humans,joinable,vehicleRestriction}`. `vehicleRestriction` is the same frozen rule exposed on room snapshots; the client can choose an eligible saved vehicle before consuming a join ticket. Preflight is informational: a room may fill or start before the subsequent join, and realtime admission still checks everything.
+
+### Room configuration and vehicle eligibility (1.5.0)
+
+```ts
+interface RoomConfig {
+  circuit: 'city' | 'beach' | 'glacier' | 'drag-2km';
+  laps: number; // 1–20 for circuits; canonicalized to 1 for drag
+  bots: number; // 0–14
+  maxHumans: number; // 1–15; humans + bots <= 15
+  difficulty: 'easy' | 'normal' | 'hard';
+  collisionMode: 'solid' | 'ghost';
+  vehicleCategoryId?: string | null; // null/omitted = all vehicles
+}
+interface VehicleRestriction {
+  categoryId: string | null;
+  categoryName: string | null;
+  allowedCarIds: readonly CarId[];
+}
+```
+
+Room creation resolves a current admin-managed category to one name and ordered vehicle list, freezes both, and rejects missing/empty categories. This rule applies to humans and bots on admission, loadout change, readiness, start, and reconnect. Renaming/deleting a category or moving its cars later does not rewrite an existing room. Permanent ownership and currently unlocked access are still checked separately; disabling a sale does not bar an existing owner. The UI uses the frozen list for existing rooms, rather than recomputing it from live category assignments. Selecting a car for the room uses its saved appearance and does not purchase cosmetics or equip it in the garage.
+
+`VEHICLE_CATEGORY_NOT_FOUND`, `VEHICLE_CATEGORY_EMPTY`, and `VEHICLE_CATEGORY_RESTRICTED` describe missing categories, empty categories, and a disallowed vehicle. Rejecting a visitor does not abort the room, reserve a reconnect seat, or cancel another member's pending start. Allowed bot IDs feed both authoritative bot creation and client asset preloading. `beginRace` persists the frozen rule and verifies that participant IDs and frozen loadouts agree with it.
+
+### Open drag track (1.5.0)
+
+`drag-2km` has a 2,000-metre open centerline from `(0,0)` to `(0,-2000)`, with 480 samples including both endpoints. The 45-metre strip supports up to 15 lanes at 3-metre spacing; all grid positions are 8.5 metres before the timing line. The score covers one forward journey through ordered progress gates; staging and the 700-metre braking runout are outside the measured start/finish separation. The race clock begins with the shared countdown release, including the equal staging approach. No local finish time or client reward is trusted.
+
+Open projection, reset, finish progress, minimap, and post-finish rollout never wrap to the start. Drag resets preserve longitudinal distance. Circuit behavior remains closed and supports 1–20 laps. `trackVersion` is now `nv-courses-2`. All-human completion, server settlement and shared prayer pauses retain their prior behavior.
 
 ### Server-only service boundary
 
@@ -524,7 +564,7 @@ One byte range is supported, including open-ended and suffix ranges. Valid range
 
 Types are declared in `shared/vehicle-thumbnails.ts`. Migration **010** adds `vehicle_thumbnail_assets` and one `vehicle_thumbnail_slots` row for each vehicle. Slots begin at numeric version **1** with `thumbnail:null`. Photo versions are independent of `catalogVersion`, ownership, saved appearances, and the presentation music/loading version. Replacing a photo does not invalidate a purchase quote or change the active car.
 
-The catalog response includes `thumbnail: VehicleThumbnail | null` on each car. Photo URLs are public, same-origin game assets. Clients should use an icon until an admin uploads a photo, or if the image fails to load. The application displays a fixed 16:9 frame with `object-fit:contain`, lazy loading, and model-specific alternative text. It filters the Garage by permanent ownership; Showroom retains all catalog cars.
+The catalog response includes `thumbnail: VehicleThumbnail | null` on each car. Photo URLs are public, same-origin game assets. The four 1.5.0 vehicles have bundled user-reference PNGs in `/vehicle-photos/`, used only when `thumbnail` is null. Admin-uploaded same-origin UUID URLs retain priority. Removing an admin upload restores the bundled reference; other models fall back to an icon. Failed or invalid URLs use an icon. Bundled reference files do not create database thumbnail rows or loosen upload URL validation. The application displays a fixed 16:9 frame with `object-fit:contain`, lazy loading, and model-specific alternative text. It filters the Garage by permanent ownership; Showroom retains all catalog cars.
 
 ```ts
 interface VehicleThumbnail {
@@ -581,7 +621,7 @@ app.use('/api', createApiRouter({services, allowedOrigins:[appOrigin], secureCoo
 
 `scripts/migrate.ts` loads `.env`, runs checksum-verified migrations under a PostgreSQL advisory transaction lock, and seeds the initial catalog/ruleset. It creates no admin account.
 
-Before starting a server upgraded to **1.4.0**, run `npm run db:migrate` against the existing database to apply **014_vehicle_categories.sql**; the Compose startup already performs migrations. Preserve `.env` and the database/volume. Migration 014 adds `vehicle_categories` and `vehicle_category_assignments` and their initial mappings without resetting accounts, balances, ownership, customization, offer prices/versions, or published rulesets.
+Before starting a server upgraded to **1.5.0**, run `npm run db:migrate` against the existing database to apply all pending migrations through **015_suv_catalog.sql**; the Compose startup already performs migrations. Preserve `.env` and the database/volume. Migration 014 adds `vehicle_categories` and `vehicle_category_assignments` and their initial mappings without resetting accounts, balances, ownership, customization, offer prices/versions, or published rulesets.
 
 `scripts/admin-create.ts` requires explicit `ADMIN_EMAIL`, `ADMIN_DISPLAY_NAME` and `ADMIN_PASSWORD`, or prompts in a TTY with hidden password entry. It creates a new administrator and audit entry, and refuses to overwrite an existing account. Use deployment secrets rather than storing the password in a committed file.
 

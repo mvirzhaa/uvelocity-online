@@ -1,4 +1,4 @@
-/* Eight preserved licensed source models plus eight original reference recreations. */
+/* Eight preserved licensed source models plus twelve original reference recreations. */
 window.NV_MODEL_URLS = {
   "veloce": "./assets/cars/veloce.glb",
   "apex": "./assets/cars/apex.glb",
@@ -15,7 +15,11 @@ window.NV_MODEL_URLS = {
   "batmobile-1989": "./assets/cars/batmobile-1989.glb",
   "jesko-absolut": "./assets/cars/jesko-absolut.glb?v=26abbff38c7d",
   "venom-f5": "./assets/cars/venom-f5.glb?v=740d181a6835",
-  "panther-grand-touring": "./assets/cars/panther-grand-touring.glb?v=9deeff82a24b"
+  "panther-grand-touring": "./assets/cars/panther-grand-touring.glb?v=9deeff82a24b",
+  "honda-crv-rs": "./assets/cars/honda-crv-rs.glb?v=3ac700ef14c7",
+  "mitsubishi-pajero-sport": "./assets/cars/mitsubishi-pajero-sport.glb?v=2dafeb957cc0",
+  "toyota-fortuner": "./assets/cars/toyota-fortuner.glb?v=2b769416354e",
+  "toyota-innova-zenix": "./assets/cars/toyota-innova-zenix.glb?v=93c285543d65"
 };
 
 /* Dimensions and effect anchors belong to these authored game meshes. */
@@ -280,5 +284,130 @@ window.NV_MODEL_METADATA = {
     "representation": "reference-recreation",
     "displayName": "Isuzu Panther Grand Touring",
     "modelRevision": "photo-rebuild-1.3.1"
+  },
+  "honda-crv-rs": {
+    "length": 4.7770094871521,
+    "wheelRadius": 0.365,
+    "headlightPositions": [
+      [
+        -0.8,
+        1.036,
+        2.25540255865772
+      ],
+      [
+        0.8,
+        1.036,
+        2.25540255865772
+      ]
+    ],
+    "exhaustPositions": [
+      [
+        -0.668,
+        0.344,
+        -2.38
+      ],
+      [
+        0.668,
+        0.344,
+        -2.38
+      ]
+    ],
+    "tail": -2.38,
+    "exhaustX": 0.668,
+    "exhaustY": 0.344,
+    "source": "Original UVelocity reference-based recreation using three user-supplied blue Honda CR-V images dated 23 November 2026; not manufacturer CAD or a scan.",
+    "representation": "reference-recreation",
+    "displayName": "Honda CR-V RS e:HEV",
+    "modelRevision": "suv-expansion-1.5.0"
+  },
+  "mitsubishi-pajero-sport": {
+    "length": 5.166977167129517,
+    "wheelRadius": 0.412,
+    "headlightPositions": [
+      [
+        -0.744,
+        1.137,
+        2.276678008234994
+      ],
+      [
+        0.744,
+        1.137,
+        2.276678008234994
+      ]
+    ],
+    "exhaustPositions": [
+      [
+        0.61,
+        0.335,
+        -2.455
+      ]
+    ],
+    "tail": -2.58,
+    "exhaustX": 0.61,
+    "exhaustY": 0.335,
+    "source": "Original UVelocity reference-based recreation of Mitsubishi Pajero Sport with off-road bumpers from three user-supplied photographs, 23 November 2026. Not a manufacturer CAD mesh, scan, or licensed factory model.",
+    "representation": "reference-recreation",
+    "displayName": "Mitsubishi Pajero Sport",
+    "modelRevision": "suv-expansion-1.5.0"
+  },
+  "toyota-fortuner": {
+    "length": 4.9245476722717285,
+    "wheelRadius": 0.4,
+    "headlightPositions": [
+      [
+        -0.72,
+        1.17,
+        2.43
+      ],
+      [
+        0.72,
+        1.17,
+        2.43
+      ]
+    ],
+    "exhaustPositions": [
+      [
+        0.62,
+        0.31,
+        -2.425
+      ]
+    ],
+    "tail": -2.425,
+    "exhaustX": 0.62,
+    "exhaustY": 0.31,
+    "source": "Original UVelocity Toyota Fortuner GR Sport recreation from the three user-supplied 23 November 2026 photos; approximate game geometry, not a scan or manufacturer model.",
+    "representation": "reference-recreation",
+    "displayName": "Toyota Fortuner GR Sport",
+    "modelRevision": "photo-rebuild-1.5.0"
+  },
+  "toyota-innova-zenix": {
+    "length": 4.870171308517456,
+    "wheelRadius": 0.365,
+    "headlightPositions": [
+      [
+        -0.803,
+        1.093,
+        2.291438638235993
+      ],
+      [
+        0.803,
+        1.093,
+        2.291438638235993
+      ]
+    ],
+    "exhaustPositions": [
+      [
+        0.569,
+        0.268,
+        -2.395
+      ]
+    ],
+    "tail": -2.43,
+    "exhaustX": 0.569,
+    "exhaustY": 0.268,
+    "source": "Original UVelocity reference-based reconstruction from two user-supplied Toyota Kijang Innova Zenix Hybrid photographs dated 23 November 2026; not manufacturer CAD or a scan.",
+    "representation": "reference-recreation",
+    "displayName": "Toyota Kijang Innova Zenix Hybrid",
+    "modelRevision": "mpv-expansion-1.5.0"
   }
 };

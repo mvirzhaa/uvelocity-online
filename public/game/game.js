@@ -3,22 +3,23 @@
       'use strict';
       const onlineRender={enabled:true,active:false,preparing:false,visible:true,paused:false,previewOnly:true,localId:'',raceId:null,startToken:null,generation:0,phase:'waiting',snapshot:null,receivedAt:0,inputElapsed:0,lastInput:'',externalInput:null,resetRequested:false,previewLoadout:null,disposed:false,frameRequest:0,presentationRequest:0,presentedFrame:null};
       const raceFrameWaiters=new Set();
-      // Three separately authored courses. Race distance is captured at the grid.
+      // Three circuits and an open2000m drag strip. Race distance is captured at the grid.
       const CIRCUITS=[
         {id:'city',name:'Neon City',short:'NEON CITY',subtitle:'KOTA',tag:'Boulevard & arsitektur',description:'Gedung kaca, apartemen, dan boulevard kota dengan tikungan teknis.',feature:'136 bangunan · 10 jenis arsitektur',accent:'#f47c46',points:[[0,0],[0,-140],[35,-245],[145,-270],[245,-205],[265,-90],[195,-10],[235,95],[195,200],[85,225],[-45,195],[-95,115],[-55,45],[-12,18]]},
         {id:'beach',name:'Azure Coast',short:'AZURE COAST',subtitle:'PANTAI',tag:'Garis pantai & kelapa',description:'Lintasan pesisir yang mengalir, pasir terang, ombak laut, dan pohon kelapa.',feature:'Laut berombak · pesisir tropis',accent:'#57d6cb',points:[[-210,130],[-245,-60],[-230,-235],[-120,-305],[70,-295],[205,-220],[250,-70],[170,35],[245,160],[180,285],[25,320],[-120,260]]},
-        {id:'glacier',name:'Frostpeak Pass',short:'FROSTPEAK PASS',subtitle:'GUNUNG ES',tag:'Puncak salju & danau es',description:'Rangkaian tikungan di antara pegunungan bersalju, tebing batu, dan danau es.',feature:'Pegunungan salju · lanskap es',accent:'#a3c9ff',points:[[-35,250],[-180,205],[-245,65],[-235,-100],[-120,-190],[20,-165],[145,-250],[280,-210],[300,-70],[200,20],[240,150],[140,250]]}
+        {id:'glacier',name:'Frostpeak Pass',short:'FROSTPEAK PASS',subtitle:'GUNUNG ES',tag:'Puncak salju & danau es',description:'Rangkaian tikungan di antara pegunungan bersalju, tebing batu, dan danau es.',feature:'Pegunungan salju · lanskap es',accent:'#a3c9ff',points:[[-35,250],[-180,205],[-245,65],[-235,-100],[-120,-190],[20,-165],[145,-250],[280,-210],[300,-70],[200,20],[240,150],[140,250]]},
+        {id:'drag-2km',name:'Drag Strip 2 KM',short:'DRAG 2 KM',subtitle:'DRAG',tag:'Lurus · sekali jalan',description:'Adu akselerasi 2.000 meter dari garis START ke FINISH. Semua peserta memulai sejajar, dilanjutkan zona pengereman 700 meter.',feature:'2 km lurus · start sejajar · sekali jalan',accent:'#32d5e4',open:true,roadHalf:22.5,points:[[0,0],[0,-2000]]}
       ];
       const LAP_MIN=1,LAP_MAX=20;
       let circuitRoot=null,activeCircuitId=null,worldElapsed=0;
       function currentCircuit(){return CIRCUITS.find(c=>c.id===settings.circuit)||CIRCUITS[0];}
       function normalizeLaps(value,fallback=3){if(value==null||typeof value==='boolean')return fallback;const n=Number(value);return Number.isFinite(n)&&String(value).trim()!==''?Math.max(LAP_MIN,Math.min(LAP_MAX,Math.round(n))):fallback;}
-      function makeCircuitCurve(spec){const curve=new THREE.CatmullRomCurve3(spec.points.map(([x,z])=>new THREE.Vector3(x,0,z)),true,'centripetal');curve.arcLengthDivisions=4000;curve.updateArcLengths();return curve;}
+      function makeCircuitCurve(spec){if(spec.open){const curve=new THREE.LineCurve3(new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-2000));curve.getPointAt=(t,target=new THREE.Vector3())=>target.set(0,0,-2000*t);curve.getTangentAt=(t,target=new THREE.Vector3())=>target.set(0,0,-1);return curve;}const curve=new THREE.CatmullRomCurve3(spec.points.map(([x,z])=>new THREE.Vector3(x,0,z)),true,'centripetal');curve.arcLengthDivisions=4000;curve.updateArcLengths();return curve;}
       function circuitOutline(spec){
         const curve=makeCircuitCurve(spec),points=curve.getSpacedPoints(100),box=new THREE.Box3().setFromPoints(points),size=box.getSize(new THREE.Vector3());
         const scale=Math.min(100/size.x,64/size.z),cx=(box.min.x+box.max.x)/2,cz=(box.min.z+box.max.z)/2;
         const mapped=points.map(p=>[(60+(p.x-cx)*scale).toFixed(1),(41+(p.z-cz)*scale).toFixed(1)]);
-        return {d:mapped.map((p,i)=>(i?'L':'M')+p.join(' ')).join(' ')+' Z',start:mapped[0],length:curve.getLength()};
+        return {d:mapped.map((p,i)=>(i?'L':'M')+p.join(' ')).join(' ')+(spec.open?'':' Z'),start:mapped[0],length:curve.getLength()};
       }
       function disposeOwnedGraph(root){
         if(!root)return;
@@ -42,18 +43,22 @@
         trackPoints=[];trackTangents=[];trackNormals=[];
         let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
         for(let i=0;i<CURVE_SAMPLES;i++){
-          const p=trackCurve.getPointAt(i/CURVE_SAMPLES),t=trackCurve.getTangentAt(i/CURVE_SAMPLES).normalize(),n=new THREE.Vector3(-t.z,0,t.x).normalize();
+          const fraction=i/(spec.open?CURVE_SAMPLES-1:CURVE_SAMPLES),p=trackCurve.getPointAt(fraction),t=trackCurve.getTangentAt(fraction).normalize(),n=new THREE.Vector3(-t.z,0,t.x).normalize();
           trackPoints.push(p);trackTangents.push(t);trackNormals.push(n);
           minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z);
         }
         minimapBounds={minX:minX-25,maxX:maxX+25,minZ:minZ-25,maxZ:maxZ+25};
-        if(spec.id==='city')createGroundPlane();
-        buildDetailedRoad();
-        const kerbTex=makeKerbTexture();kerbTex.repeat.set(1,1);
-        buildEdgeStripMesh(ROAD_HALF,ROAD_HALF+1.15,.14,kerbTex,true);buildEdgeStripMesh(-ROAD_HALF-1.15,-ROAD_HALF,.14,kerbTex,true);
-        buildDetailedBarrier(ROAD_HALF+1.35);buildDetailedBarrier(-ROAD_HALF-1.35);buildStartFinishGate();buildCityStreetLights();
-        const opts={THREE,scene,trackPoints,trackTangents,trackNormals,roadHalf:ROAD_HALF,trackLength:trackTotalLength,samples:CURVE_SAMPLES};
-        cityWorld=spec.id==='city'?NVCity.build(opts):NVBiomes.build({...opts,biome:spec.id});
+        if(spec.open){
+          cityWorld=window.NVDragStrip.build({THREE,scene});roadSurface=cityWorld.roadSurface;
+        }else{
+          if(spec.id==='city')createGroundPlane();
+          buildDetailedRoad();
+          const kerbTex=makeKerbTexture();kerbTex.repeat.set(1,1);
+          buildEdgeStripMesh(ROAD_HALF,ROAD_HALF+1.15,.14,kerbTex,true);buildEdgeStripMesh(-ROAD_HALF-1.15,-ROAD_HALF,.14,kerbTex,true);
+          buildDetailedBarrier(ROAD_HALF+1.35);buildDetailedBarrier(-ROAD_HALF-1.35);buildStartFinishGate();buildCityStreetLights();
+          const opts={THREE,scene,trackPoints,trackTangents,trackNormals,roadHalf:ROAD_HALF,trackLength:trackTotalLength,samples:CURVE_SAMPLES};
+          cityWorld=spec.id==='city'?NVCity.build(opts):NVBiomes.build({...opts,biome:spec.id});
+        }
         cityWorld.setQuality?.(settings.quality);
         circuitRoot=new THREE.Group();circuitRoot.name='Circuit World';circuitRoot.userData.circuitId=spec.id;
         for(const child of [...scene.children])if(!before.has(child))circuitRoot.add(child);
@@ -63,7 +68,7 @@
       function switchCircuit(id){
         if(GameState.mode!=='MENU'||!gameReady||!CIRCUITS.some(c=>c.id===id))return;
         if(id===activeCircuitId){updateCircuitUI();return;}
-        clearInput();settings.circuit=id;gameReady=false;DOM.btnStart.disabled=true;
+        clearInput();settings.circuit=id;if(currentCircuit().open)settings.laps=1;gameReady=false;DOM.btnStart.disabled=true;
         for(const racer of allRacers)disposeVehicle(racer.visual);allRacers=[];aiCars=[];playerCar=null;headLights=[];
         for(const p of particles){scene.remove(p.mesh);p.mesh.material.dispose();}particles.length=0;
         try{
@@ -73,30 +78,31 @@
       }
       function setRaceLaps(value){
         if(GameState.mode!=='MENU')return;
-        settings.laps=normalizeLaps(value,settings.laps);updateCircuitUI();persistSettings();
+        settings.laps=currentCircuit().open?1:normalizeLaps(value,settings.laps);updateCircuitUI();persistSettings();
       }
       function updateCircuitUI(){
         const spec=currentCircuit(),length=activeCircuitId===spec.id?trackTotalLength:makeCircuitCurve(spec).getLength();
         for(const b of document.querySelectorAll('[data-circuit]')){const selected=b.dataset.circuit===spec.id;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));}
         if($('lap-count'))$('lap-count').value=settings.laps;
+        if($('lap-count'))$('lap-count').disabled=!!spec.open;
         if($('bot-count'))$('bot-count').value=settings.bots;
         if($('bot-decrease'))$('bot-decrease').disabled=settings.bots<=BOT_MIN;
         if($('bot-increase'))$('bot-increase').disabled=settings.bots>=BOT_MAX;
         for(const b of document.querySelectorAll('[data-bots]')){const selected=Number(b.dataset.bots)===settings.bots;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));}
-        if($('lap-decrease'))$('lap-decrease').disabled=settings.laps<=LAP_MIN;
-        if($('lap-increase'))$('lap-increase').disabled=settings.laps>=LAP_MAX;
-        for(const b of document.querySelectorAll('[data-laps]')){const selected=Number(b.dataset.laps)===settings.laps;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));}
+        if($('lap-decrease'))$('lap-decrease').disabled=!!spec.open||settings.laps<=LAP_MIN;
+        if($('lap-increase'))$('lap-increase').disabled=!!spec.open||settings.laps>=LAP_MAX;
+        for(const b of document.querySelectorAll('[data-laps]')){const selected=Number(b.dataset.laps)===settings.laps;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));b.disabled=!!spec.open;}
         const text=(id,value)=>{if($(id))$(id).textContent=value;};
-        text('ticket-track',spec.short);text('ticket-laps',settings.laps+' lap');text('race-distance',(length*settings.laps/1000).toFixed(2)+' km total');
+        text('ticket-track',spec.short);text('ticket-laps',spec.open?'Sekali jalan':settings.laps+' lap');text('race-distance',(length*(spec.open?1:settings.laps)/1000).toFixed(2)+' km total');
         text('ticket-bots',settings.bots?settings.bots+' rival AI':'Latihan solo');text('race-field-summary',settings.bots?settings.bots+1+' peserta termasuk Anda':'Lintasan untuk Anda sendiri');
         if(DOM.btnStart?.querySelector('span'))DOM.btnStart.querySelector('span').textContent=settings.bots?'MULAI BALAPAN':'MULAI LATIHAN';
         text('circuit-description',spec.description);text('hud-track-name',spec.short);text('tour-title',spec.short);text('tour-description',spec.description);
-        text('tour-buildings',spec.feature);text('tour-length',(length/1000).toFixed(2)+' km per lap');text('selected-circuit-name',spec.name);
+        text('tour-buildings',spec.feature);text('tour-length',(length/1000).toFixed(2)+(spec.open?' km sekali jalan':' km per lap'));text('selected-circuit-name',spec.name);
         const path=circuitOutline(spec);if($('ticket-map-path'))$('ticket-map-path').setAttribute('d',path.d);
         if($('ticket-map-start')){$('ticket-map-start').setAttribute('cx',path.start[0]);$('ticket-map-start').setAttribute('cy',path.start[1]);}
       }
       function bindWorldControls(){
-        $('circuit-cards').innerHTML=CIRCUITS.map((c,i)=>{const outline=circuitOutline(c);return `<button class="circuit-card circuit-${c.id}" data-circuit="${c.id}" aria-pressed="false" style="--circuit-accent:${c.accent}"><span class="circuit-index">0${i+1} / ${c.subtitle}</span><svg viewBox="0 0 120 82" fill="none" aria-hidden="true"><path class="course-shadow" d="${outline.d}"/><path class="course-line" d="${outline.d}"/><circle cx="${outline.start[0]}" cy="${outline.start[1]}" r="3"/></svg><span class="circuit-card-bottom"><b>${c.name}</b><small>${(outline.length/1000).toFixed(2)} km / lap</small></span><span class="circuit-check">✓</span></button>`;}).join('');
+        $('circuit-cards').innerHTML=CIRCUITS.map((c,i)=>{const outline=circuitOutline(c);return `<button class="circuit-card circuit-${c.id}" data-circuit="${c.id}" aria-pressed="false" style="--circuit-accent:${c.accent}"><span class="circuit-index">0${i+1} / ${c.subtitle}</span><svg viewBox="0 0 120 82" fill="none" aria-hidden="true"><path class="course-shadow" d="${outline.d}"/><path class="course-line" d="${outline.d}"/><circle cx="${outline.start[0]}" cy="${outline.start[1]}" r="3"/></svg><span class="circuit-card-bottom"><b>${c.name}</b><small>${(outline.length/1000).toFixed(2)} km ${c.open?'sekali jalan':'/ lap'}</small></span><span class="circuit-check">✓</span></button>`;}).join('');
         document.querySelectorAll('[data-circuit]').forEach(b=>b.addEventListener('click',()=>switchCircuit(b.dataset.circuit)));
         $('lap-count').addEventListener('change',e=>setRaceLaps(e.target.value));
         $('lap-count').addEventListener('keydown',e=>{if(e.key==='Enter'){setRaceLaps(e.target.value);e.target.blur();}});
@@ -128,7 +134,7 @@
         const idle=profile.idleRpm,redline=profile.redlineRpm;
         if(nvRenderPose(car)?.speed<-.5){const rpm=idle+Math.min(redline-idle,speedKmh*110+900);return{gear:'R',rpm:Math.round(rpm),rpmNorm:(rpm-idle)/(redline-idle)};}
         if(speedKmh<2){if(car)car.transmissionGear=0;const rpm=idle+(Input.up&&!Input.down&&!car?.finished&&!car?.dnf?700:0);return{gear:'N',rpm,rpmNorm:(rpm-idle)/(redline-idle)};}
-        const ratios=profile.gears===7?[.16,.29,.42,.56,.71,.89,1.24]:profile.gears===5?[.23,.43,.64,.86,1.24]:[.19,.35,.51,.68,.86,1.24];
+        const ratios=profile.gearRatios||(profile.gears===7?[.16,.29,.42,.56,.71,.89,1.24]:profile.gears===5?[.23,.43,.64,.86,1.24]:[.19,.35,.51,.68,.86,1.24]);
         const caps=ratios.map(r=>r*(car?.model.topSpeed||currentModel().topSpeed));
         let g=car?.transmissionGear||0;
         while(g<caps.length-1&&speedKmh>caps[g])g++;
@@ -171,10 +177,10 @@
       function placeRaceField(){
         const order=[...aiCars,playerCar];
         order.forEach((racer,slot)=>{
-          const row=Math.floor(slot/2),lane=order.length===1?0:slot%2?3.65:-3.65,back=8.5+row*8.4+(slot%2?1.7:0);
-          const t=1-back/trackTotalLength,idx=Math.floor(t*CURVE_SAMPLES)%CURVE_SAMPLES,p=trackCurve.getPointAt(t),tan=trackCurve.getTangentAt(t).normalize(),right=new THREE.Vector3(-tan.z,0,tan.x);
+          const open=!!currentCircuit().open,row=Math.floor(slot/2),lane=open?(slot-(order.length-1)/2)*3:order.length===1?0:slot%2?3.65:-3.65,back=open?8.5:8.5+row*8.4+(slot%2?1.7:0);
+          const t=(open?0:1)-back/trackTotalLength,idx=open?0:Math.floor(t*CURVE_SAMPLES)%CURVE_SAMPLES,p=trackCurve.getPointAt(t),tan=trackCurve.getTangentAt(t).normalize(),right=new THREE.Vector3(-tan.z,0,tan.x);
           racer.pos.copy(p).addScaledVector(right,lane);racer.pos.y=0;racer.heading=Math.atan2(tan.x,tan.z);racer.speed=0;racer.trackIdx=idx;racer.lastTrackIdx=idx;
-          racer.lap=1;racer.lastTrackT=racer.isPlayer?idx/CURVE_SAMPLES:t;racer.progress=racer.lastTrackT-1;racer.nextGate=0;racer.completedLaps=0;racer.finished=false;racer.finishTime=0;racer.gridSlot=slot;
+          racer.lap=1;racer.lastTrackT=open?t:racer.isPlayer?idx/CURVE_SAMPLES:t;racer.progress=racer.lastTrackT-(open?0:1);racer.nextGate=0;racer.completedLaps=0;racer.finished=false;racer.finishTime=0;racer.gridSlot=slot;
           if(racer.isPlayer){racer.steerAngle=0;racer.driftAngle=0;racer.bodyRoll=0;racer.bodyPitch=0;racer.nitro=50;racer.nitroActive=false;racer.transmissionGear=0;}
           else{racer.t=t;racer.laneOffset=lane;racer.targetLane=lane;}
           racer.visual.root.position.copy(racer.pos);racer.visual.root.rotation.y=racer.heading;racer.visual.root.visible=true;
@@ -183,28 +189,28 @@
       }
       function updateRaceFieldAI(dt){
         if(GameState.mode!=='RACING')return;
-        const difficulty=GameState.raceConfig?.difficulty||settings.difficulty,factor={easy:.70,normal:.88,hard:1.04}[difficulty],acceleration={easy:6.2,normal:8.5,hard:10.2}[difficulty];
+        const open=!!currentCircuit().open,difficulty=GameState.raceConfig?.difficulty||settings.difficulty,factor={easy:.70,normal:.88,hard:1.04}[difficulty],acceleration={easy:6.2,normal:8.5,hard:10.2}[difficulty];
         for(const ai of aiCars){
           if(ai.finished)continue;
           ai.laneTimer-=dt;
-          if(ai.laneTimer<=0){ai.laneTimer=2.6+Math.random()*3;ai.targetLane=(Math.random()-.5)*12.2;}
+          if(!open&&ai.laneTimer<=0){ai.laneTimer=2.6+Math.random()*3;ai.targetLane=(Math.random()-.5)*12.2;}
           let leader=null,gap=Infinity;
           for(const other of allRacers){if(other===ai||other.finished)continue;const delta=((other.lastTrackT-ai.t+1)%1)*trackTotalLength;if(delta>.02&&delta<26&&Math.abs(other.isPlayer?trackNormals[other.trackIdx].dot(other.pos.clone().sub(trackPoints[other.trackIdx]))-ai.laneOffset:other.laneOffset-ai.laneOffset)<2.65&&delta<gap){leader=other;gap=delta;}}
-          if(leader&&gap<18){
+          if(!open&&leader&&gap<18){
             const desired=ai.laneOffset>=0?-4.2:4.2;let clear=true;
             for(const other of aiCars){if(other===ai||other.finished)continue;const d=Math.abs(((other.t-ai.t+1.5)%1)-.5)*trackTotalLength;if(d<11&&Math.abs(other.laneOffset-desired)<2.6){clear=false;break;}}
             if(clear){ai.targetLane=desired;ai.laneTimer=1.1;}
           }
           ai.laneOffset+=THREE.MathUtils.clamp(ai.targetLane-ai.laneOffset,-2.6*dt,2.6*dt);
-          const idx=Math.floor(ai.t*CURVE_SAMPLES)%CURVE_SAMPLES,next=(idx+10)%CURVE_SAMPLES,corner=Math.max(.68,trackTangents[idx].dot(trackTangents[next]));
+          const idx=open?Math.max(0,Math.min(CURVE_SAMPLES-1,Math.floor(ai.t*(CURVE_SAMPLES-1)))):Math.floor(ai.t*CURVE_SAMPLES)%CURVE_SAMPLES,next=open?Math.min(idx+10,CURVE_SAMPLES-1):(idx+10)%CURVE_SAMPLES,corner=Math.max(.68,trackTangents[idx].dot(trackTangents[next]));
           const diff=playerCar.progress-ai.progress,rubber=diff>.08?Math.min(11,diff*24):diff<-.12?Math.max(-8,diff*18):0;
           let target=Math.min(ai.model.topSpeed/3.6*.98,(ai.baseSpeed+rubber)*corner*factor);
           if(leader&&gap<19)target=Math.min(target,Math.max(4,leader.speed+(gap-7.5)*1.45));
           ai.speed+=THREE.MathUtils.clamp(target-ai.speed,-acceleration*3.2*dt,acceleration*dt);
-          ai.t=(ai.t+ai.speed*dt/trackTotalLength)%1;
+          ai.t=open?ai.t+ai.speed*dt/trackTotalLength:(ai.t+ai.speed*dt/trackTotalLength)%1;
           const p=trackCurve.getPointAt(ai.t),tan=trackCurve.getTangentAt(ai.t).normalize(),right=new THREE.Vector3(-tan.z,0,tan.x);
           ai.pos.copy(p).addScaledVector(right,ai.laneOffset);ai.pos.y=0;ai.heading=Math.atan2(tan.x,tan.z);
-          updateLapProgress(ai,Math.floor(ai.t*CURVE_SAMPLES)%CURVE_SAMPLES,ai.t);
+          updateLapProgress(ai,open?Math.max(0,Math.min(CURVE_SAMPLES-1,Math.floor(ai.t*(CURVE_SAMPLES-1)))):Math.floor(ai.t*CURVE_SAMPLES)%CURVE_SAMPLES,ai.t);
           ai.visual.root.position.copy(ai.pos);ai.visual.root.rotation.y=ai.heading;
           ai.visual.wheels.forEach(w=>w.rotation.x+=ai.speed*dt/(ai.visual.wheelRadius||.33));
           const nextTan=trackTangents[(ai.trackIdx+4)%CURVE_SAMPLES],turn=THREE.MathUtils.clamp(Math.atan2(tan.z*nextTan.x-tan.x*nextTan.z,tan.dot(nextTan))*2,-.36,.36);
@@ -242,7 +248,11 @@
         {id:'batmobile-1989',name:'Batmobile 1989',cardName:'Batmobile 1989',title:'<small class="make-label">1989</small>Batmobile <b>89</b>',type:'CINEMA ICON · REKONSTRUKSI REFERENSI',short:'BATMOBILE · 1989',class:'S · 910',description:'Rekonstruksi dari referensi Batmobile era Keaton/Burton: bodi memanjang, intake turbin bundar, kanopi rendah, dan sirip belakang.',color:'#15191d',topSpeed:300,zeroTo100:3.9,drive:'RWD',handling:.90,ratings:[90,84,78],branded:true,newArrival:true,representation:'reference-recreation'},
         {id:'jesko-absolut',name:'Koenigsegg Regera',cardName:'Regera',title:'<small class="make-label">KOENIGSEGG</small>Regera',type:'HYPERCAR · REKONSTRUKSI REFERENSI',short:'KOENIGSEGG · REGERA',class:'X · 998',description:'Rekonstruksi Regera dari referensi terbaru: kanopi melengkung, lampu depan khas, bodi berlekuk, dan intake samping yang menyatu dengan pintu.',color:'#d9dde0',topSpeed:420,zeroTo100:2.3,drive:'RWD',handling:.96,ratings:[100,100,85],branded:true,newArrival:true,representation:'reference-recreation'},
         {id:'venom-f5',name:'Hennessey Venom F5',cardName:'Venom F5',title:'<small class="make-label">HENNESSEY</small>Venom <b>F5</b>',type:'HYPERCAR · REKONSTRUKSI REFERENSI',short:'HENNESSEY · VENOM F5',class:'X · 995',description:'Rekonstruksi F5 mengikuti referensi terbaru dengan kokpit terbuka, fender tinggi, lampu tipis, intake samping besar, dan sayap belakang.',color:'#8b8c87',topSpeed:410,zeroTo100:2.4,drive:'RWD',handling:.95,ratings:[100,99,84],branded:true,newArrival:true,representation:'reference-recreation'},
-        {id:'panther-grand-touring',name:'Isuzu Panther Grand Touring',cardName:'Panther Grand Touring',title:'<small class="make-label">ISUZU</small>Panther <b>Grand Touring</b>',type:'DIESEL MPV · REKONSTRUKSI REFERENSI',short:'ISUZU · PANTHER',class:'C · 520',description:'Rekonstruksi Panther Grand Touring dari foto pengguna: bodi MPV tinggi, lampu dan grille lebar, roof rail, serta pijakan samping.',color:'#19252e',topSpeed:170,zeroTo100:10.8,drive:'RWD',handling:.88,ratings:[45,38,73],branded:true,newArrival:true,representation:'reference-recreation'}
+        {id:'panther-grand-touring',name:'Isuzu Panther Grand Touring',cardName:'Panther Grand Touring',title:'<small class="make-label">ISUZU</small>Panther <b>Grand Touring</b>',type:'DIESEL MPV · REKONSTRUKSI REFERENSI',short:'ISUZU · PANTHER',class:'C · 520',description:'Rekonstruksi Panther Grand Touring dari foto pengguna: bodi MPV tinggi, lampu dan grille lebar, roof rail, serta pijakan samping.',color:'#19252e',topSpeed:170,zeroTo100:10.8,drive:'RWD',handling:.88,ratings:[45,38,73],branded:true,newArrival:true,representation:'reference-recreation'},
+        {id:'honda-crv-rs',name:'Honda CR-V RS e:HEV',cardName:'CR-V RS e:HEV',title:'<small class="make-label">HONDA</small>CR-V <b>RS e:HEV</b>',type:'HYBRID SUV · REKONSTRUKSI REFERENSI',short:'HONDA · CR-V',class:'C · 650',description:'SUV dari referensi CR-V biru: grille poligonal, lampu tipis, empat pintu, dan lampu belakang berbentuk L.',color:'#4b637a',topSpeed:210,zeroTo100:8.2,drive:'FWD',handling:1.02,ratings:[59,56,86],branded:true,newArrival:true,representation:'reference-recreation'},
+        {id:'mitsubishi-pajero-sport',name:'Mitsubishi Pajero Sport',cardName:'Pajero Sport',title:'<small class="make-label">MITSUBISHI</small>Pajero <b>Sport</b>',type:'OFF-ROAD SUV · REKONSTRUKSI REFERENSI',short:'MITSUBISHI · PAJERO',class:'C · 625',description:'Pajero Sport hitam mengikuti foto pengguna: bumper baja off-road, ban tebal, side step, dan lampu belakang vertikal.',color:'#151a1d',topSpeed:195,zeroTo100:10.5,drive:'AWD',handling:.94,ratings:[54,43,78],branded:true,newArrival:true,representation:'reference-recreation'},
+        {id:'toyota-fortuner',name:'Toyota Fortuner GR Sport',cardName:'Fortuner GR Sport',title:'<small class="make-label">TOYOTA</small>Fortuner <b>GR Sport</b>',type:'DIESEL SUV · REKONSTRUKSI REFERENSI',short:'TOYOTA · FORTUNER',class:'C · 640',description:'Fortuner GR Sport dari foto pengguna, dengan bodi SUV tinggi, grille depan khas, pijakan samping, dan lampu belakang memanjang.',color:'#20262b',topSpeed:205,zeroTo100:9.8,drive:'AWD',handling:.96,ratings:[57,48,80],branded:true,newArrival:true,representation:'reference-recreation'},
+        {id:'toyota-innova-zenix',name:'Toyota Kijang Innova Zenix Hybrid',cardName:'Innova Zenix Hybrid',title:'<small class="make-label">TOYOTA</small>Innova <b>Zenix Hybrid</b>',type:'HYBRID MPV · REKONSTRUKSI REFERENSI',short:'TOYOTA · INNOVA ZENIX',class:'C · 635',description:'MPV keluarga dari foto pengguna: kabin luas, grille trapesium, empat pintu, dan lampu belakang horizontal.',color:'#d5d9dd',topSpeed:195,zeroTo100:9.5,drive:'FWD',handling:1.01,ratings:[54,49,85],branded:true,newArrival:true,representation:'reference-recreation'}
       ];
       const PALETTE = [
         {name:'Signal Orange',hex:'#ed6b2f'}, {name:'Crimson Red',hex:'#b92842'},
@@ -266,7 +276,7 @@
         quality:['high','medium','low'].includes(saved.quality)?saved.quality:'medium',
         timeOfDay:['dusk','night'].includes(saved.timeOfDay)?saved.timeOfDay:'dusk',
         circuit:CIRCUITS.some(c=>c.id===saved.circuit)?saved.circuit:'city',
-        laps:normalizeLaps(saved.laps,3),
+        laps:saved.circuit==='drag-2km'?1:normalizeLaps(saved.laps,3),
         bots:normalizeBots(saved.bots,3),
         muted:!!saved.muted,
         records:{}
@@ -812,11 +822,11 @@ function renderGarageThumbnail(visual) {
         if(audio.ctx)audio.ctx.suspend().catch(()=>{});document.activeElement?.blur();
       }
       function updateCityTour(dt){
-        tourT=(tourT+dt*16/trackTotalLength)%1;
+        tourT=currentCircuit().open?Math.min(1,tourT+dt*16/trackTotalLength):(tourT+dt*16/trackTotalLength)%1;
         const p=trackCurve.getPointAt(tourT),t=trackCurve.getTangentAt(tourT),n=new THREE.Vector3(-t.z,0,t.x);
         const desired=p.clone().addScaledVector(n,-3.2);desired.y=5.1;
         if(!tourCameraReady){camera.position.copy(desired);tourCameraReady=true;}else camera.position.lerp(desired,Math.min(1,dt*4));
-        const ahead=trackCurve.getPointAt((tourT+.035)%1);ahead.y=9;
+        const ahead=trackCurve.getPointAt(currentCircuit().open?tourT+.035:(tourT+.035)%1);ahead.y=9;
         camera.fov=59;camera.updateProjectionMatrix();camera.lookAt(ahead);
         updateCityWorld(dt,camera.position);
         renderer.setScissorTest(false);renderer.setViewport(0,0,innerWidth,innerHeight);renderer.render(scene,camera);
@@ -933,7 +943,11 @@ const NV_AUDIO_PROFILES = Object.freeze({
   'batmobile-1989':Object.freeze({id:'batmobile-1989',label:'Turbin fiksi · sintesis',character:'Desis turbin sinematik; bukan rekaman kendaraan',cylinders:2,layout:'fictional-turbine',turbochargers:1,idleRpm:18000,redlineRpm:48000,gears:1,group:[0,.5],fireMix:.24,bankMix:.38,crankMix:.018,edge:2.35,pulseVariation:0,bodyHz:200,bodyGain:2.0,intakeHz:2100,intakeGain:3.8,maxCutoff:5200,drive:1.12,level:.80,roughness:.6,shiftTime:.32,turboBase:1450,turboRange:3100,spoolTime:.95,releaseLevel:.16,overrun:0}),
   'jesko-absolut':Object.freeze({id:'jesko-absolut',label:'V8 twin-turbo · sintesis',character:'Putaran tinggi dan nada turbo yang terang',cylinders:8,layout:'V8',turbochargers:2,idleRpm:1050,redlineRpm:8600,gears:9,group:[0,.25,.50,.75],fireMix:.72,bankMix:.32,crankMix:.041,edge:1.05,pulseVariation:.010,bodyHz:335,bodyGain:3.5,intakeHz:2150,intakeGain:3.3,maxCutoff:4850,drive:1.45,level:.94,roughness:1.6,shiftTime:.085,turboBase:1150,turboRange:2200,spoolTime:.36,releaseLevel:.62,overrun:.11}),
   'venom-f5':Object.freeze({id:'venom-f5',label:'V8 twin-turbo · sintesis',character:'Bass besar dan pelepasan turbo pendek',cylinders:8,layout:'V8',turbochargers:2,idleRpm:980,redlineRpm:8400,gears:7,group:[0,.125,.375,.750],fireMix:.46,bankMix:.64,crankMix:.082,edge:1.06,pulseVariation:.029,bodyHz:138,bodyGain:5.2,intakeHz:1250,intakeGain:3.0,maxCutoff:3900,drive:1.66,level:.94,roughness:3.9,shiftTime:.12,turboBase:920,turboRange:2300,spoolTime:.41,releaseLevel:.75,overrun:.16}),
-  'panther-grand-touring':Object.freeze({id:'panther-grand-touring',label:'Diesel inline-4 · sintesis',character:'Denyut diesel rendah, ketukan mekanis, dan turbo lembut',cylinders:4,layout:'inline-4',fuel:'diesel',turbochargers:1,idleRpm:780,redlineRpm:4600,gears:5,group:[0,.50],fireMix:.74,bankMix:.44,crankMix:.13,edge:1.04,pulseVariation:.075,bodyHz:125,bodyGain:5.0,intakeHz:680,intakeGain:1.7,maxCutoff:2350,drive:1.57,level:.94,roughness:7.4,shiftTime:.30,turboBase:650,turboRange:1050,spoolTime:.85,releaseLevel:.08,overrun:0})
+  'panther-grand-touring':Object.freeze({id:'panther-grand-touring',label:'Diesel inline-4 · sintesis',character:'Denyut diesel rendah, ketukan mekanis, dan turbo lembut',cylinders:4,layout:'inline-4',fuel:'diesel',turbochargers:1,idleRpm:780,redlineRpm:4600,gears:5,group:[0,.50],fireMix:.74,bankMix:.44,crankMix:.13,edge:1.04,pulseVariation:.075,bodyHz:125,bodyGain:5.0,intakeHz:680,intakeGain:1.7,maxCutoff:2350,drive:1.57,level:.94,roughness:7.4,shiftTime:.30,turboBase:650,turboRange:1050,spoolTime:.85,releaseLevel:.08,overrun:0}),
+  'honda-crv-rs':Object.freeze({id:'honda-crv-rs',gearRatios:Object.freeze([1.24]),label:'Hybrid inline-4 · sintesis',character:'Empat silinder SUV yang halus; suara sintetis untuk permainan',cylinders:4,layout:'inline-4',fuel:'hybrid',turbochargers:0,idleRpm:850,redlineRpm:6200,gears:1,group:[0,.50],fireMix:.65,bankMix:.35,crankMix:.05,edge:1.18,pulseVariation:.015,bodyHz:165,bodyGain:3.4,intakeHz:900,intakeGain:1.8,maxCutoff:3000,drive:1.25,level:.83,roughness:2.2,shiftTime:.26,turboBase:0,turboRange:0,spoolTime:.5,releaseLevel:0,overrun:0}),
+  'mitsubishi-pajero-sport':Object.freeze({id:'mitsubishi-pajero-sport',gearRatios:Object.freeze([.14,.23,.34,.46,.59,.74,.93,1.24]),label:'Turbodiesel inline-4 · sintesis',character:'Bass diesel dan desis turbo untuk SUV off-road',cylinders:4,layout:'inline-4',fuel:'diesel',turbochargers:1,idleRpm:750,redlineRpm:4500,gears:8,group:[0,.50],fireMix:.76,bankMix:.41,crankMix:.12,edge:1.07,pulseVariation:.065,bodyHz:118,bodyGain:5.2,intakeHz:710,intakeGain:1.9,maxCutoff:2450,drive:1.55,level:.93,roughness:6.6,shiftTime:.24,turboBase:680,turboRange:1280,spoolTime:.74,releaseLevel:.10,overrun:0}),
+  'toyota-fortuner':Object.freeze({id:'toyota-fortuner',label:'Turbodiesel inline-4 · sintesis',character:'Denyut diesel dalam dengan induksi turbo bertahap',cylinders:4,layout:'inline-4',fuel:'diesel',turbochargers:1,idleRpm:770,redlineRpm:4600,gears:6,group:[0,.50],fireMix:.72,bankMix:.45,crankMix:.11,edge:1.10,pulseVariation:.060,bodyHz:130,bodyGain:4.9,intakeHz:760,intakeGain:2.0,maxCutoff:2550,drive:1.50,level:.92,roughness:6.0,shiftTime:.26,turboBase:720,turboRange:1240,spoolTime:.78,releaseLevel:.09,overrun:0}),
+  'toyota-innova-zenix':Object.freeze({id:'toyota-innova-zenix',gearRatios:Object.freeze([1.24]),label:'Hybrid inline-4 · sintesis',character:'Nada MPV empat silinder yang lembut; suara sintetis permainan',cylinders:4,layout:'inline-4',fuel:'hybrid',turbochargers:0,idleRpm:820,redlineRpm:6000,gears:1,group:[0,.50],fireMix:.63,bankMix:.36,crankMix:.06,edge:1.14,pulseVariation:.018,bodyHz:155,bodyGain:3.6,intakeHz:860,intakeGain:1.7,maxCutoff:2850,drive:1.28,level:.84,roughness:2.4,shiftTime:.28,turboBase:0,turboRange:0,spoolTime:.5,releaseLevel:0,overrun:0})
 });
 
 class ProceduralAudio {
@@ -1629,6 +1643,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
 
 
       function findClosestTrackIndex(x, z, hintIndex) {
+        if(currentCircuit().open)return Math.max(0,Math.min(CURVE_SAMPLES-1,Math.round(-z/trackTotalLength*(CURVE_SAMPLES-1))));
         let bestIdx = hintIndex;
         let bestDistSq = Infinity;
 
@@ -1848,7 +1863,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         updateLapProgress(car, newIdx);
 
         const offset = getSignedTrackOffset(car.pos.x, car.pos.z, car.trackIdx);
-        const maxOffset = ROAD_HALF - CAR_HALF_WIDTH;
+        const maxOffset = (currentCircuit().roadHalf||ROAD_HALF) - CAR_HALF_WIDTH;
 
         if (Math.abs(offset) > maxOffset) {
           const sign = Math.sign(offset);
@@ -1927,11 +1942,11 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
       // subtracts distance, so rocking across the finish line cannot earn laps.
       function updateLapProgress(car, newIdx, preciseT) {
         if(onlineRender.enabled)return;
-        const t = preciseT === undefined ? newIdx / CURVE_SAMPLES : preciseT;
+        const open=!!currentCircuit().open,t = preciseT === undefined ? (open?-car.pos.z/trackTotalLength:newIdx / CURVE_SAMPLES) : preciseT;
         const oldT = car.lastTrackT === undefined ? car.lastTrackIdx / CURVE_SAMPLES : car.lastTrackT;
         let delta = t - oldT;
-        if (delta > 0.5) delta -= 1;
-        if (delta < -0.5) delta += 1;
+        if (!open&&delta > 0.5) delta -= 1;
+        if (!open&&delta < -0.5) delta += 1;
         car.trackIdx = newIdx;
         car.lastTrackIdx = newIdx;
         car.lastTrackT = t;
@@ -2222,7 +2237,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           if (i === 0) ctx.moveTo(mx, my);
           else ctx.lineTo(mx, my);
         }
-        ctx.closePath();
+        if(currentCircuit().open){const last=trackPoints[CURVE_SAMPLES-1];ctx.lineTo(toMapX(last.x),toMapY(last.z));}else ctx.closePath();
         ctx.strokeStyle = 'rgba(146, 161, 177, 0.28)';
         ctx.lineWidth = 6;
         ctx.stroke();
@@ -2236,6 +2251,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         const sy = toMapY(trackPoints[0].z);
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(sx - 4, sy - 2, 8, 4);
+        if(currentCircuit().open){const last=trackPoints[CURVE_SAMPLES-1];ctx.fillStyle='#f0bf70';ctx.fillRect(toMapX(last.x)-6,toMapY(last.z)-2,12,4);}
 
         // Titik mobil lawan AI
         aiCars.forEach(ai => {
@@ -2314,7 +2330,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         if(onlineRender.enabled){NVGame._emit('start-request',{circuit:settings.circuit});return;}
         if(!gameReady)return;
         raceGeneration++;finishDelay=-1;goUntil=0;clearInput();document.activeElement?.blur();
-        settings.laps=normalizeLaps(settings.laps,3);TOTAL_LAPS=settings.laps;
+        settings.laps=currentCircuit().open?1:normalizeLaps(settings.laps,3);TOTAL_LAPS=settings.laps;
         settings.bots=normalizeBots(settings.bots);
         GameState.raceConfig=Object.freeze({circuit:settings.circuit,laps:TOTAL_LAPS,bots:settings.bots,model:settings.model,difficulty:settings.difficulty});
         GameState.lastLapTime=0;$('hud-lap-total').textContent=TOTAL_LAPS;$('hud-track-name').textContent=currentCircuit().short;
@@ -2456,9 +2472,10 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           return;
         }
         if(racer.nvRollout)return; // settling -> finished must not restart rollout
-        const t=Number.isFinite(racer.trackT)?racer.trackT:findClosestTrackIndex(racer.pos.x,racer.pos.z,racer.trackIdx)/CURVE_SAMPLES;
+        const t=Number.isFinite(racer.trackT)?racer.trackT:currentCircuit().open?-racer.pos.z/trackTotalLength:findClosestTrackIndex(racer.pos.x,racer.pos.z,racer.trackIdx)/CURVE_SAMPLES;
         const center=trackCurve.getPointAt(t),tangent=trackCurve.getTangentAt(t),heading=Math.atan2(tangent.x,tangent.z);
-        racer.nvRollout={elapsed:0,duration:3,startT:t,speed:Math.abs(racer.speed),direction:racer.speed<0?-1:1,offset:racer.pos.clone().sub(center),pathHeading:heading,headingError:Math.atan2(Math.sin(racer.heading-heading),Math.cos(racer.heading-heading)),drift:racer.driftAngle,steer:racer.steerAngle,roll:racer.bodyRoll,pitch:racer.bodyPitch};
+        const duration=currentCircuit().open?Math.max(.001,Math.min(3,(1.35-t)*trackTotalLength*3/Math.max(1,Math.abs(racer.speed)))):3;
+        racer.nvRollout={elapsed:0,duration,startT:t,speed:Math.abs(racer.speed),direction:racer.speed<0?-1:1,offset:racer.pos.clone().sub(center),pathHeading:heading,headingError:Math.atan2(Math.sin(racer.heading-heading),Math.cos(racer.heading-heading)),drift:racer.driftAngle,steer:racer.steerAngle,roll:racer.bodyRoll,pitch:racer.bodyPitch};
         racer.nvVisualPose={pos:racer.pos.clone(),heading:racer.heading,speed:racer.speed,steerAngle:racer.steerAngle,driftAngle:racer.driftAngle,bodyRoll:racer.bodyRoll,bodyPitch:racer.bodyPitch,nitroActive:false};
       }
       function nvUpdateResultRollout(racer,dt){
@@ -2470,7 +2487,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         // Analytic, monotonic visual easing. Official x/z, speed, laps, time and
         // rankings stay on the received snapshot; this has no collision body.
         const distance=rollout.direction*rollout.speed*rollout.duration*(u-u*u+u*u*u/3);
-        const t=((rollout.startT+distance/trackTotalLength)%1+1)%1;
+        const rawT=rollout.startT+distance/trackTotalLength,t=currentCircuit().open?rawT:((rawT%1)+1)%1;
         const center=trackCurve.getPointAt(t),tangent=trackCurve.getTangentAt(t),heading=Math.atan2(tangent.x,tangent.z);
         const turn=Math.atan2(Math.sin(heading-rollout.pathHeading),Math.cos(heading-rollout.pathHeading));
         pose.pos.copy(rollout.offset).applyAxisAngle(new THREE.Vector3(0,1,0),turn).add(center);
@@ -2543,7 +2560,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           if(onlineRender.active)nvStopRace();
           settings.circuit=options.circuit;buildCircuitWorld();applyTimeOfDay(false);updateStreetLights(1000,trackPoints[0]);captureCityReflections();
         }
-        if(options.laps!==undefined){settings.laps=normalizeLaps(options.laps);TOTAL_LAPS=settings.laps;}
+        if(options.laps!==undefined||currentCircuit().open){settings.laps=currentCircuit().open?1:normalizeLaps(options.laps);TOTAL_LAPS=settings.laps;}
         if(['high','medium','low'].includes(options.quality)){settings.quality=options.quality;applyQuality();}
         if(['dusk','night'].includes(options.timeOfDay)){settings.timeOfDay=options.timeOfDay;applyTimeOfDay(false);}
         if(typeof options.muted==='boolean'){settings.muted=options.muted;GameState.muted=options.muted;audio.setMuted(options.muted);DOM.muteIcon.textContent=options.muted?'×':'♪';DOM.muteLabel.textContent=options.muted?'Senyap':'Audio';updateGarageSoundUI();}
@@ -2640,7 +2657,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
           const racer=nvEnsureRacer(raw);if(!racer)continue;ids.add(racer.id);
           racer.previousSpeed=racer.speed;racer.pos.set(nvNumber(raw.x,0,-100000,100000),nvNumber(raw.y,0,-20,1000),nvNumber(raw.z,0,-100000,100000));
           racer.heading=nvNumber(raw.heading);racer.speed=nvNumber(raw.speed,0,-250,250);racer.steerAngle=nvNumber(raw.steerAngle,0,-1,1);racer.driftAngle=nvNumber(raw.driftAngle,0,-2,2);racer.bodyRoll=nvNumber(raw.bodyRoll,0,-.5,.5);racer.bodyPitch=nvNumber(raw.bodyPitch,0,-.5,.5);racer.nitro=nvNumber(raw.nitro,0,0,100);racer.nitroActive=!!raw.nitroActive;
-          racer.lap=nvNumber(raw.lap,1,1,21);racer.completedLaps=nvNumber(raw.completedLaps);racer.progress=nvNumber(raw.progress);racer.finished=!!raw.finished;racer.dnf=!!raw.dnf;racer.finishTime=nvNumber(raw.finishTimeMs);racer.serverPosition=nvNumber(raw.position,0,0,64);racer.connected=raw.connected!==false;racer.ghost=!!raw.ghost;racer.trackIdx=Math.round(nvNumber(raw.trackIdx,0,0,CURVE_SAMPLES-1));racer.trackT=typeof raw.trackT==='number'&&Number.isFinite(raw.trackT)?((raw.trackT%1)+1)%1:null;racer.lapTimeMs=nvNumber(raw.lapTimeMs,Math.max(0,nvNumber(snapshot.elapsedMs)-nvNumber(raw.lapStartedMs)));racer.bestLapMs=raw.bestLapMs==null?null:nvNumber(raw.bestLapMs);racer.lastLapMs=raw.lastLapMs==null?null:nvNumber(raw.lastLapMs);racer.lastProcessedSeq=nvNumber(raw.lastProcessedSeq);
+          racer.lap=nvNumber(raw.lap,1,1,21);racer.completedLaps=nvNumber(raw.completedLaps);racer.progress=nvNumber(raw.progress);racer.finished=!!raw.finished;racer.dnf=!!raw.dnf;racer.finishTime=nvNumber(raw.finishTimeMs);racer.serverPosition=nvNumber(raw.position,0,0,64);racer.connected=raw.connected!==false;racer.ghost=!!raw.ghost;racer.trackIdx=Math.round(nvNumber(raw.trackIdx,0,0,CURVE_SAMPLES-1));racer.trackT=typeof raw.trackT==='number'&&Number.isFinite(raw.trackT)?(currentCircuit().open?raw.trackT:((raw.trackT%1)+1)%1):null;racer.lapTimeMs=nvNumber(raw.lapTimeMs,Math.max(0,nvNumber(snapshot.elapsedMs)-nvNumber(raw.lapStartedMs)));racer.bestLapMs=raw.bestLapMs==null?null:nvNumber(raw.bestLapMs);racer.lastLapMs=raw.lastLapMs==null?null:nvNumber(raw.lastLapMs);racer.lastProcessedSeq=nvNumber(raw.lastProcessedSeq);
           racer.visual.root.userData.ghost=racer.ghost;racer.visual.root.position.copy(racer.pos);racer.visual.root.rotation.y=racer.heading+racer.driftAngle*.55;
         }
         if(ids.size){for(const racer of allRacers)if(!ids.has(racer.id))disposeVehicle(racer.visual);allRacers=allRacers.filter(r=>ids.has(r.id));}

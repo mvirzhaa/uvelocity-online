@@ -1,0 +1,135 @@
+{
+  "id": "honda-crv-rs",
+  "file": "/game/assets/cars/honda-crv-rs.glb",
+  "bytes": 6028536,
+  "triangles": 143852,
+  "meshCount": 40,
+  "nodeCount": 49,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "crv_satin_graphite",
+    "crv_chrome",
+    "brake_caliper",
+    "paint_body",
+    "crv_window_rubber",
+    "glass",
+    "crv_moulded_cladding",
+    "stripe_accent",
+    "light_front",
+    "crv_hybrid_badge_blue",
+    "crv_rs_badge_red",
+    "crv_lamp_housing",
+    "crv_headlamp_reflector",
+    "crv_clear_lens",
+    "light_rear",
+    "interior_seat"
+  ],
+  "bounds": {
+    "min": [
+      -1.0980000495910645,
+      -9.536743172944284e-9,
+      -2.3863935470581055
+    ],
+    "max": [
+      1.0980000495910645,
+      1.8476442098617554,
+      2.390615940093994
+    ]
+  },
+  "dimensions": [
+    2.196000099182129,
+    1.8476442193984985,
+    4.7770094871521
+  ],
+  "provenance": "Original UVelocity reference-based recreation using three user-supplied blue Honda CR-V images dated 23 November 2026; not manufacturer CAD or a scan.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-crv.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "displayName": "Honda CR-V RS e:HEV",
+  "revision": "suv-expansion-1.5.0",
+  "wheelRadius": 0.365,
+  "wheelWidth": 0.245,
+  "wheelCenters": {
+    "FL": [
+      0.805,
+      0.365,
+      1.4500000000000002
+    ],
+    "FR": [
+      -0.805,
+      0.365,
+      1.4500000000000002
+    ],
+    "RL": [
+      0.805,
+      0.365,
+      -1.25
+    ],
+    "RR": [
+      -0.805,
+      0.365,
+      -1.25
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.8,
+      1.036,
+      2.25540255865772
+    ],
+    [
+      0.8,
+      1.036,
+      2.25540255865772
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      -0.668,
+      0.344,
+      -2.38
+    ],
+    [
+      0.668,
+      0.344,
+      -2.38
+    ]
+  ],
+  "tail": -2.38,
+  "exhaustX": 0.668,
+  "exhaustY": 0.344,
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "features": [
+    "continuous curved roof crown and rolled pillars",
+    "open primary nose behind dark bumper intakes",
+    "sixth-generation blue reference silhouette",
+    "open wheel arches",
+    "paired-spoke RS alloys",
+    "hexagonal diamond grille",
+    "Honda hybrid H emblem",
+    "slim LED headlights",
+    "three side-glass apertures",
+    "thin chrome window surround",
+    "low roof rails",
+    "roof spoiler and sharkfin",
+    "L-shaped wraparound rear lamps",
+    "recessed tailgate registration pocket",
+    "twin trapezoid exhaust finishers"
+  ],
+  "cockpitEye": [
+    -0.34,
+    1.46,
+    0.3
+  ],
+  "length": 4.7770094871521
+}

@@ -2,7 +2,7 @@
 
 ## Yang dipertahankan
 
-UVelocity mempertahankan delapan model kendaraan dan tiga lingkungan dari versi World Tour. Versi 1.1 menambahkan tujuh rekonstruksi kendaraan; versi **1.3.0** memperbarui dua di antaranya sesuai foto terbaru (Koenigsegg Regera dan Hennessey Venom F5) serta menambahkan **Isuzu Panther Grand Touring**. Versi **1.3.1** membangun ulang geometri Panther berdasarkan empat foto pengguna. Versi **1.4.0** mempertahankan seluruh 16 GLB dari 1.3.1 dan memperbarui lingkungan bengkel menjadi futuristis. Total katalog tetap **16 model 3D**, dengan jumlah berkas GLB **63.484.360 byte** (sekitar **63,5 MB**) sebelum kompresi transfer. Semua GLB disajikan sebagai aset statis terpisah di `public/game/assets/cars/`.
+UVelocity mempertahankan delapan model kendaraan dan tiga lingkungan dari versi World Tour. Versi 1.1 menambahkan tujuh rekonstruksi kendaraan; versi **1.3.0** memperbarui dua di antaranya sesuai foto terbaru (Koenigsegg Regera dan Hennessey Venom F5) serta menambahkan **Isuzu Panther Grand Touring**. Versi **1.3.1** membangun ulang geometri Panther berdasarkan empat foto pengguna. Versi **1.4.0** mempertahankan seluruh 16 GLB dari 1.3.1 dan memperbarui lingkungan bengkel menjadi futuristis. Pada versi **1.5.0**, empat model baru menambah katalog menjadi **20 model 3D**. Seluruh 16 GLB dari 1.4.0 dipertahankan byte demi byte. Jumlah ukuran seluruh GLB sebelum kompresi transfer dicatat pada tabel verifikasi rilis. Semua GLB disajikan sebagai aset statis terpisah di `public/game/assets/cars/`.
 
 **Lima belas GLB dari paket 1.3.0 dipertahankan byte demi byte.** Revisi 1.3.1 mengganti hanya model Panther. Modul arsitektur kota, bioma pantai dan gunung es, aksesori Polisi 77, serta model cadangan juga tetap identik. Sebagai riwayat, revisi 1.3.0 mempertahankan 13 GLB dari 1.2.0: delapan model World Tour (Veloce R, Apex GT, Cinder V8, Kaze Rally, Aventador, Skyline R34, BRZ, Veyron Polisi 77), empat model BMW/Mercedes, dan Batmobile; dua hypercar direvisi dan Panther ditambahkan pada versi tersebut. `tests/renderer/asset-hashes.json` mencatat identitas seluruh aset.
 
@@ -10,7 +10,7 @@ Three.js r128 dan GLTFLoader disajikan dari `public/game/vendor/`. Tidak ada CDN
 
 Kredit pencipta model dan lisensinya tetap tersedia dalam halaman kredit aplikasi serta `public/game/assets/CREDITS.txt`. Lisensi Three.js tersedia di direktori vendor.
 
-## Delapan rekonstruksi kendaraan tambahan
+## Delapan rekonstruksi sebelum 1.5.0
 
 Delapan model berikut dibuat dari geometri asli untuk UVelocity dengan mengacu pada gambar pengguna. Model ini **bukan mesh resmi pabrikan, hasil pemindaian, atau aset yang diambil dari permainan lain**. Katalog menandainya sebagai `reference-recreation`; GLB dan metadata pembuatannya juga menyimpan asal-usul tersebut.
 
@@ -32,6 +32,31 @@ Geometri dibangun menggunakan helper pada `scripts/modeling-kit.cjs` dan script 
 Empat roda dan dua pivot kemudi diekspor sebagai node terpisah. Roda kustom tetap diukur dari ban model masing-masing; kaliper belakang pada model tambahan disimpan pada axle yang tidak ikut body roll. Titik lampu dan exhaust berasal dari metadata model, termasuk exhaust tengah tunggal untuk model yang memerlukannya. Jarak kamera bengkel dan thumbnail bertambah untuk model panjang; framing delapan model lama tetap sama.
 
 Ukuran, top speed, akselerasi, dan handling dalam aplikasi merupakan data visual atau keseimbangan permainan. Angka performa tersebut tidak disajikan sebagai pengukuran kendaraan produksi atau homologasi balap.
+
+## Empat kendaraan baru 1.5.0
+
+Model berikut adalah geometri asli yang dibangun dari gambar pengguna. Foto kartu disertakan terpisah di `public/vehicle-photos/`; foto itu tidak menggantikan model yang diputar di bengkel dan dipakai saat balapan.
+
+| ID | Sumber pembentuk | Detail referensi utama |
+| --- | --- | --- |
+| `honda-crv-rs` | `scripts/build-crv.cjs` | Foto biru depan/samping/belakang: grille hitam, lampu depan tipis, kaca kuarter panjang, lampu belakang tinggi berbentuk L, spoiler dan roda gelap |
+| `mitsubishi-pajero-sport` | `scripts/build-pajero.cjs` | Bodi hitam, grille krom, bumper baja depan/belakang, kait pemulihan merah, ban tebal, pijakan samping dan lampu belakang vertikal |
+| `toyota-fortuner` | `scripts/build-fortuner.cjs` | Foto hitam GR Sport: grille bertingkat, aksen bumper diagonal, lampu depan menyapu sudut, garis kaca belakang naik, lampu belakang mendatar dan skid trim |
+| `toyota-innova-zenix` | `scripts/build-zenix.cjs` | Bodi putih/perak MPV, grille heksagonal besar, lampu depan lebar, tiga bagian kaca samping, spoiler serta lampu belakang mendatar berbentuk panah |
+
+Keempat aset mempunyai pintu/kaca terpisah secara visual, empat node roda, dua pivot kemudi, lampu depan/belakang, serta titik efek berdasarkan metadata. Material cat bodi, pelek, kaca dan cladding tetap terpisah. Pemasangan paket pelek, pengecatan pelek bawaan, lima desain striping dan kokpit mengikuti jalur renderer yang sama dengan kendaraan lama. Bodi tetap merupakan interpretasi geometri untuk game; bagian yang tidak tampak pada foto bukan pengukuran CAD.
+
+Render inspeksi **depan, belakang dan samping** dibuat langsung dari GLB yang dikirim menggunakan `scripts/render-vehicle-previews.py` dengan Blender Cycles CPU. Kamera dan pencahayaan studio berbeda dari garasi Three.js. Pemeriksaan ini membantu menemukan panel intake yang tertutup bodi, trim yang berjarak dari permukaan, ujung lampu yang keluar dari kap, dan hubungan atap/pilar; bagian-bagian tersebut dirapikan pada model yang disertakan.
+
+Keempat mobil memakai profil audio sintesis tersendiri. Rasio transmisi tambahan dapat diberikan per profil; dua hybrid memakai progresi suara tanpa perpindahan gigi bertingkat dan Pajero memakai delapan rasio virtual. Ini penyetelan audio permainan, bukan rekaman atau klaim performa kendaraan produksi. Enam belas profil lama mempertahankan perilaku sebelumnya.
+
+## Lintasan drag 2 km
+
+`public/game/assets/drag-strip.js` membangun arena sebagai geometri Three.js asli: aspal lurus, 15 lajur, grid, gap staging, gantry START/FINISH, papan jarak, lampu, pembatas, paddock, serta area pengereman. Titik timing berjarak tepat **2.000 m**; grid 8,5 m sebelum START dan runout **700 m** sesudah FINISH tidak mengubah panjang garis tengah yang dinilai. Peta dibuat terbuka; tidak ada segmen penghubung kembali ke start.
+
+Lebar aspal **45 m** menyediakan 15 lajur dengan jarak tengah **3 m**, sehingga seluruh peserta menempuh jarak start yang sama. Geometri jalan mencakup staging 100 m sampai akhir runout. Kualitas rendah menyembunyikan detail paddock, dan pilihan suasana tetap memengaruhi lampu. Pengujian CPU mencatat **148 mesh / 50.898 segitiga setelah memperhitungkan instance**; angka tersebut bukan benchmark GPU atau FPS. Sumber daya milik arena dibuang ketika lintasan diganti.
+
+Proyeksi, checkpoint, reset dan gerak finis memakai identitas track terbuka yang sama pada server dan prediksi klien. Posisi sesudah FINISH tetap pada runout dan melambat; tidak ada teleportasi akibat modulo lap. Tiga sirkuit lama tetap tertutup. Label hasil memakai waktu finish untuk drag, sedangkan sirkuit tetap mempunyai lap terbaik.
 
 ## Rebuild Panther 1.3.1
 
@@ -149,7 +174,7 @@ Ketika memakai Hood atau Dashboard, visibilitas assembly eksterior pemain disimp
 
 Selama `prayer_pause` dan `resume_countdown`, tombol C, tombol kamera, API pemilihan kamera, dan geser pandangan dikunci. Kokpit, sudut setir, serta posisi kamera yang tersimpan tetap digambar; tidak ada pembangunan ulang scene. Pemain yang menyambung kembali tetap dapat menampilkan snapshot jeda dan memenuhi barrier frame. Setelah fase `racing` diterima, pilihan kamera kembali dapat digunakan. Keluar balapan mengembalikan keadaan kamera ke Chase.
 
-Uji portabel memeriksa geometri kokpit keenam belas model, posisi mata, setir di dalam frustum, arah putaran, batas sudut, koridor kaca depan melalui ray casting pada rasio 16:9, 4:3, dan 9:16, serta pelepasan sumber daya. Uji integrasi renderer memeriksa snapshot kemudi, keyboard/tombol/API kamera, pemulihan eksterior, near clip, loading barrier pada interior, dan pembekuan dashboard ketika jeda salat. Pemeriksaan tersebut memvalidasi struktur dan perilaku renderer; hasil kualitas pencahayaan/piksel memerlukan penilaian WebGL di browser nyata.
+Uji portabel memeriksa geometri kokpit seluruh dua puluh model, posisi mata, setir di dalam frustum, arah putaran, batas sudut, koridor kaca depan melalui ray casting pada rasio 16:9, 4:3, dan 9:16, serta pelepasan sumber daya. Uji integrasi renderer memeriksa snapshot kemudi, keyboard/tombol/API kamera, pemulihan eksterior, near clip, loading barrier pada interior, dan pembekuan dashboard ketika jeda salat. Pemeriksaan tersebut memvalidasi struktur dan perilaku renderer; hasil kualitas pencahayaan/piksel memerlukan penilaian WebGL di browser nyata.
 
 ## Batas antara renderer dan permainan online
 

@@ -1,6 +1,6 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import type {PrayerStatus} from '../../shared/prayer.js';
-import type { BeginRaceInput, FrozenLoadout, LoadoutSelection, RaceResult, RaceRuleset, RaceSettlement, SessionUser } from '../../shared/types.js';
+import type { BeginRaceInput, FrozenLoadout, LoadoutSelection, RaceResult, RaceRuleset, RaceSettlement, SessionUser, VehicleRestriction } from '../../shared/types.js';
 
 /** Only trusted server closures may provide these services. Never merge them
  * into onCreate options, which are controlled by a matchmaking client. */
@@ -10,6 +10,7 @@ export interface RealtimeServices {
   /** Personal prayer data remains private; rooms publish only safe event labels. */
   gameplayAccess(userId:string):Promise<PrayerStatus>;
   resolveLoadout(userId:string,selection:LoadoutSelection,rulesetId?:string):Promise<FrozenLoadout>;
+  resolveVehicleRestriction(categoryId:string|null):Promise<VehicleRestriction>;
   getActiveRuleset():Promise<RaceRuleset>;
   beginRace(input:BeginRaceInput):Promise<unknown>;
   finalizeRace(result:RaceResult):Promise<RaceSettlement>;

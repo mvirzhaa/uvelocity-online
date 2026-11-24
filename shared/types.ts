@@ -1,7 +1,7 @@
 /** Wire and simulation contracts. This module has no browser or server imports. */
-export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze', 'bmw-hybrid-v8', 'bmw-m4-gt4', 'amg-gt4', 'sls-amg-gt3', 'batmobile-1989', 'jesko-absolut', 'venom-f5', 'panther-grand-touring'] as const;
+export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze', 'bmw-hybrid-v8', 'bmw-m4-gt4', 'amg-gt4', 'sls-amg-gt3', 'batmobile-1989', 'jesko-absolut', 'venom-f5', 'panther-grand-touring', 'honda-crv-rs', 'mitsubishi-pajero-sport', 'toyota-fortuner', 'toyota-innova-zenix'] as const;
 export type CarId = typeof CAR_IDS[number];
-export const CIRCUIT_IDS = ['city', 'beach', 'glacier'] as const;
+export const CIRCUIT_IDS = ['city', 'beach', 'glacier', 'drag-2km'] as const;
 export type CircuitId = typeof CIRCUIT_IDS[number];
 export type Finish = 'gloss' | 'metallic' | 'matte';
 export const STRIPE_IDS = ['none','twin-racing','offset','side-sweep','circuit','heritage'] as const;
@@ -85,6 +85,15 @@ export interface RoomConfig {
   maxHumans: number;
   difficulty: Difficulty;
   collisionMode: CollisionMode;
+  /** null/omitted accepts every vehicle the participant can access. */
+  vehicleCategoryId?: string | null;
+}
+/** Captured from the admin catalog when a room is created. Later category
+ * edits never silently change eligibility for people already in that room. */
+export interface VehicleRestriction {
+  categoryId: string | null;
+  categoryName: string | null;
+  allowedCarIds: readonly CarId[];
 }
 export interface PhysicsConfig {
   tickRate: number;
@@ -205,6 +214,8 @@ export interface RoomSnapshot {
   loadingDeadline: number | null;
   prayerPause:RoomPrayerPause|null;
   config: RoomConfig;
+  /** Older protocol-1 clients may not include this field in cached snapshots. */
+  vehicleRestriction?: VehicleRestriction;
   rulesetVersion: string | null;
   trackVersion: string;
   physics: PhysicsConfig;
@@ -234,6 +245,7 @@ export interface BeginRaceInput {
   roomId: string;
   inviteCode: string;
   config: RoomConfig;
+  vehicleRestriction?: VehicleRestriction;
   rulesetVersion: string;
   createdAt: string;
   scheduledStartAt?: string;

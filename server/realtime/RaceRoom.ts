@@ -5,7 +5,7 @@ import { CAR_NAMES } from '../../shared/catalog.js';
 import { DEFAULT_PHYSICS, freezeLoadout, validateRoomConfig } from '../../shared/config.js';
 import { createRacer, sortRacers } from '../../shared/simulation.js';
 import { TRACK_VERSION } from '../../shared/track.js';
-import { CAR_IDS, STRIPE_IDS, type BeginRaceInput, type FrozenLoadout, type LoadoutSelection, type RacePhase, type RaceResult, type RaceSettlement, type RoomConfig, type RoomMember, type RoomSnapshot, type SessionUser, type RoomPrayerPause } from '../../shared/types.js';
+import { CAR_IDS, STRIPE_IDS, type BeginRaceInput, type CarId, type FrozenLoadout, type LoadoutSelection, type RacePhase, type RaceResult, type RaceSettlement, type RoomConfig, type RoomMember, type RoomSnapshot, type SessionUser, type RoomPrayerPause, type VehicleRestriction } from '../../shared/types.js';
 import type {PrayerStatus} from '../../shared/prayer.js';
 import type { RealtimeOptions, RealtimeServices } from './contracts.js';
 import { RaceRuntime } from './RaceRuntime.js';
@@ -16,7 +16,7 @@ interface PendingStart {
   raceId:string;token:string;roster:string[];deadline:number;input:BeginRaceInput|null;
   acknowledging:Set<string>;committing:boolean;persisted:boolean;cancelled:boolean;abortPromise?:Promise<unknown>;
 }
-interface InviteLookup { roomId:string;inviteCode:string;phase:RacePhase;config:RoomConfig;humans:number;joinable:boolean }
+interface InviteLookup { roomId:string;inviteCode:string;phase:RacePhase;config:RoomConfig;vehicleRestriction:VehicleRestriction;humans:number;joinable:boolean }
 
 function headersRecord(headers:Headers):IncomingHttpHeaders {
   return Object.fromEntries(headers.entries());
@@ -36,7 +36,7 @@ function selection(value:unknown):LoadoutSelection {
 }
 function configFrom(value:Record<string,unknown>):RoomConfig {
   const config:Partial<RoomConfig>={};
-  for(const key of['circuit','laps','bots','maxHumans','difficulty','collisionMode']as const)if(value[key]!==undefined)(config as Record<string,unknown>)[key]=value[key];
+  for(const key of['circuit','laps','bots','maxHumans','difficulty','collisionMode','vehicleCategoryId']as const)if(value[key]!==undefined)(config as Record<string,unknown>)[key]=value[key];
   try{return validateRoomConfig(config);}catch(error){throw new ServerError(400,(error as Error).message);}
 }
 function makeCode():string {
@@ -71,11 +71,17 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
   const rooms=new Map<string,RaceRoom>();
   const now=options.now??Date.now;
   const reconnectSeconds=options.reconnectSeconds??20,countdownMs=options.countdownMs??3000,loadingTimeoutMs=options.loadingTimeoutMs??45000;
+  async function resolveSelected(userId:string,chosen:LoadoutSelection,version?:string){
+    const resolved=freezeLoadout(await services.resolveLoadout(userId,chosen,version));
+    if(resolved.carId!==chosen.carId)throw new ServerError(409,'LOADOUT_REJECTED: Kendaraan tidak cocok dengan konfigurasi tersimpan.');
+    return resolved;
+  }
   class RaceRoom extends Room {
     // Up to120 fixed-step inputs plus ping/sync and occasional UI controls.
     maxMessagesPerSecond=180;
     patchRate=null;
     private config!:RoomConfig;
+    private vehicleRestriction!:VehicleRestriction;
     private phase:RacePhase='lobby';
     private inviteCode='';
     private members=new Map<string,Entry>();
@@ -113,13 +119,21 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
       if(!user)throw new ServerError(401,'Tiket balapan telah kedaluwarsa atau dipakai.');
       const access=await services.gameplayAccess(user.id);
       if(!access.allowed)throw new ServerError(423,'PRAYER_BREAK: '+access.message);
-      const loadout=freezeLoadout(await services.resolveLoadout(user.id,selection(raw.loadout??raw)));
+      const loadout=await resolveSelected(user.id,selection(raw.loadout??raw));
       // Retained only in Colyseus server-side auth data; never placed in a
       // snapshot or matchmaking response. Reconnect rechecks this same session.
       return{user,loadout,sessionHeaders:{cookie:requestHeaders.cookie}};
     }
     async onCreate(raw:Record<string,unknown>){
       this.config=configFrom(raw);this.maxClients=this.config.maxHumans;
+      try{
+        const restriction=await services.resolveVehicleRestriction(this.config.vehicleCategoryId??null);
+        if(restriction.categoryId!==(this.config.vehicleCategoryId??null)||!restriction.allowedCarIds.length||restriction.allowedCarIds.some(id=>!CAR_IDS.includes(id)))throw new Error('Kategori tidak memiliki daftar kendaraan valid.');
+        this.vehicleRestriction=Object.freeze({...restriction,allowedCarIds:Object.freeze([...new Set(restriction.allowedCarIds)])});
+      }catch(error){
+        const failure=error as {status?:number;code?:string;message?:string};
+        throw new ServerError(failure.status??400,(failure.code??'VEHICLE_CATEGORY_UNAVAILABLE')+': '+(failure.message??'Kategori kendaraan tidak tersedia.'));
+      }
       do{this.inviteCode=makeCode();}while(rooms.has(this.inviteCode));
       rooms.set(this.inviteCode,this);
       await this.setPrivate(true);await this.setMetadata({inviteCode:this.inviteCode,circuit:this.config.circuit});
@@ -149,13 +163,17 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
       if(!access.allowed)throw new ServerError(423,'PRAYER_BREAK: '+access.message);
       if(this.phase!=='lobby'||this.prayerPause)throw new ServerError(403,'Persiapan room sudah dimulai.');
       if([...this.members.values()].some(member=>member.userId===entry.user.id))throw new ServerError(409,'Akun ini sudah berada di room. Gunakan sambung ulang.');
+      this.assertVehicleAllowed(entry.loadout.carId);
       if(!this.hostId)this.hostId=client.sessionId;
       this.members.set(client.sessionId,{id:client.sessionId,userId:entry.user.id,name:entry.user.displayName,host:client.sessionId===this.hostId,ready:false,assetsLoaded:false,arenaReady:false,connected:true,loadout:entry.loadout,selection:selection(entry.loadout)});
       this.rememberGameplay(client.sessionId,access,checkedAt);
       this.lastActivity=now();this.publish();
     }
     onDrop(client:Client){
-      const member=this.members.get(client.sessionId);if(member)member.connected=false;
+      // Rejected onJoin calls are also dropped by the transport. They were
+      // never participants and must not reserve a reconnection seat or cancel
+      // another participant's pending start.
+      const member=this.members.get(client.sessionId);if(!member)return;member.connected=false;
       if(this.prayerPause){this.prayerPause.readyIds=this.prayerPause.readyIds.filter(id=>id!==client.sessionId);this.prayerPause.resumeAt=null;}
       if(this.pendingStart&&!this.prayerPause)this.cancelStart(this.pendingStart,'START_DISCONNECTED','Seorang pemain terputus sebelum balapan dimulai. Kembali ke lobi dan tunggu semua pemain siap.');
       this.runtime?.setConnected(client.sessionId,false);this.publish();
@@ -164,7 +182,17 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
     }
     async onReconnect(client:Client){
       if(!await this.checkSession(client))return;
-      const member=this.members.get(client.sessionId);if(member)member.connected=true;
+      const member=this.members.get(client.sessionId);
+      if(member){
+        try{
+          this.assertVehicleAllowed(member.selection.carId);this.assertVehicleAllowed(member.loadout.carId);
+          if(this.phase==='lobby'){const loadout=await resolveSelected(member.userId,member.selection);this.assertVehicleAllowed(loadout.carId);member.loadout=loadout;}
+        }catch{
+          this.blockedSessions.add(client.sessionId);this.runtime?.markDnf(client.sessionId);
+          this.error(client,'LOADOUT_REJECTED','Kendaraan tidak lagi dapat digunakan dalam room ini.');client.leave(4003,'Vehicle access changed');return;
+        }
+        member.connected=true;
+      }
       this.runtime?.setConnected(client.sessionId,true);
       if(this.prayerPause){this.prayerPause.readyIds=this.prayerPause.readyIds.filter(id=>id!==client.sessionId);this.prayerPause.resumeAt=null;}
       // Existing participants reconnect into their paused room even while their
@@ -172,6 +200,7 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
       await this.checkGameplay(client,true);this.lastActivity=now();this.publish();this.sendResult(client);
     }
     onLeave(client:Client){
+      if(!this.members.has(client.sessionId))return;
       if(this.pendingStart&&!this.prayerPause)this.cancelStart(this.pendingStart,'START_DISCONNECTED','Seorang pemain keluar sebelum balapan dimulai. Semua pemain kembali ke lobi.');
       if(this.prayerPause){
         this.prayerPause.requiredIds=this.prayerPause.requiredIds.filter(id=>id!==client.sessionId);this.prayerPause.readyIds=this.prayerPause.readyIds.filter(id=>id!==client.sessionId);
@@ -196,16 +225,23 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
       if(!pending&&this.raceId&&!this.settlementSaved&&this.phase!=='settling')await services.abortRace?.(this.raceId,'room_disposed').catch(error=>services.log?.('Abort race failed',error));
     }
     onUncaughtException(error:Error,method:string){
+      // Colyseus also wraps deliberately rejected admissions. One visitor's
+      // wrong category must not abort the room for its admitted participants.
+      const cause=error.cause;
+      if(['onCreate','onAuth','onJoin'].includes(method)&&cause instanceof ServerError&&cause.code>=400&&cause.code<500)return;
       services.log?.('Realtime exception in '+method,error);void this.abort('Gangguan server. Balapan dibatalkan.');
     }
     private visiblePhase():RacePhase{return this.prayerPause?(this.prayerPause.resumeAt===null?'prayer_pause':'resume_countdown'):this.phase;}
-    lookup():InviteLookup{return{roomId:this.roomId,inviteCode:this.inviteCode,phase:this.visiblePhase(),config:this.config,humans:this.members.size,joinable:!this.prayerPause&&this.phase==='lobby'&&this.members.size<this.maxClients};}
+    lookup():InviteLookup{return{roomId:this.roomId,inviteCode:this.inviteCode,phase:this.visiblePhase(),config:this.config,vehicleRestriction:this.vehicleRestriction,humans:this.members.size,joinable:!this.prayerPause&&this.phase==='lobby'&&this.members.size<this.maxClients};}
     private snapshot():RoomSnapshot{
-      return{protocol:1,roomId:this.roomId,inviteCode:this.inviteCode,raceId:this.raceId,phase:this.visiblePhase(),tick:this.runtime?.tick??0,serverTime:now(),elapsedMs:this.runtime?.elapsedMs??0,startAt:this.startAt,startToken:this.startToken,loadingDeadline:this.phase==='loading'?this.pendingStart?.deadline??null:null,prayerPause:this.prayerPause?structuredClone(this.prayerPause):null,config:this.config,rulesetVersion:this.rulesetVersion,trackVersion:TRACK_VERSION,physics:this.runtime?.physics??{...DEFAULT_PHYSICS},hostId:this.hostId,
+      return{protocol:1,roomId:this.roomId,inviteCode:this.inviteCode,raceId:this.raceId,phase:this.visiblePhase(),tick:this.runtime?.tick??0,serverTime:now(),elapsedMs:this.runtime?.elapsedMs??0,startAt:this.startAt,startToken:this.startToken,loadingDeadline:this.phase==='loading'?this.pendingStart?.deadline??null:null,prayerPause:this.prayerPause?structuredClone(this.prayerPause):null,config:this.config,vehicleRestriction:this.vehicleRestriction,rulesetVersion:this.rulesetVersion,trackVersion:TRACK_VERSION,physics:this.runtime?.physics??{...DEFAULT_PHYSICS},hostId:this.hostId,
         members:[...this.members.values()].map(({selection:_selection,...member})=>member),racers:this.runtime?.snapshots()??[],...(this.settlementError?{settlementError:this.settlementError}:{})};
     }
     private publish(){if(!this.disposed)this.broadcast('snapshot',this.snapshot());}
     private error(client:Client,code:string,message:string){client.send('room_error',{code,message});}
+    private assertVehicleAllowed(carId:CarId){
+      if(!this.vehicleRestriction.allowedCarIds.includes(carId))throw new ServerError(403,'VEHICLE_CATEGORY_RESTRICTED: Pilih kendaraan dari kategori '+(this.vehicleRestriction.categoryName??'yang diizinkan')+'.');
+    }
     private sendResult(client:Client){
       if(!this.result||!this.settlementSaved||!this.settlement)return;
       const member=this.members.get(client.sessionId);if(!member)return;
@@ -273,6 +309,7 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
       }
       if(this.phase!=='lobby'||this.pendingLoadouts.has(client.sessionId))return;
       const member=this.members.get(client.sessionId);if(!member)return;
+      if(input.ready===true){try{this.assertVehicleAllowed(member.selection.carId);this.assertVehicleAllowed(member.loadout.carId);}catch{this.error(client,'VEHICLE_CATEGORY_RESTRICTED','Kendaraan tidak sesuai kategori room.');return;}}
       if(input.ready===true&&!await this.checkGameplay(client,true))return;
       if(this.phase!=='lobby'||this.prayerPause||this.readyVersions.get(client.sessionId)!==version||this.pendingLoadouts.has(client.sessionId)||!member.connected)return;
       member.ready=input.ready===true;member.assetsLoaded=input.assetsLoaded===true;member.arenaReady=false;this.lastActivity=now();this.publish();
@@ -326,14 +363,15 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
       const member=this.members.get(client.sessionId);if(!member)return;
       this.readyVersions.set(client.sessionId,(this.readyVersions.get(client.sessionId)??0)+1);
       this.pendingLoadouts.add(client.sessionId);member.ready=false;member.assetsLoaded=false;member.arenaReady=false;
-      try{if(!await this.checkGameplay(client,true)||this.prayerPause)return;const chosen=selection(value),loadout=freezeLoadout(await services.resolveLoadout(member.userId,chosen));if(this.phase==='lobby'&&!this.prayerPause&&this.members.has(member.id)){member.selection=chosen;member.loadout=loadout;this.lastActivity=now();}}
-      catch{this.error(client,'LOADOUT_REJECTED','Akses kendaraan atau konfigurasi berubah. Gunakan mobil yang dapat diakses dan tampilan yang sudah dibayar.');}
+      try{if(!await this.checkGameplay(client,true)||this.prayerPause)return;const chosen=selection(value);this.assertVehicleAllowed(chosen.carId);const loadout=await resolveSelected(member.userId,chosen);this.assertVehicleAllowed(loadout.carId);if(this.phase==='lobby'&&!this.prayerPause&&this.members.has(member.id)){member.selection=chosen;member.loadout=loadout;this.lastActivity=now();}}
+      catch(error){if((error as Error).message.startsWith('VEHICLE_CATEGORY_RESTRICTED'))this.error(client,'VEHICLE_CATEGORY_RESTRICTED','Pilih kendaraan dari kategori '+this.vehicleRestriction.categoryName+'.');else this.error(client,'LOADOUT_REJECTED','Akses kendaraan atau konfigurasi berubah. Gunakan mobil yang dapat diakses dan tampilan yang sudah dibayar.');}
       finally{this.pendingLoadouts.delete(client.sessionId);this.publish();}
     }
     private async start(client:Client){
       if(client.sessionId!==this.hostId){this.error(client,'HOST_ONLY','Hanya pembuat room yang dapat memulai.');return;}
       if(this.phase!=='lobby'||this.prayerPause)return;
       const people=[...this.members.values()];
+      try{for(const member of people){this.assertVehicleAllowed(member.selection.carId);this.assertVehicleAllowed(member.loadout.carId);}}catch{this.error(client,'VEHICLE_CATEGORY_RESTRICTED','Kendaraan peserta tidak sesuai kategori room.');return;}
       if(!people.length||this.pendingLoadouts.size||people.some(member=>!member.ready||!member.assetsLoaded||!member.connected)){this.error(client,'NOT_READY','Semua pemain harus siap dan selesai memuat kendaraan.');return;}
       const pending:PendingStart={raceId:randomUUID(),token:randomUUID(),roster:people.map(member=>member.id),deadline:now()+loadingTimeoutMs,input:null,acknowledging:new Set(),committing:false,persisted:false,cancelled:false};
       this.pendingStart=pending;this.raceId=pending.raceId;this.startToken=pending.token;this.startAt=null;this.startedAt=null;
@@ -344,19 +382,19 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
         const access=await Promise.all(people.map(member=>{const present=this.clients.find(person=>person.sessionId===member.id);return present?this.checkGameplay(present,true):Promise.resolve(false);}));
         if(!this.isCurrentStart(pending))return;if(access.some(allowed=>!allowed))throw new Error('Gameplay access changed before start');
         const ruleset=await services.getActiveRuleset();if(!this.isCurrentStart(pending))return;this.rulesetVersion=ruleset.version;
-        const frozen=await Promise.all(people.map(async member=>({...member,loadout:freezeLoadout(await services.resolveLoadout(member.userId,member.selection,ruleset.version))})));
+        const frozen=await Promise.all(people.map(async member=>{this.assertVehicleAllowed(member.selection.carId);const loadout=await resolveSelected(member.userId,member.selection,ruleset.version);this.assertVehicleAllowed(loadout.carId);return{...member,loadout};}));
         if(!this.isCurrentStart(pending))return;
         if(frozen.some(member=>!this.members.get(member.id)?.connected))throw new Error('Participant left before arena preparation');
         const racers=frozen.map(member=>{this.members.get(member.id)!.loadout=member.loadout;return createRacer(member.id,member.name,member.loadout,member.userId);});
         const palette=['#ae3047','#86a8cf','#ba984d','#4d9b85','#bb704a','#6a71b8','#c8cfd3','#a68ab9','#79a34f','#ddbc65','#4686a0','#a35d73','#d3b89b','#688992'];
         for(let i=0;i<this.config.bots;i++){
-          const carId=CAR_IDS[i%CAR_IDS.length]!,stats=ruleset.cars[carId];
+          const allowed=this.vehicleRestriction.allowedCarIds,carId=allowed[i%allowed.length]!,stats=ruleset.cars[carId];
           if(!stats)throw new Error('Ruleset is missing a bot vehicle');
           racers.push(createRacer('bot_'+i,CAR_NAMES[carId]+' · BOT '+String(i+1).padStart(2,'0'),freezeLoadout({carId,color:palette[i]!,finish:'metallic',rimId:'stock',stats,tuningVersion:ruleset.version}),null,true));
         }
         for(let i=racers.length-1;i>0;i--){const j=randomInt(i+1);[racers[i],racers[j]]=[racers[j]!,racers[i]!];}
         this.runtime=new RaceRuntime(this.config,racers,ruleset.physics,options.inputTimeoutMs??400,options.maxRaceDurationMs);
-        pending.input={raceId:pending.raceId,roomId:this.roomId,inviteCode:this.inviteCode,config:this.config,rulesetVersion:ruleset.version,createdAt:new Date(now()).toISOString(),participants:racers.map(r=>({id:r.id,userId:r.userId,isBot:r.isBot,name:r.name,carId:r.loadout.carId,loadout:r.loadout}))};
+        pending.input={raceId:pending.raceId,roomId:this.roomId,inviteCode:this.inviteCode,config:this.config,vehicleRestriction:this.vehicleRestriction,rulesetVersion:ruleset.version,createdAt:new Date(now()).toISOString(),participants:racers.map(r=>({id:r.id,userId:r.userId,isBot:r.isBot,name:r.name,carId:r.loadout.carId,loadout:r.loadout}))};
         // The frozen scene is now sent to everyone, but no race row, clock,
         // countdown or input processing starts until every arena acknowledges.
         this.publish();

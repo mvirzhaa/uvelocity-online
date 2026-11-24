@@ -95,9 +95,10 @@ ORIGINAL REFERENCE-BASED EXPANSION VEHICLES
 
 BMW M Hybrid V8; BMW M4 GT4 F82; Mercedes-AMG GT4;
 Mercedes-Benz SLS AMG GT3; Batmobile 1989; Koenigsegg Regera;
-Hennessey Venom F5; Isuzu Panther Grand Touring.
+Hennessey Venom F5; Isuzu Panther Grand Touring; Honda CR-V RS e:HEV;
+Mitsubishi Pajero Sport; Toyota Fortuner GR Sport; Toyota Kijang Innova Zenix Hybrid.
 
-These eight meshes are original UVelocity geometry authored from the supplied
+These twelve meshes are original UVelocity geometry authored from the supplied
 visual references using scripts/modeling-kit.cjs and the vehicle build scripts.
 They are reference-based game recreations, not manufacturer meshes, scans,
 or geometry copied from another game. Brand/vehicle names identify the visual
@@ -109,3 +110,18 @@ geometric artwork. The five stripe patterns clip actual paint-surface triangles;
 no outside livery textures or manufacturer racing artwork are distributed.
 Additional engine profiles are game synthesis, not manufacturer recordings.
 The Batmobile profile is a fictional cinematic turbine interpretation.
+
+
+1.5.0 PHOTO REFERENCES AND DRAG WORLD
+
+Four bundled vehicle-card PNGs in public/vehicle-photos are the corresponding
+front photos supplied by the user for CR-V, Pajero Sport, Fortuner and Zenix.
+They are reference photographs, separate from the newly authored GLB geometry.
+The Honda model follows the blue front/side/rear references; the white older
+reference is not mixed into that body. The Fortuner uses the black GR Sport
+front/rear references; the white picture informs proportions only. Pajero
+retains the custom steel bumpers and recovery fittings shown in the photos.
+
+Drag Strip 2 KM is original procedural UVelocity geometry, including the
+straight pavement, start and finish gates, lane markings, distance signs,
+lighting and braking runout. No external track asset is included.

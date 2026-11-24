@@ -29,7 +29,7 @@ before(async()=>{
   await control.query(`CREATE SCHEMA ${schema}`);
   pool=new pg.Pool({connectionString,options:`-c search_path=${schema}`,max:12});
   const files=await migrate(pool);
-  assert.equal(files.length,14);
+  assert.equal(files.length,15);
   services=createServices(pool,{prayerNow:()=>new Date('2026-11-20T03:00:00.000Z')});
   alice=await services.accounts.register({email:'alice@example.test',displayName:'Alice Racer',password});
   bob=await services.accounts.register({email:'bob@example.test',displayName:'Bob Racer',password});
@@ -76,8 +76,8 @@ test('migrations are repeatable; seed is actual PostgreSQL and starter grant is 
   const count=await pool.query("SELECT count(*)::int n FROM wallet_entries WHERE user_id=$1 AND kind='starter'",[alice.user.id]);assert.equal(count.rows[0].n,1);
 });
 
-test('all16 cars match canonical arcade tuning and wheels stay cosmetic',async()=>{
-  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,16);assert.equal(catalog.wheels.length,4);
+test('all20 cars match canonical arcade tuning and wheels stay cosmetic',async()=>{
+  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,20);assert.equal(catalog.wheels.length,4);
   const rules=await services.economy.getActiveRuleset();
   assert.equal(rules.cars.brz.topSpeed,255);assert.equal(rules.cars.veyron77.zeroTo100,2.7);assert.equal(rules.cars.kaze.handling,1.16);
   assert(catalog.wheels.every((wheel:any)=>wheel.cosmeticOnly));
@@ -185,7 +185,7 @@ test('rim paint persists across sessions and snapshots without bypassing wheel o
 });
 
 test('published tuning is immutable, compare-and-swap protected and old versions remain usable',async()=>{
-  const old=await services.economy.getActiveRuleset();assert.equal(old.version,'3');
+  const old=await services.economy.getActiveRuleset();assert.equal(old.version,'4');
   const published=await services.admin.publishTuning(admin.id,{expectedVersion:old.version,carId:'brz',topSpeed:260,zeroTo100:5.5,handling:1.2,reason:'Test next-race balance update'});assert.equal(published.version,String(Number(old.version)+1));
   const next=await services.economy.getActiveRuleset();assert.equal(next.cars.brz.topSpeed,260);
   const frozen=await services.economy.resolveLoadout(alice.user.id,undefined,'1');assert.equal(frozen.stats.topSpeed,255);assert.equal(frozen.tuningVersion,'1');

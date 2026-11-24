@@ -7,6 +7,7 @@ const assert=require('node:assert/strict');
 const {verifyStripeSurface,verifyMaterialGroups}=require('./stripes.cjs');
 const {verifyCockpitGeometry}=require('./cockpit.cjs');
 const {verifyFinishFlow}=require('./finish.cjs');
+const {verifyDragStrip}=require('./drag.cjs');
 const {verifyStockRimPaint,verifyOnlineStockRimPaint}=require('./stock-rim-paint.cjs');
 const {verifyTouchControls}=require('./touch-controls.cjs');
 const {verifyVehicleExpansion}=require('./vehicle-expansion.cjs');
@@ -20,7 +21,8 @@ async function main(){
  const {parseHTML}=await import('linkedom');
  const expectedAssets=JSON.parse(fs.readFileSync(path.join(__dirname,'asset-hashes.json'),'utf8'));
  for(const [relative,expected]of Object.entries(expectedAssets.files)){const actual=require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(REPO,relative))).digest('hex');assert.equal(actual,expected,'Preserved asset changed: '+relative);}
- const finishOnly=process.argv.includes('--finish-only');
+ const dragOnly=process.argv.includes('--drag-only');
+ const finishOnly=process.argv.includes('--finish-only')||dragOnly;
  const stockPaintOnly=process.argv.includes('--stock-paint-only');
  const html=fs.readFileSync(process.argv.slice(2).find(value=>!value.startsWith('--'))||path.join(GAME_DIR,'game.html'),'utf8');
  const gameDir=GAME_DIR;
@@ -88,7 +90,7 @@ async function main(){
   vm.runInContext(script,context,{timeout:20000});
  }
  assert.ok(sourceGame,'Final HTML must contain its game script');
- const hook=`\nwindow.__qa={get state(){return GameState},get player(){return playerCar},get racers(){return allRacers},get inputs(){return Input},get settings(){return settings},get garage(){return garageCar},get clock(){return gameClock},get worldTime(){return worldElapsed},get particles(){return particles},get ready(){return gameReady},get scene(){return scene},get garageScene(){return garageScene},get garageCamera(){return garageCamera},get workshop(){return garageWorkshop},get online(){return onlineRender},get renderer(){return renderer},get camera(){return camera},get orbit(){return garageOrbit},get imported(){return window.NVImportedCars},get audio(){return audio},lapUpdate:updateLapProgress,resetGrid:resetGridPositions,advanceClock(ms){gameClock+=ms},get samples(){return CURVE_SAMPLES},get track(){return trackPoints}};\n`;
+ const hook=`\nwindow.__qa={get state(){return GameState},get player(){return playerCar},get racers(){return allRacers},get inputs(){return Input},get settings(){return settings},get garage(){return garageCar},get clock(){return gameClock},get worldTime(){return worldElapsed},get particles(){return particles},get ready(){return gameReady},get scene(){return scene},get garageScene(){return garageScene},get garageCamera(){return garageCamera},get workshop(){return garageWorkshop},get online(){return onlineRender},get renderer(){return renderer},get camera(){return camera},get orbit(){return garageOrbit},get imported(){return window.NVImportedCars},get audio(){return audio},rpm:computeVehicleRpm,lapUpdate:updateLapProgress,resetGrid:resetGridPositions,advanceClock(ms){gameClock+=ms},get samples(){return CURVE_SAMPLES},get track(){return trackPoints}};\n`;
  const end=sourceGame.lastIndexOf('})();');assert.ok(end>=0,'IIFE hook location');
  sourceGame=sourceGame.slice(0,end)+hook+sourceGame.slice(end);
  vm.runInContext(sourceGame,context,{timeout:20000});
@@ -126,16 +128,18 @@ async function main(){
  results.push('Showroom front/side/rear/cycle, explicit-only quality changes, dusk/night, credits and asset-ready API verified.');
  verifyMaterialGroups(THREE,window.NVStripes);
  const stats=[],stripeStats=[],cockpitStats=[],stockPaintStats=[];
- const carIds=['veloce','apex','cinder','kaze','aventador','skyline','brz','veyron77','bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5','panther-grand-touring'];
- assert.equal(window.NVGame.getCatalog().cars.length,16);await window.NVGame.ensureModels(carIds);
- const expansion=verifyVehicleExpansion({THREE,Imported:window.NVImportedCars,metadata:window.NV_MODEL_METADATA,Audio:window.NVEngineAudio});
- results.push('Vehicle expansion: closed Regera canopy versus open Venom cockpit, distinct front body surfaces, taller Panther MPV, finite loaded source geometry and matching effect anchors; diesel waveform has a four-cylinder firing harmonic.');
+ const carIds=['veloce','apex','cinder','kaze','aventador','skyline','brz','veyron77','bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5','panther-grand-touring','honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner','toyota-innova-zenix'];
+ assert.equal(window.NVGame.getCatalog().cars.length,20);await window.NVGame.ensureModels(dragOnly?['brz','veyron77']:carIds);
+ const expansion=dragOnly?null:verifyVehicleExpansion({THREE,Imported:window.NVImportedCars,metadata:window.NV_MODEL_METADATA,Audio:window.NVEngineAudio});
+ if(expansion)results.push('Vehicle expansion: distinct hypercar canopies, tall Panther and four family bodies, finite loaded geometry with matching effect anchors, and diesel/hybrid synthesis with a four-cylinder firing harmonic.');
  assert.equal(window.NVGame.getCatalog().stripes.length,6);
  for(const id of finishOnly||stockPaintOnly?[]:carIds){
   await window.NVGame.preview({carId:id,color:'#3366bb',finish:'metallic',rimId:'stock'});
   assert.equal(q.garage.modelId,id);assert.equal(q.garage.wheels.length,4);assert.equal(q.garage.frontPivots.length,2);
   const car=q.garage,stockNodes=[];
   assert.ok(window.NVEngineAudio.profiles[id],'Missing engine synthesis profile: '+id);assert.equal(q.audio.vehicleId,id);
+  if(['honda-crv-rs','toyota-innova-zenix'].includes(id))assert.equal(q.rpm(170).gear,'1','Hybrid sound must not invent stepped shifts: '+id);
+  if(id==='mitsubishi-pajero-sport')assert.equal(q.rpm(220).gear,'8','Pajero uses its own eight-speed audio progression');
   if(car.representation==='reference-recreation'){
    await window.NVGame.setCamera('side');frames(.05);q.garageCamera.updateMatrixWorld(true);
    const bb=new THREE.Box3().setFromObject(window.NVImportedCars.getTemplate(id));
@@ -164,12 +168,12 @@ async function main(){
   stockPaintStats.push(verifyStockRimPaint(THREE,car,window.NVWheels,window.NVImportedCars));
  }
  if(!finishOnly&&!stockPaintOnly){
-  results.push('All sixteen cars: dedicated sound profiles, extended-model camera framing, three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.');
+  results.push('All twenty cars: dedicated sound profiles, extended-model camera framing, three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.');
   results.push('Five vinyl patterns on every loaded car: paint-only clipping, every vertex within 1.52 mm of its source triangle, normals, one draw, material-group exclusion and clean removal.');
-  results.push('All sixteen fitted procedural cockpits including the higher right-side Panther seat: finite PBR geometry, driver seat and wheel in camera frustum, clear windshield rays at three aspect ratios, correct steering direction/clamp, source nodes untouched and owned geometry released.');
+  results.push('All twenty fitted procedural cockpits including the higher right-side family vehicle seats: finite PBR geometry, driver seat and wheel in camera frustum, clear windshield rays at three aspect ratios, correct steering direction/clamp, source nodes untouched and owned geometry released.');
  }
  if(stockPaintOnly)for(const id of carIds){await window.NVGame.preview({carId:id,color:'#3366bb',finish:'metallic',rimId:'stock',stockRimPainted:false});stockPaintStats.push(verifyStockRimPaint(THREE,q.garage,window.NVWheels,window.NVImportedCars));}
- if(stockPaintStats.length)results.push('All sixteen stock rims: legacy factory appearance, explicit same-default RGB paint, exact Veyron triangle material isolation, no tire/brake/body/texture mutations, per-car clone isolation, custom/stock/factory restoration and owned-resource disposal.');
+ if(stockPaintStats.length)results.push('All twenty stock rims: legacy factory appearance, explicit same-default RGB paint, exact Veyron triangle material isolation, no tire/brake/body/texture mutations, per-car clone isolation, custom/stock/factory restoration and owned-resource disposal.');
  const api=window.NVGame,inputs=[];api.on('input',value=>inputs.push(value));
  await api.configure({circuit:'beach',quality:'medium',online:true});await api.setLocalPlayer('me');
  await api.startRace({raceId:'test-race',config:{circuit:'beach',laps:3,bots:0},localRacerId:'me',loadouts:[{id:'me',name:'Driver',loadout:{carId:'brz',color:'#2255aa',finish:'metallic',rimId:'mesh',stripeId:'side-sweep',stripeColor:'#f4cb53',stats:{topSpeed:255,zeroTo100:5.6,handling:1.18}}},{id:'rival',name:'Rival',loadout:{carId:'veyron77',color:'#eeeeee',finish:'gloss',rimId:'six-spoke',stripeId:'heritage',stripeColor:'#235eac'}}]});
@@ -238,12 +242,13 @@ async function main(){
  const slowStart=api.startRace({raceId:'cancelled-slow-start',startToken:'old-token',config:{circuit:'beach'},localRacerId:'me',loadouts:[{id:'me',loadout:{carId:'brz'}}]});const slowStartCheck=assert.rejects(slowStart,{name:'AbortError'});await Promise.resolve();assert.equal(typeof finishSlowAsset,'function');assert.equal(api.getState().preparing,true);await api.stopRace();finishSlowAsset();await slowStartCheck;window.NVImportedCars.load=realLoad;assert.equal(api.getState().active,false);assert.equal(q.racers.length,0);
  results.push('Loading barrier: no ack without applied snapshot or visible scene frame, server-only countdown, motion stopped while loading, frame wait aborted on exit, stale slow model completion cannot reopen arena.');
  results.push(await verifyFinishFlow({THREE,api,q,frames,key,$}));
+ results.push(await verifyDragStrip({THREE,api,q,frames,$}));
  if(!finishOnly)results.push(await verifyOnlineStockRimPaint({api,q,frames,Wheels:window.NVWheels}));
 
  await api.configure({circuit:'glacier',previewOnly:true});assert.equal(q.settings.circuit,'glacier');frames(.05);await api.configure({circuit:'city',previewOnly:true});assert.equal(q.settings.circuit,'city');frames(.05);
  results.push('All three existing worlds switch through the public API.');
  assert.equal(errors.length,0,errors.join('\n'));
- results.unshift('SHA-256 integrity of sixteen GLBs: thirteen preserved sources, two reviewed hypercar revisions, one new Panther, and unchanged city/biome/police/fallback modules.');
+ results.unshift('SHA-256 integrity of the sixteen pre-existing GLBs and unchanged city/biome/police/fallback modules, plus reviewed new reference vehicles.');
  api.dispose();assert.equal(workshop.root.children.length,0);assert.equal(workshop.root.parent,null);for(const resource of workshopResources)assert.equal(workshopDisposals.get(resource),1,'Every owned workshop geometry/material/texture must dispose exactly once');
  console.log(JSON.stringify({verification:'CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering',passed:results,expansion,fittedModels:stats.map(item=>item.id),cockpits:cockpitStats,stockRimPaint:stockPaintStats,stripes:stripeStats,warnings:warnings.slice(0,12),errors},null,2));
 }

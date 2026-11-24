@@ -7,16 +7,26 @@
   const clamp=T.MathUtils.clamp;
   const RACE_CARS=new Set(['bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3']);
 
+  // Authored cabin fits for the reference SUVs/MPV. These are procedural game
+  // interiors, with right-hand steering and a seat height suited to each mesh.
+  const FAMILY_COCKPITS=Object.freeze({
+    'honda-crv-rs':{eye:[-.34,1.46,.30],headerLift:.22},
+    'mitsubishi-pajero-sport':{eye:[-.38,1.52,.24],headerLift:.28},
+    'toyota-fortuner':{eye:[-.36,1.50,.24],headerLift:.28},
+    'toyota-innova-zenix':{eye:[-.34,1.51,.36],headerLift:.23}
+  });
+
   function create(car){
     const id=car.modelId||car.model?.id||'brz';
     const dims=car.dimensions||[car.model?.width||1.85,1.36,car.model?.length||4.4];
     const race=RACE_CARS.has(id),prototype=id==='bmw-hybrid-v8',cinema=id==='batmobile-1989',mpv=id==='panther-grand-touring';
     // The MPV's outer bounds include its mirrors. Fit its right-hand driving
     // position to the narrower passenger cabin and the higher seating level.
-    const width=clamp((Number(dims[0])||1.85)*(mpv?.82:1),1.6,2.4),half=width*.43;
+    const family=FAMILY_COCKPITS[id];
+    const width=clamp((Number(dims[0])||1.85)*((mpv||family)?.82:1),1.6,2.4),half=width*.43;
     const eyeY=mpv?clamp((Number(dims[1])||2.05)*.73,1.42,1.52):clamp((Number(dims[1])||1.36)*.76,.88,1.13);
-    const eye=new T.Vector3(mpv?-half*.43:prototype?half*.31:half*.43,eyeY,mpv?.22:cinema?-.64:prototype?-.12:-.30);
-    const headerLift=mpv?.31:.53;
+    const eye=family?new T.Vector3(...family.eye):new T.Vector3(mpv?-half*.43:prototype?half*.31:half*.43,eyeY,mpv?.22:cinema?-.64:prototype?-.12:-.30);
+    const headerLift=family?.headerLift??(mpv?.31:.53);
     const root=new T.Group();root.name='UVelocity cockpit';root.userData.nvCockpit=true;
     root.userData.origin='UVelocity procedural cockpit; not a manufacturer interior';
     root.userData.vehicleId=id;

@@ -1,0 +1,28 @@
+/* Room rules stay readable in the existing compact neon panel. */
+.race-room-rules{display:grid;gap:7px;margin-bottom:12px}
+.race-room-rules .room-category{width:fit-content;max-width:100%;white-space:normal;overflow-wrap:anywhere;color:#9fe3ed;border-color:#3b7789;background:#113342}
+.race-car-choice{display:grid;gap:8px;margin-top:8px;min-width:0}
+.room-panel .race-car-choice .race-car-warning{color:#e9c281;line-height:1.6}
+.room-panel .race-car-choice select{max-width:100%;text-overflow:ellipsis}
+.race-distance{display:grid;align-content:center;gap:4px;padding:9px 11px;border:1px solid #3c7888;border-radius:6px;background:#153240}
+.race-distance small{font-size:8px;letter-spacing:.09em;color:#92bcc9}
+.race-distance strong{font-size:13px;color:#b2f2f6}
+.race-distance span{font-size:9px;color:#adc6d0}
+.circuit-art.drag-2km{background:linear-gradient(145deg,#164859,#122b3e)}
+.circuit-art.drag-2km:before{width:70%;height:100px;top:-25px;right:8%;border-width:0 2px;border-radius:0;transform:rotate(30deg)}
+.invite-preview{border:1px solid #3b6179;border-radius:7px;padding:14px;background:#132c3b}
+.invite-preview>b{display:block;margin-bottom:12px;font-size:15px;color:#e4f6fb}
+.invite-preview .race-room-rules{margin-bottom:8px}
+.invite-preview .text-button{margin-top:8px;font-size:11px;min-height:38px}
+@media(max-width:760px){
+ .room-panel .circuit-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .room-panel .circuit-option{display:flex;gap:10px;align-items:center;min-height:76px}
+ .room-panel .circuit-option .circuit-art{width:42px;min-width:42px;height:48px;margin:0}
+ .room-panel .circuit-option>span:nth-child(2){margin:0}
+ .room-panel .circuit-option>svg{right:4px;top:4px;width:14px;height:14px}
+ .room-panel .circuit-option b{font-size:11px;line-height:1.35}
+ .room-panel .circuit-option small{font-size:6px;line-height:1.5}
+ .race-distance strong{font-size:14px}
+ .race-distance span{font-size:10px;line-height:1.5}
+ .race-car-choice select{min-height:44px}
+}

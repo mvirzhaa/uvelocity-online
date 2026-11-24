@@ -31,12 +31,13 @@ let catalog={currency:'RP_GAME',currencyLabel:'Kredit game',rulesetVersion:'test
 catalog.cars[0].thumbnail={id:'12345678-1234-4234-8234-123456789abc',url:'/api/vehicle-thumbnails/12345678-1234-4234-8234-123456789abc',mimeType:'image/webp',bytes:12000,width:512,height:288};
 const appearance=(id,color,owned=true)=>({carId:id,rimId:'stock',color,finish:'metallic',rimColor:'#c7cdd4',stockRimPainted:false,stripeId:'none',stripeColor:'#ffffff',version:'1',owned,canCustomize:owned});
 let profile={user,wallet:{balance:'1000000',version:'1',currency:'RP_GAME'},inventory:{cars:['brz','bmw-m4-gt4'],wheels:['stock','six-spoke']},accessibleCars:['brz','bmw-m4-gt4','amg-gt4'],appearances:[appearance('brz','#2866b8'),appearance('bmw-m4-gt4','#eeeeee'),appearance('amg-gt4','#aaaaaa',false)],loadout:appearance('brz','#2866b8'),statistics:{races:0,wins:0,rewards:'0'}};
-const calls=[],quotes=new Map(),applied=new Map();let disconnectAfterFirstCommit=true,chargeCount=0,nextProfileResponse=null;
+const calls=[],quotes=new Map(),applied=new Map();let disconnectAfterFirstCommit=true,chargeCount=0,nextProfileResponse=null,inviteLookup=null;
 const copy=x=>structuredClone(x),ok=x=>new Response(JSON.stringify(x),{status:200,headers:{'Content-Type':'application/json'}}),fail=(code,message,status=409)=>new Response(JSON.stringify({error:{code,message}}),{status,headers:{'Content-Type':'application/json'}});
 globalThis.fetch=async(url,options={})=>{
  const path=String(url).replace('/api',''),method=options.method??'GET',body=options.body?JSON.parse(options.body):{},key=options.headers?.['Idempotency-Key'];calls.push({path,method,body:copy(body),key});
  if(path==='/auth/me')return ok({user,csrfToken:'ui-test-csrf'});
  if(path==='/catalog')return ok(catalog);
+ if(path.startsWith('/rooms/'))return inviteLookup?ok(inviteLookup):fail('ROOM_NOT_FOUND','Ruang tidak ditemukan.',404);
  if(path==='/profile'){if(nextProfileResponse){const pending=nextProfileResponse;nextProfileResponse=null;return pending;}return ok(profile);}
  if(path==='/presentation')return ok({version:1,garageMusic:null,loadingImage:null,musicVolume:.35});
  if(path==='/prayer/status'){
@@ -225,6 +226,59 @@ try{
  await act(async()=>{controller.handlers.snapshot({...pausedRoom,phase:'racing',serverTime:roomTime+903000,prayerPause:null});});
  assert.strictEqual(document.querySelector('iframe'),sameFrame);assert.equal(document.querySelector('main').hasAttribute('inert'),false);
  console.log('PASS room prayer pause preserves the arena iframe, blocks background controls, waits for the authoritative resumed phase');
+
+ // Room choices have their own saved loadout, separate from the permanent garage selection.
+ profile={...profile,loadout:copy(saved('brz')),inventory:{...profile.inventory,cars:['brz','bmw-m4-gt4']},accessibleCars:['brz','bmw-m4-gt4','amg-gt4']};
+ catalog={...catalog,categories:[{id:'coupe',name:'Coupe',sortOrder:0,version:1},{id:'gt',name:'GT Racing',sortOrder:1,version:1},{id:'hyper',name:'Hypercar',sortOrder:2,version:1}],cars:catalog.cars.map(item=>({...item,locked:item.id!=='amg-gt4',categoryId:item.id==='brz'?'coupe':item.id==='jesko-absolut'?'hyper':'gt'}))};
+ await act(async()=>controller.handlers.left());await settle();
+ const beforeRaceMutations=mutations().length,permanentRaceLoadout=copy(profile.loadout),raceBalance=profile.wallet.balance;
+ let createdRoom=null,createdSelection=null,roomSelections=[];
+ Object.defineProperty(controller,'connected',{configurable:true,get:()=>true});
+ controller.create=async(config,loadout)=>{createdSelection={config:copy(config),loadout:copy(loadout)};createdRoom={...loadingRoom,roomId:'category-room',phase:'lobby',config:copy(config),vehicleRestriction:{categoryId:config.vehicleCategoryId,categoryName:'GT Racing',allowedCarIds:['bmw-m4-gt4','amg-gt4']},members:[{...loadingRoom.members[0],id:'fast',ready:false,loadout:copy(loadout)}]};controller.handlers.snapshot(createdRoom);};
+ controller.setLoadout=loadout=>{roomSelections.push(copy(loadout));};
+ await clickText('Balapan');assert.equal(previews.at(-1).carId,'brz');
+ await change(document.querySelector('[aria-label="Jumlah lap"]'),'7');
+ await click([...document.querySelectorAll('.circuit-option')].find(item=>item.textContent.includes('Drag · 2 km')));
+ assert.equal(document.querySelector('[aria-label="Jumlah lap"]'),null);assert.match(document.querySelector('.race-distance').textContent,/Drag · 2 km.*Satu perjalanan/);
+ await click([...document.querySelectorAll('.circuit-option')].find(item=>item.textContent.includes('Neon City')));assert.equal(document.querySelector('[aria-label="Jumlah lap"]').value,'7','Circuit laps are preserved when returning from Drag');
+ await click([...document.querySelectorAll('.circuit-option')].find(item=>item.textContent.includes('Drag · 2 km')));
+ await change(document.querySelector('[aria-label="Slot pemain"]'),'1');await change(document.querySelector('[aria-label="Lawan bot"]'),'14');
+ await change(document.querySelector('[aria-label="Kategori kendaraan ruang"]'),'gt');
+ const raceSelect=()=>document.querySelector('[aria-label="Kendaraan untuk balapan"]');
+ const availableRaceIds=()=>[...raceSelect().querySelectorAll('option')].map(option=>option.value).filter(Boolean);
+ assert.deepEqual(availableRaceIds(),['bmw-m4-gt4','amg-gt4']);assert.equal(raceSelect().value,'');assert.equal(button('Buat ruang balapan').disabled,true);assert.equal(previews.at(-1).carId,'brz','Category changes never select another car implicitly');
+ await submit(document.querySelector('.room-panel form'));assert.equal(createdSelection,null,'An invalid category/car pair cannot submit');
+ await change(raceSelect(),'bmw-m4-gt4');assert.equal(previews.at(-1).carId,'bmw-m4-gt4');assert.equal(mutations().length,beforeRaceMutations);
+ await submit(document.querySelector('.room-panel form'));
+ assert.equal(createdSelection.config.circuit,'drag-2km');assert.equal(createdSelection.config.laps,1);assert.equal(createdSelection.config.vehicleCategoryId,'gt');assert.equal(createdSelection.config.bots,14);assert.equal(createdSelection.config.maxHumans,1);assert.equal(createdSelection.loadout.carId,'bmw-m4-gt4');assert.equal(createdSelection.loadout.color,saved('bmw-m4-gt4').color);assert.equal(createdSelection.loadout.appearanceVersion,saved('bmw-m4-gt4').version);assert.deepEqual(profile.loadout,permanentRaceLoadout);assert.equal(profile.wallet.balance,raceBalance);assert.equal(mutations().length,beforeRaceMutations);
+ assert.match(document.querySelector('.race-room-rules').textContent,/GT Racing.*Drag · 2 km/s);
+ console.log('PASS drag forces one 2 km journey, remembers circuit laps, and category creation requires an explicit saved accessible car without purchase or equip');
+
+ // The room keeps its creation-time membership despite later admin changes.
+ catalog={...catalog,categories:catalog.categories.map(category=>category.id==='gt'?{...category,name:'Nama baru'}:category),cars:catalog.cars.map(item=>({...item,categoryId:item.id==='brz'?'gt':'coupe',enabled:item.id!=='bmw-m4-gt4'}))};
+ await clickText('Showroom');await clickText('Balapan');
+ assert.deepEqual(availableRaceIds(),['bmw-m4-gt4','amg-gt4']);assert.match(document.querySelector('.room-category').textContent,/GT Racing/);assert.doesNotMatch(document.querySelector('.room-category').textContent,/Nama baru/);
+ await change(raceSelect(),'amg-gt4');assert.equal(roomSelections.at(-1).carId,'amg-gt4');assert.equal(button('Saya siap balapan').disabled,true,'Ready waits for the authoritative selected car');assert.equal(previews.at(-1).carId,'bmw-m4-gt4','Preview remains on the accepted room car until acknowledgment');
+ createdRoom={...createdRoom,members:createdRoom.members.map(member=>({...member,loadout:roomSelections.at(-1)}))};await act(async()=>controller.handlers.snapshot(createdRoom));
+ assert.equal(button('Saya siap balapan').disabled,false);assert.equal(previews.at(-1).carId,'amg-gt4');assert.deepEqual(profile.loadout,permanentRaceLoadout);assert.equal(profile.wallet.balance,raceBalance);assert.equal(mutations().length,beforeRaceMutations);
+ console.log('PASS frozen room IDs and name survive catalog reassignment; owned off-sale cars remain eligible; explicit free-car changes await server acknowledgment');
+
+ await act(async()=>controller.handlers.left());await settle();
+ inviteLookup={roomId:'invite-category-room',inviteCode:'GT2026',phase:'lobby',config:{circuit:'drag-2km',laps:1,bots:3,maxHumans:4,difficulty:'hard',collisionMode:'ghost',vehicleCategoryId:'gt'},humans:1,joinable:true,vehicleRestriction:{categoryId:'gt',categoryName:'GT Racing',allowedCarIds:['bmw-m4-gt4','amg-gt4']}};
+ let joinedSelection=null;controller.join=async(code,loadout)=>{joinedSelection={code,loadout:copy(loadout)};};
+ await clickText('Balapan');await clickText('Gabung teman');await change(document.querySelector('.code-input'),'GT2026');await submit(document.querySelector('.room-panel form'));
+ assert.ok(document.querySelector('.invite-preview'));assert.match(document.querySelector('.invite-preview').textContent,/GT Racing.*Drag · 2 km.*3 bot.*4 pemain.*kompetitif.*tanpa kontak/s);assert.deepEqual(availableRaceIds(),['bmw-m4-gt4','amg-gt4']);assert.equal(button('Gabung ruang balapan').disabled,true);assert.equal(joinedSelection,null);
+ await change(raceSelect(),'bmw-m4-gt4');await submit(document.querySelector('.room-panel form'));assert.equal(joinedSelection.code,'GT2026');assert.equal(joinedSelection.loadout.carId,'bmw-m4-gt4');assert.equal(joinedSelection.loadout.stripeId,saved('bmw-m4-gt4').stripeId);assert.deepEqual(profile.loadout,permanentRaceLoadout);assert.equal(mutations().length,beforeRaceMutations);
+ joinedSelection=null;await clickText('Periksa ulang ruang');await change(raceSelect(),'bmw-m4-gt4');
+ inviteLookup={...inviteLookup,roomId:'replacement-room'};await submit(document.querySelector('.room-panel form'));assert.equal(joinedSelection,null,'An invitation replaced between review and join is not silently accepted');assert.match(document.body.textContent,/Aturan ruang telah berubah/);assert.equal(document.querySelector('.invite-preview'),null);
+ console.log('PASS invite review shares authoritative drag/category rules and frozen car membership; joining sends saved cosmetics only and rejects changed invitations');
+
+ // No eligible cars: present a useful destination and leave both Ready and Start blocked.
+ let showroomVisits=0,readyPresses=0;
+ const emptyRoom={...createdRoom,vehicleRestriction:{categoryId:'hyper',categoryName:'Hypercar',allowedCarIds:['jesko-absolut']},members:createdRoom.members.map(member=>({...member,ready:false}))};
+ await act(async()=>root.render(React.createElement(compiled.exports.RacePanel,{room:emptyRoom,profile,catalog,status:'Tersambung',ping:15,busy:false,modelReady:true,onRoomCarChange(){},onShowroom(){showroomVisits++;},onReady(){readyPresses++;},onStart(){},onLeave(){},onNotice(){}})));
+ assert.deepEqual(availableRaceIds(),[]);assert.equal(button('Saya siap balapan').disabled,true);assert.equal(button('Mulai balapan').disabled,true);assert.match(document.querySelector('.race-car-warning').textContent,/belum memiliki kendaraan yang sesuai/);await clickText('Lihat kendaraan di showroom');assert.equal(showroomVisits,1);assert.equal(readyPresses,0);assert.deepEqual(profile.loadout,permanentRaceLoadout);assert.equal(profile.wallet.balance,raceBalance);
+ console.log('PASS no eligible vehicle presents the showroom action without auto-buying, auto-equipping, or allowing invalid readiness');
 
  await act(async()=>{root.render(React.createElement(compiled.exports.RacePanel,{room:{phase:'loading',inviteCode:'TEST12',config:{circuit:'city',laps:3,bots:0,maxHumans:2},members:[{id:'fast',userId:user.id,name:'Cepat',host:true,ready:true,arenaReady:true,connected:true,loadout:profile.loadout},{id:'slow',userId:'slow-driver',name:'Lambat',host:false,ready:true,arenaReady:false,connected:true,loadout:profile.loadout}]},profile,status:'Tersambung',ping:25,busy:false,modelReady:true,onLeave(){}}));});
  assert.match(document.querySelector('.arena-loading-card').textContent,/1 \/ 2 perangkat siap/);assert.equal(document.querySelector('[role="progressbar"]').getAttribute('aria-valuenow'),'1');assert.match(document.querySelector('.room-members').textContent,/Arena siap/);assert.match(document.querySelector('.room-members').textContent,/Memuat arena/);assert.ok(![...document.querySelectorAll('button')].some(b=>b.textContent==='Mulai balapan'));

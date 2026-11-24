@@ -1,3 +1,4 @@
+import {CAR_IDS} from '../../shared/types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -42,7 +43,8 @@ test('Room prayer pause freezes all racers and requires fresh unanimous consent 
   async authenticate(headers){const id=headers.cookie?.slice(4);return id?{id,displayName:id}:null;},
   async gameplayAccess(id){const captured=statusFor(id),hold=lookupHolds.get(id);if(hold){if((hold.skip??0)>0)hold.skip=(hold.skip??0)-1;else{lookupHolds.delete(id);hold.entered.resolve();await hold.gate.promise;}}return captured;},
   async resolveLoadout(_id,loadout,version='1'){return{...loadout,rimId:loadout.rimId??'stock',stats:DEFAULT_VEHICLE_STATS[loadout.carId],tuningVersion:version};},
-  async getActiveRuleset(){return{version:'1',cars:DEFAULT_VEHICLE_STATS,physics:{...DEFAULT_PHYSICS}};},
+  async resolveVehicleRestriction(categoryId){if(categoryId)throw new Error('Fixture category unavailable');return{categoryId:null,categoryName:null,allowedCarIds:[...CAR_IDS]};},
+    async getActiveRuleset(){return{version:'1',cars:DEFAULT_VEHICLE_STATS,physics:{...DEFAULT_PHYSICS}};},
   async beginRace(input){beginCalls.set(input.raceId,(beginCalls.get(input.raceId)??0)+1);const gate=beginGate;if(gate)await gate.promise;begun.set(input.raceId,input);},
   async finalizeRace(result){results.set(result.raceId,result);return{raceId:result.raceId,rewards:[]};},
   async abortRace(id){aborted.add(id);},

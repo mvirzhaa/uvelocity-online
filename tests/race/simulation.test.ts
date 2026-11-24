@@ -11,7 +11,7 @@ function loadout(carId:CarId='kaze'):FrozenLoadout{return freezeLoadout({carId,c
 
 test('Original three arc-length courses and physical15-car grids remain distinct and clear',()=>{
   const lengths=[1450.7607591860722,1924.2162173818447,1816.1935724392406];
-  for(const [i,id]of CIRCUIT_IDS.entries()){
+  for(const [i,id]of (['city','beach','glacier']as const).entries()){
     const track=getTrack(id);assert.equal(track.samples.length,480);assert.ok(Math.abs(track.length-lengths[i]!)<1e-6);
     const racers=Array.from({length:15},(_,i)=>createRacer('r'+i,'R'+i,loadout(CAR_IDS[i%CAR_IDS.length]!),String(i)));
     placeStartingGrid(racers,track);

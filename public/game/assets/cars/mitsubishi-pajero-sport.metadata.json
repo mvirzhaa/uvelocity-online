@@ -1,0 +1,144 @@
+{
+  "id": "mitsubishi-pajero-sport",
+  "file": "/game/assets/cars/mitsubishi-pajero-sport.glb",
+  "bytes": 6086088,
+  "triangles": 155597,
+  "meshCount": 40,
+  "nodeCount": 49,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "pajero_offroad_steel",
+    "pajero_tread_rubber",
+    "brake_caliper",
+    "paint_body",
+    "pajero_window_rubber",
+    "pajero_chrome",
+    "pajero_headlamp_dark",
+    "pajero_headlamp_reflector",
+    "light_front",
+    "pajero_clear_lens",
+    "carbon",
+    "glass",
+    "paint_aero",
+    "light_rear",
+    "pajero_clear_rear_lens",
+    "pajero_recovery_red",
+    "interior_seat"
+  ],
+  "bounds": {
+    "min": [
+      -1.1894999742507935,
+      -4.768371808516747e-10,
+      -2.5850000381469727
+    ],
+    "max": [
+      1.1894999742507935,
+      2.039102077484131,
+      2.581977128982544
+    ]
+  },
+  "dimensions": [
+    2.378999948501587,
+    2.039102077960968,
+    5.166977167129517
+  ],
+  "provenance": "Original UVelocity reference-based recreation of Mitsubishi Pajero Sport with off-road bumpers from three user-supplied photographs, 23 November 2026. Not a manufacturer CAD mesh, scan, or licensed factory model.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-pajero.cjs",
+  "displayName": "Mitsubishi Pajero Sport",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "revision": "suv-expansion-1.5.0",
+  "wheelRadius": 0.412,
+  "wheelWidth": 0.285,
+  "wheelCenters": {
+    "FL": [
+      0.82,
+      0.412,
+      1.42
+    ],
+    "FR": [
+      -0.82,
+      0.412,
+      1.42
+    ],
+    "RL": [
+      0.82,
+      0.412,
+      -1.38
+    ],
+    "RR": [
+      -0.82,
+      0.412,
+      -1.38
+    ]
+  },
+  "wheelbase": 2.8,
+  "track": 1.64,
+  "headlightPositions": [
+    [
+      -0.744,
+      1.137,
+      2.276678008234994
+    ],
+    [
+      0.744,
+      1.137,
+      2.276678008234994
+    ]
+  ],
+  "rearLampPositions": [
+    [
+      -0.804,
+      1.1,
+      -2.349497280399693
+    ],
+    [
+      0.804,
+      1.1,
+      -2.349497280399693
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      0.61,
+      0.335,
+      -2.455
+    ]
+  ],
+  "tail": -2.58,
+  "exhaustX": 0.61,
+  "exhaustY": 0.335,
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "rimMaterial": "rim_paint",
+  "defaultColor": "#151a1d",
+  "cockpitEye": [
+    -0.38,
+    1.52,
+    0.24
+  ],
+  "features": [
+    "sculpted SUV shell",
+    "open wheel arches",
+    "twelve-spoke dark alloys",
+    "all-terrain tread blocks",
+    "Dynamic Shield chrome grille",
+    "long vertical red rear lamps",
+    "running boards",
+    "roof rails",
+    "steel off-road bumpers",
+    "red recovery pins and D shackles",
+    "rear tow hitch",
+    "original photo-reference recreation"
+  ],
+  "length": 5.166977167129517
+}

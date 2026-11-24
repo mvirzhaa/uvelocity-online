@@ -11,3 +11,27 @@ Panther memakai rebuild **1.3.1**, ditinjau terhadap foto depan-samping kendaraa
 - `panther-grand-touring-front.png`, `panther-grand-touring-side.png`, dan `panther-grand-touring-rear.png`: Isuzu Panther Grand Touring, rebuild 1.3.1 berdasarkan rujukan 21 November 2026.
 
 Semua model tambahan adalah rekonstruksi geometri buatan UVelocity berdasarkan gambar pengguna, bukan hasil scan atau CAD pabrikan.
+
+
+## Tambahan 1.5.0 — 23 November 2026
+
+CR-V, Pajero Sport, Fortuner dan Innova Zenix mempunyai tiga render inspeksi
+per model: `*-front.png`, `*-rear.png`, dan `*-side.png`. Semua dibuat dari GLB
+final pada `public/game/assets/cars/`, memakai warna/material aset, studio
+netral, kamera ortografis, dan Blender Cycles CPU. Berkas ini merupakan
+pratinjau aset, bukan screenshot garasi atau bukti rendering WebGL browser.
+
+Untuk mengulangi render (Blender hanya diperlukan pada workstation desain):
+
+```bash
+blender -b -t 4 --python scripts/render-vehicle-previews.py -- \
+  --models honda-crv-rs,mitsubishi-pajero-sport,toyota-fortuner,toyota-innova-zenix \
+  --output docs/previews --views front,rear,side --samples 96 --width 1100 --height 700
+```
+
+Model CR-V mengikuti foto biru yang saling konsisten; foto putih model lama
+bukan dasar pencampuran generasi. Fortuner mengikuti foto GR Sport hitam,
+sedangkan foto putih membantu membaca proporsi. Pajero mempertahankan
+aksesori bumper dan ban yang tampak pada rujukan. Zenix mengikuti dua foto
+putih/perak depan dan belakang. Ukuran dan detail merupakan rekonstruksi
+untuk permainan, bukan data pabrikan.

@@ -1,0 +1,101 @@
+{
+  "verification": "CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering",
+  "passed": [
+    "SHA-256 integrity of the sixteen pre-existing GLBs and unchanged city/biome/police/fallback modules, plus reviewed new reference vehicles.",
+    "3D cyan workshop: 98 merged draws / 28820 triangles, two articulated service arms outside the clear 6.2 × 8.2 m bay, floor-mounted cyan display rings, finite PBR geometry, orbit visibility, quality and owned-resource disposal.",
+    "Showroom front/side/rear/cycle, explicit-only quality changes, dusk/night, credits and asset-ready API verified.",
+    "Vehicle expansion: distinct hypercar canopies, tall Panther and four family bodies, finite loaded geometry with matching effect anchors, and diesel/hybrid synthesis with a four-cylinder firing harmonic.",
+    "Dashboard camera: actual driver-eye transform, live snapshot steering rather than keyboard animation, 4-mode keyboard/touch/API cycle, near clip and exterior restoration, no hidden rival cars.",
+    "Touch controls: independent gas/steer/nitro, two fingers per pedal, pointerup/cancel/lost capture, capture-failure fallback, complete pause/hide/blur reset, blocked paused/hidden presses, stale release isolation, brake and pressed accessibility state.",
+    "Online renderer: supplied state only, normalized input, no local physics/laps/results, stock cameras/effects, visibility suspension, stale snapshot guard, clean exit.",
+    "Room prayer pause: held/external/reset inputs cleared and blocked, wheels/particles/world animation and driving audio frozen, scene/model identity retained, paused and resume-countdown frame barriers valid, server-only resume and fresh-input restart.",
+    "Loading barrier: no ack without applied snapshot or visible scene frame, server-only countdown, motion stopped while loading, frame wait aborted on exit, stale slow model completion cannot reopen arena.",
+    "Finished cars: neutral held/external/reset/nitro controls, official racing-phase coasting snapshots, silent prayer freeze, immediate result phase with unfinished bots, separate 3-second monotonic visual/wheel/HUD/audio rollout, repeated result snapshots never restart, official positions/speed/laps/times/results remain unchanged.",
+    "2km drag world: independent timing gantries exactly2000m apart,45m/15-lane fair strip,700m braking pavement,148 mesh draws/50898 instance triangles, clear driving corridor, open map, forced one journey, quality/day settings, nonwrapping authoritative and visual finish rollout, circuit restoration and owned-resource disposal.",
+    "All three existing worlds switch through the public API."
+  ],
+  "expansion": {
+    "dimensions": {
+      "jesko-absolut": [
+        2.2899999618530273,
+        1.2189999914169312,
+        5.207694053649902
+      ],
+      "venom-f5": [
+        2.319999933242798,
+        1.4299999570846558,
+        5.052602052688599
+      ],
+      "panther-grand-touring": [
+        2.2760000228881836,
+        1.8804969828128815,
+        4.731774568557739
+      ],
+      "honda-crv-rs": [
+        2.196000099182129,
+        1.8476442193984985,
+        4.7770094871521
+      ],
+      "mitsubishi-pajero-sport": [
+        2.378999948501587,
+        2.039102077960968,
+        5.166977167129517
+      ],
+      "toyota-fortuner": [
+        2.194000005722046,
+        1.9712373077869416,
+        4.9245476722717285
+      ],
+      "toyota-innova-zenix": [
+        2.190337657928467,
+        1.9444558715820313,
+        4.870171308517456
+      ]
+    },
+    "closedCanopyRays": {
+      "regera": 9,
+      "venom": 0,
+      "total": 9
+    },
+    "averageRoofHeightGap": 1.201506704026009,
+    "averageBonnetHeightDifference": 0.03533519920512669,
+    "diesel": {
+      "idleRpm": 780,
+      "redlineRpm": 4600,
+      "dominantCycleHarmonic": 4,
+      "synthesis": true
+    },
+    "familyEngines": {
+      "honda-crv-rs": {
+        "fuel": "hybrid",
+        "idleRpm": 850,
+        "redlineRpm": 6200,
+        "dominantCycleHarmonic": 4
+      },
+      "mitsubishi-pajero-sport": {
+        "fuel": "diesel",
+        "idleRpm": 750,
+        "redlineRpm": 4500,
+        "dominantCycleHarmonic": 4
+      },
+      "toyota-fortuner": {
+        "fuel": "diesel",
+        "idleRpm": 770,
+        "redlineRpm": 4600,
+        "dominantCycleHarmonic": 4
+      },
+      "toyota-innova-zenix": {
+        "fuel": "hybrid",
+        "idleRpm": 820,
+        "redlineRpm": 6000,
+        "dominantCycleHarmonic": 4
+      }
+    }
+  },
+  "fittedModels": [],
+  "cockpits": [],
+  "stockRimPaint": [],
+  "stripes": [],
+  "warnings": [],
+  "errors": []
+}

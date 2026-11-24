@@ -1,6 +1,6 @@
 import type { CarId, VehicleStats } from './types.js';
 
-export const RECONSTRUCTED_CAR_IDS:readonly CarId[]=['bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5','panther-grand-touring'];
+export const RECONSTRUCTED_CAR_IDS:readonly CarId[]=['bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5','panther-grand-touring','honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner','toyota-innova-zenix'];
 
 /** Offline defaults only. Online racers always use a server-frozen ruleset. */
 export const DEFAULT_VEHICLE_STATS: Record<CarId, VehicleStats> = {
@@ -20,6 +20,10 @@ export const DEFAULT_VEHICLE_STATS: Record<CarId, VehicleStats> = {
   'jesko-absolut': {topSpeed:420,zeroTo100:2.3,handling:.96},
   'venom-f5': {topSpeed:410,zeroTo100:2.4,handling:.95},
   'panther-grand-touring': {topSpeed:170,zeroTo100:10.8,handling:.88},
+  'honda-crv-rs': {topSpeed:210,zeroTo100:8.2,handling:1.02},
+  'mitsubishi-pajero-sport': {topSpeed:195,zeroTo100:10.5,handling:.94},
+  'toyota-fortuner': {topSpeed:205,zeroTo100:9.8,handling:.96},
+  'toyota-innova-zenix': {topSpeed:195,zeroTo100:9.5,handling:1.01},
 };
 export const CAR_NAMES: Record<CarId, string> = {
   brz: 'Subaru BRZ', veyron77: 'Bugatti Veyron Polisi 77', aventador: 'Lamborghini Aventador',
@@ -28,4 +32,5 @@ export const CAR_NAMES: Record<CarId, string> = {
   // Keep the historical key so existing purchases, paint and race history retain their identity.
   'sls-amg-gt3':'Mercedes-Benz SLS AMG GT3','batmobile-1989':'Batmobile 1989','jesko-absolut':'Koenigsegg Regera','venom-f5':'Hennessey Venom F5',
   'panther-grand-touring':'Isuzu Panther Grand Touring',
+  'honda-crv-rs':'Honda CR-V RS e:HEV','mitsubishi-pajero-sport':'Mitsubishi Pajero Sport','toyota-fortuner':'Toyota Fortuner GR Sport','toyota-innova-zenix':'Toyota Kijang Innova Zenix Hybrid',
 };

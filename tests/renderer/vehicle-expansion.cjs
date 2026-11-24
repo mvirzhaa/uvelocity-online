@@ -3,7 +3,8 @@ const assert=require('node:assert/strict');
 // Check the geometry that the GLTF loader actually gives the game. Material
 // selection lets a missing roof stay open even when seats are visible below it.
 function verifyVehicleExpansion({THREE,Imported,metadata,Audio}){
- const ids=['jesko-absolut','venom-f5','panther-grand-touring'];
+ const familyIds=['honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner','toyota-innova-zenix'];
+ const ids=['jesko-absolut','venom-f5','panther-grand-touring',...familyIds];
  const templates=Object.fromEntries(ids.map(id=>[id,Imported.getTemplate(id)]));
  const dimensions={};
  for(const id of ids){
@@ -63,8 +64,21 @@ function verifyVehicleExpansion({THREE,Imported,metadata,Audio}){
  const wave=engine._wave(engine.profile,false),power=Array.from(wave.real,(value,i)=>value**2+wave.imag[i]**2);
  assert.ok(power.every(Number.isFinite));assert.equal(power[0],0);
  assert.equal(power.indexOf(Math.max(...power)),4,'Diesel combustion pulse train must retain its four-cylinder firing harmonic');
+ const familyEngines={};
+ for(const id of familyIds){
+  assert.ok(dimensions[id][1]>1.7&&dimensions[id][1]<2.2,'Family vehicle keeps its tall cabin: '+id);
+  assert.ok(dimensions[id][2]>4.5&&dimensions[id][2]<5.4,'Family model has a full-size passenger body: '+id);
+  assert.ok(familyIds.filter(other=>other!==id).every(other=>templates[other]!==templates[id]),'Every family vehicle owns distinct geometry: '+id);
+  assert.equal(engine.setVehicle(id),true);assert.equal(engine.profile.cylinders,4);
+  assert.equal(engine.profile.fuel,['mitsubishi-pajero-sport','toyota-fortuner'].includes(id)?'diesel':'hybrid');
+  const waveform=engine._wave(engine.profile,false),energy=Array.from(waveform.real,(value,i)=>value**2+waveform.imag[i]**2);
+  assert.ok(energy.every(Number.isFinite)&&energy.some(value=>value>0),'Playable family-engine synthesis: '+id);
+  assert.equal(energy.indexOf(Math.max(...energy)),4,'Four-cylinder firing cycle: '+id);
+  familyEngines[id]={fuel:engine.profile.fuel,idleRpm:engine.profile.idleRpm,redlineRpm:engine.profile.redlineRpm,dominantCycleHarmonic:4};
+ }
  assert.equal(Audio.recordedSamples,false);
- return {dimensions,closedCanopyRays:{regera:closedCount(regeraRoof),venom:closedCount(venomRoof),total:cabinPoints.length},averageRoofHeightGap:roofGap,averageBonnetHeightDifference:bonnetDifference,diesel:{idleRpm:engine.profile.idleRpm,redlineRpm:engine.profile.redlineRpm,dominantCycleHarmonic:4,synthesis:true}};
+ const diesel=Audio.profiles['panther-grand-touring'];
+ return {dimensions,closedCanopyRays:{regera:closedCount(regeraRoof),venom:closedCount(venomRoof),total:cabinPoints.length},averageRoofHeightGap:roofGap,averageBonnetHeightDifference:bonnetDifference,diesel:{idleRpm:diesel.idleRpm,redlineRpm:diesel.redlineRpm,dominantCycleHarmonic:4,synthesis:true},familyEngines};
 }
 function surfacePairs(first,second){return first.flatMap((height,i)=>height>.1&&second[i]>.1?[[height,second[i]]]:[]);}
 module.exports={verifyVehicleExpansion};

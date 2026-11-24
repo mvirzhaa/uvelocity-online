@@ -83,7 +83,7 @@ export class RaceRuntime {
     if(this.config.collisionMode==='solid')events.push(...resolveCarCollisions(this.racers,this.track));
     for(const racer of this.racers){
       if(racer.finished||racer.dnf)continue;
-      const progress=advanceLapProgress(racer,racer.trackT,this.config.laps,this.elapsedMs,dt*1000);
+      const progress=advanceLapProgress(racer,racer.trackT,this.config.laps,this.elapsedMs,dt*1000,this.track.closed);
       progress.forEach(event=>events.push({...event,racerId:racer.id}));
       if(racer.finished){
         racer.ghost=true;racer.lastProcessedSeq=Math.max(racer.lastProcessedSeq,racer.input.seq);

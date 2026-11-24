@@ -10,6 +10,14 @@ type ThumbnailCar=Pick<CatalogItem,'id'|'name'|'thumbnail'>;
 const errorMessage=(error:unknown)=>error instanceof Error?error.message:'Foto kendaraan belum berhasil diperbarui.';
 const sizeLabel=(bytes:number)=>bytes>=1024*1024?`${(bytes/1024/1024).toFixed(1).replace('.0','')} MB`:`${Math.ceil(bytes/1024)} KB`;
 const allowedTypes=new Set(['image/jpeg','image/png','image/webp']);
+// User-supplied reference photos are bundled only for the four new vehicles.
+// Admin-uploaded images retain priority and their existing URL validation.
+const referencePhotos:Readonly<Record<string,string>>={
+  'honda-crv-rs':'./vehicle-photos/honda-crv-rs.png',
+  'mitsubishi-pajero-sport':'./vehicle-photos/mitsubishi-pajero-sport.png',
+  'toyota-fortuner':'./vehicle-photos/toyota-fortuner.png',
+  'toyota-innova-zenix':'./vehicle-photos/toyota-innova-zenix.png',
+};
 function fileType(file:File){
   if(file.type)return allowedTypes.has(file.type)?file.type:null;
   const extension=file.name.split('.').pop()?.toLowerCase();
@@ -30,7 +38,7 @@ function thumbnailUrl(thumbnail:VehicleThumbnail|null|undefined){
 
 /** A presentational image only: selecting/loading a photo cannot equip a car. */
 export function CarThumbnail({car,className=''}:{car:ThumbnailCar;className?:string}){
-  const source=thumbnailUrl(car.thumbnail),[failedSource,setFailedSource]=useState<string|null>(null);
+  const source=car.thumbnail?thumbnailUrl(car.thumbnail):referencePhotos[car.id]??null,[failedSource,setFailedSource]=useState<string|null>(null);
   const available=!!source&&failedSource!==source;
   return <span className={'vehicle-thumbnail'+(className?' '+className:'')} data-car-thumbnail={car.id}>
     {available?<img key={source} src={source!} width={512} height={288} loading="lazy" decoding="async" alt={'Foto '+car.name} onError={()=>setFailedSource(source)}/>:<span className="vehicle-thumbnail-fallback" role="img" aria-label={'Foto '+car.name+' belum tersedia'}><Icon name="car" size={38}/><small>{car.thumbnail?'Foto belum termuat':'Belum ada foto'}</small></span>}
@@ -131,7 +139,7 @@ export function VehicleImageEditor({cars,onSaved,onNotice}:{cars:CatalogItem[];o
       const updated=await api<VehicleThumbnailSlot>('/admin/vehicle-thumbnails/'+encodeURIComponent(removal.carId),'DELETE',{expectedVersion:removal.version,reason:note},undefined,{signal:controller.signal});
       if(!mounted.current)return;
       if(!updated||updated.carId!==removal.carId||!Number.isInteger(updated.version)||updated.version<=removal.version||updated.thumbnail!==null)throw new ApiError(200,'INVALID_RESPONSE','Hasil penghapusan belum lengkap. Muat ulang foto sebelum mencoba lagi.');
-      applySlot(updated);setRemoval(null);setRemoveReason('');const text='Foto '+removal.name+' dihapus. Ikon kendaraan ditampilkan kembali.';setStatus(text);callbacks.current.onNotice?.(text);await refreshCatalog();
+      applySlot(updated);setRemoval(null);setRemoveReason('');const text='Foto '+removal.name+' dihapus. '+(referencePhotos[removal.carId]?'Foto referensi bawaan ditampilkan kembali.':'Ikon kendaraan ditampilkan kembali.');setStatus(text);callbacks.current.onNotice?.(text);await refreshCatalog();
     }catch(cause){await handleMutationError(cause);}
     finally{if(mutation.current===controller)mutation.current=null;operationRef.current=null;if(mounted.current)setOperation(null);}
   }
@@ -145,7 +153,7 @@ export function VehicleImageEditor({cars,onSaved,onNotice}:{cars:CatalogItem[];o
     {car&&<label className="vehicle-image-selector">Pilih kendaraan<select value={car.id} disabled={busy} onChange={event=>selectCar(event.target.value)}>{cars.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
     {!car&&<p className="empty-state">Belum ada kendaraan dalam katalog.</p>}
     {car&&currentCar&&library&&<div className="vehicle-image-workspace">
-      <div className="vehicle-image-current"><div className="vehicle-image-caption"><h3>{car.name}</h3><span>Foto saat ini</span></div><CarThumbnail car={currentCar}/><div className="vehicle-image-details"><span>{slot?.thumbnail?`${slot.thumbnail.width} × ${slot.thumbnail.height} · ${sizeLabel(slot.thumbnail.bytes)}`:'Unggah foto pertama untuk kendaraan ini.'}</span>{slot&&<span className="pill">FOTO V{slot.version}</span>}</div><button type="button" className="text-button danger" disabled={busy||!slot?.thumbnail} onClick={()=>{if(!slot)return;clearFile();setError('');setStatus('');setRemoval({carId:car.id,name:car.name,version:slot.version});setRemoveReason('');}}>Hapus foto</button></div>
+      <div className="vehicle-image-current"><div className="vehicle-image-caption"><h3>{car.name}</h3><span>Foto saat ini</span></div><CarThumbnail car={currentCar}/><div className="vehicle-image-details"><span>{slot?.thumbnail?`${slot.thumbnail.width} × ${slot.thumbnail.height} · ${sizeLabel(slot.thumbnail.bytes)}`:referencePhotos[car.id]?'Foto referensi bawaan. Unggah foto untuk menggantinya.':'Unggah foto pertama untuk kendaraan ini.'}</span>{slot&&<span className="pill">FOTO V{slot.version}</span>}</div><button type="button" className="text-button danger" disabled={busy||!slot?.thumbnail} onClick={()=>{if(!slot)return;clearFile();setError('');setStatus('');setRemoval({carId:car.id,name:car.name,version:slot.version});setRemoveReason('');}}>Hapus foto</button></div>
       <form className="vehicle-image-upload" onSubmit={upload}>
         <h3>{slot?.thumbnail?'Ganti foto kendaraan':'Unggah foto kendaraan'}</h3>
         <label>Foto JPEG, PNG, atau WebP<input ref={fileInput} type="file" accept=".jpg,.jpeg,.jfif,.png,.webp,image/jpeg,image/png,image/webp" disabled={busy||!!removal} onChange={event=>chooseFile(event.target.files?.[0]??null)}/></label>

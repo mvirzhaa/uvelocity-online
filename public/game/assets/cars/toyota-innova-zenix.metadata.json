@@ -1,0 +1,129 @@
+{
+  "id": "toyota-innova-zenix",
+  "file": "/game/assets/cars/toyota-innova-zenix.glb",
+  "bytes": 4831352,
+  "triangles": 126080,
+  "meshCount": 39,
+  "nodeCount": 48,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "zenix_chrome",
+    "zenix_satin_graphite",
+    "brake_caliper",
+    "paint_body",
+    "zenix_window_rubber",
+    "glass",
+    "zenix_moulded_cladding",
+    "stripe_accent",
+    "light_front",
+    "zenix_lamp_housing",
+    "zenix_lamp_reflector",
+    "zenix_clear_lens",
+    "zenix_hybrid_badge_blue",
+    "light_rear",
+    "interior_seat"
+  ],
+  "bounds": {
+    "min": [
+      -1.0951688289642334,
+      -9.536743172944284e-9,
+      -2.4203810691833496
+    ],
+    "max": [
+      1.0951688289642334,
+      1.944455862045288,
+      2.4497902393341064
+    ]
+  },
+  "dimensions": [
+    2.190337657928467,
+    1.9444558715820313,
+    4.870171308517456
+  ],
+  "provenance": "Original UVelocity reference-based reconstruction from two user-supplied Toyota Kijang Innova Zenix Hybrid photographs dated 23 November 2026; not manufacturer CAD or a scan.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-zenix.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "displayName": "Toyota Kijang Innova Zenix Hybrid",
+  "revision": "mpv-expansion-1.5.0",
+  "wheelRadius": 0.365,
+  "wheelWidth": 0.245,
+  "wheelCenters": {
+    "FL": [
+      0.8,
+      0.365,
+      1.5050000000000001
+    ],
+    "FR": [
+      -0.8,
+      0.365,
+      1.5050000000000001
+    ],
+    "RL": [
+      0.8,
+      0.365,
+      -1.345
+    ],
+    "RR": [
+      -0.8,
+      0.365,
+      -1.345
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.803,
+      1.093,
+      2.291438638235993
+    ],
+    [
+      0.803,
+      1.093,
+      2.291438638235993
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      0.569,
+      0.268,
+      -2.395
+    ]
+  ],
+  "tail": -2.43,
+  "exhaustX": 0.569,
+  "exhaustY": 0.268,
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "features": [
+    "continuous curved roof crown and rolled pillars",
+    "open primary nose behind dark bumper intakes",
+    "dedicated taller long-roof MPV shell",
+    "open wheel arches",
+    "silver split-spoke alloys",
+    "large horizontal-cell hexagonal grille",
+    "Toyota ellipse emblem",
+    "broad multi-projector headlamps",
+    "triangular corner intakes with running-light strips",
+    "three side-window apertures",
+    "sculpted door and quarter panels",
+    "roof spoiler and sharkfin",
+    "horizontal two-piece arrow rear lamps",
+    "recessed tailgate registration pressing",
+    "seven-seat cabin"
+  ],
+  "cockpitEye": [
+    -0.34,
+    1.51,
+    0.36
+  ],
+  "length": 4.870171308517456
+}

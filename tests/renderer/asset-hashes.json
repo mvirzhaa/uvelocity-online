@@ -1,5 +1,5 @@
 {
-  "provenance": "Fifteen other vehicle GLBs and four environment/fallback modules preserved byte-for-byte against the recovered UVelocity v1.3.0 package. The visually reviewed v1.3.1 rebuild replaces only Panther Grand Touring using the four supplied photo references. Change asset hashes only after explicit review.",
+  "provenance": "All sixteen existing vehicle GLBs and four environment/fallback modules are preserved byte-for-byte from the canonical UVelocity v1.4.0 package. Four independently authored photo-reference vehicles (CR-V RS e:HEV, Pajero Sport, Fortuner GR Sport and Innova Zenix Hybrid) were added for v1.5.0 and locked after visual review on 23 November 2026. Change asset hashes only after explicit review.",
   "algorithm": "SHA-256",
   "files": {
     "public/game/assets/cars/aventador.glb": "def52aa321714ecf0c12afa742da2d5662045b5c7ad746acd282c0b9b599f040",
@@ -21,6 +21,10 @@
     "public/game/assets/cars/jesko-absolut.glb": "26abbff38c7d00284b2329cf4b3d7526927413d7f3d6a98329717891b8819b2c",
     "public/game/assets/cars/sls-amg-gt3.glb": "566e4527619475836e7714e8caf1aeffbae3eb31dca9884a73ab1c0068e26dde",
     "public/game/assets/cars/venom-f5.glb": "740d181a6835fd2ed3e7ff45a5b0d90e6751290b3f25b2bd15a468571b642449",
-    "public/game/assets/cars/panther-grand-touring.glb": "9deeff82a24b19758a7128e2bca13ddee4f6992fa7e545411ed0f612214b6b51"
+    "public/game/assets/cars/panther-grand-touring.glb": "9deeff82a24b19758a7128e2bca13ddee4f6992fa7e545411ed0f612214b6b51",
+    "public/game/assets/cars/honda-crv-rs.glb": "3ac700ef14c747fc0b0bed386f600ffcea428a55532eccc11eae6e5792754f90",
+    "public/game/assets/cars/mitsubishi-pajero-sport.glb": "2dafeb957cc0e0505e928fdc83bdca1dcdd99fd150f1b8670de9706143b3230a",
+    "public/game/assets/cars/toyota-fortuner.glb": "2b769416354e19b46822a7d55a575e42acd59338cfecb4af591e5d730547cc0c",
+    "public/game/assets/cars/toyota-innova-zenix.glb": "93c285543d65a31a59ac8d17875ecc899ab3a8a540443acb1fdb671c9c66158e"
   }
 }

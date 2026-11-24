@@ -1,4 +1,67 @@
-# Verifikasi implementasi UVelocity 1.4.0
+# Verifikasi implementasi UVelocity 1.5.0
+
+## Verifikasi pembaruan 1.5.0 — 23 November 2026
+
+Basis pembaruan adalah paket final **1.4.0**. Ruang lingkup mencakup empat kendaraan baru yang dapat dibeli, foto referensi bawaan, drag lurus 2 km, dan pemilihan kategori kendaraan ruang untuk pemain serta bot. Riwayat pengujian versi lama dipertahankan di bawah.
+
+| Pemeriksaan | Hasil rilis 1.5.0 |
+| --- | --- |
+| TypeScript dan build produksi | **Lulus**; GLB pada build produksi cocok dengan hash sumber final |
+| `npm test` | **69 tes lulus**, 0 gagal, mencakup server/client, kesiapan, jeda salat, finish dan drag |
+| `npm run test:backend` | **89 tes lulus**, PostgreSQL native, 0 gagal |
+| `INTEGRATION_STATIC=1 npm run test:integration` | **11 langkah lulus** melalui HTTP/SDK/Colyseus, database nyata dan aset build produksi |
+| `npm run test:ui` | **24 kelompok interaksi lulus**, termasuk kategori, pemilihan mobil ruang, undangan dan jarak drag |
+| `npm run test:media-ui` | **14 kelompok lulus**, termasuk splash 3 detik serta satu pemutar musik yang berlanjut melewati login |
+| `npm run test:vehicle-images-ui` | **7 kelompok lulus**, termasuk empat foto bawaan, prioritas foto admin, kegagalan gambar dan penghapusan foto admin |
+| Renderer CPU/Canvas | **17 kelompok lulus** untuk seluruh 20 model; **12 kelompok terarah lulus** sesudah perapian trim Fortuner dan lampu belakang Zenix; 0 warning / 0 error |
+| Aset/migrasi lama | Seluruh **16 GLB lama** serta migrasi **001–014** identik byte demi byte dengan paket 1.4.0 |
+
+### Drag yang terbuka dan berjarak 2 km
+
+Tes menjalankan kendaraan dengan fisika resmi, bukan sekadar mengubah koordinatnya. Garis start/finish berjarak 2.000 m dengan 480 sampel termasuk endpoint. Lima belas peserta mendapat 15 lajur yang berbeda, jarak lajur 3 m, dan posisi longitudinal yang sama 8,5 m sebelum start. Clock balap dimulai saat countdown bersama dilepas, sehingga semua peserta juga menempuh pendekatan grid yang sama. Jalan selebar 45 m dan runout 700 m sesudah finish diperiksa melalui geometri arena yang sebenarnya.
+
+Kasus negatif meliputi gerak mundur, gerak menyamping, berulang kali melewati start, lompatan proyeksi langsung ke finish, serta reset yang mencoba menambah jarak. Finis hanya terjadi setelah melewati gate berurutan. Reset mempertahankan posisi longitudinal. Perjalanan sesudah finish tidak memakai modulo, waktu/posisi hasil tidak diubah oleh animasi rollout, dan kendaraan tidak berpindah kembali ke start. Prediksi klien cocok dengan gerak server. Tiga sirkuit lama tetap mengulang lintasannya dan mendukung 1–20 lap.
+
+Constraint PostgreSQL `races_circuit_check` diperluas oleh migrasi 015 agar `drag-2km` dapat disimpan. Langkah integrasi produksi benar-benar memulai drag dan memeriksa record pertandingan, sehingga validasi tidak berhenti pada menu atau pemuatan arena.
+
+### Aturan kategori yang ditegakkan server
+
+Kategori dan daftar ID kendaraan dibekukan ketika ruang dibuat. Pengujian mencakup kategori yang hilang/kosong, pembuat ruang dengan kendaraan yang salah, pengunjung yang ditolak, pergantian loadout, payload palsu, kesiapan/mulai, bot, reconnect, dan kategori yang diganti nama, dipindahkan assignment-nya, atau dihapus setelah ruang terbentuk. Penolakan satu pengunjung tidak membatalkan ruang, mencadangkan kursi reconnect, atau membatalkan persiapan anggota lain.
+
+`beginRace` menyimpan aturan kategori bersama roster. ID mobil peserta harus sama dengan loadout dan termasuk daftar yang diizinkan, baik manusia maupun bot. Kepemilikan/akses gratis diperiksa secara terpisah. UI menampilkan aturan undangan sebelum bergabung, hanya menawarkan mobil yang dapat dipakai, dan meminta pilihan eksplisit saat mobil aktif tidak sesuai. Pilihan tersebut memakai kosmetik tersimpan untuk ruang; tidak menulis pembelian atau mengganti mobil aktif di garasi.
+
+### Pembelian dan kendaraan baru
+
+Keempat mobil diuji melalui topup admin pada akun uji, pembelian dengan debit idempoten, cat/pelek/striping berbayar, pengaktifan, masuk lobi, barrier arena, countdown, lalu kontrol gas yang menghasilkan gerak resmi server. Kategori awal adalah SUV untuk CR-V/Pajero/Fortuner dan MPV untuk Zenix. Upgrade mempertahankan penawaran dan tuning admin untuk mobil lama serta versi ruleset pertandingan terdahulu.
+
+Foto kartu disalin dari gambar pengguna sebagai fallback aset lokal. Pengujian memastikan unggahan admin didahulukan, penghapusan mengembalikan foto referensi, URL luar tetap ditolak, gambar rusak mempunyai fallback yang dapat dibaca pembaca layar, serta tidak ada perubahan saldo/equip dari pemuatan gambar.
+
+### Model dan bukti visual
+
+Empat GLB diekspor dengan wheel/steering hierarchy, material cat/pelek/lampu, serta metadata yang terpisah. Render depan, belakang dan samping dibuat langsung dari GLB final di Blender Cycles CPU, 1100 × 700 piksel dan 96 samples. Render tersebut tersedia pada `docs/previews/`; pencahayaan studio tidak sama dengan bengkel Three.js. Tidak ada screenshot browser yang direkayasa atau diganti gambar referensi.
+
+| GLB baru | Byte | Segitiga | Mesh |
+| --- | ---: | ---: | ---: |
+| `honda-crv-rs` | 6,028,536 | 143,852 | 40 |
+| `mitsubishi-pajero-sport` | 6,086,088 | 155,597 | 40 |
+| `toyota-fortuner` | 4,160,200 | 131,908 | 43 |
+| `toyota-innova-zenix` | 4,831,352 | 126,080 | 39 |
+
+Total 20 GLB: **84,590,536 byte** sebelum kompresi transfer. Angka mesh/segitiga merupakan ukuran geometri, bukan benchmark FPS.
+
+### Renderer final dan batas paket
+
+Suite gabungan memeriksa 20 model, 20 kokpit, pengecatan pelek bawaan setiap model, tiga paket pelek, dan lima pola striping per mobil. Jalur drag, kesiapan arena, dashboard, kontrol sentuh, jeda salat dan gerak setelah finish ikut diperiksa. Sesudah penyesuaian posisi dua garis kap Fortuner serta lensa dan housing lampu belakang Zenix, gate terarah memuat kembali geometri keempat kendaraan baru, titik efek dan 24 hash aset yang dikunci; hasilnya 12 kelompok lulus tanpa warning/error. Penyesuaian tersebut tidak mengubah wheel rig, cockpit, dimensi atau perilaku fisika.
+
+Aset lama tetap cocok dengan SHA-256 baseline 1.4.0; hanya empat aset GLB baru ditambahkan pada daftar integritas. Build produksi terakhir menyalin keempat GLB dengan hash yang sama seperti sumber. Paket pembaruan hanya berisi berkas baru/berubah; penggabungannya dengan sumber 1.4.0 diperiksa agar menghasilkan berkas sumber yang sama dengan paket lengkap.
+
+Laporan mesin yang disertakan: `docs/verification/renderer-all-models-1.5.0.json`, `docs/verification/renderer-final-assets-1.5.0.json`, dan `docs/verification/release-1.5.0.json`.
+
+### Batas verifikasi
+
+Suite UI memakai React DOM dengan transport/media terprogram. Harness renderer memeriksa geometri Three.js, Canvas 2D, DOM, resource disposal dan perilaku snapshot tanpa GPU WebGL nyata. Integrasi backend memakai PostgreSQL dan koneksi Colyseus sebenarnya dengan akun uji terisolasi. Hasil ini bukan pengukuran FPS, kualitas piksel di browser, speaker, ataupun uji sentuhan perangkat nyata. Paket sumber siap dipasang; deployment ke server publik tidak dilakukan dari lingkungan ini.
+
+---
 
 ## Verifikasi pembaruan 1.4.0 — 21 November 2026
 

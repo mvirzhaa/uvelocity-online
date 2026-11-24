@@ -1,4 +1,4 @@
-import type { CarId, Finish, VehicleStats } from '../../shared/types.js';
+import type { CarId, Finish, VehicleStats, RoomConfig, RacePhase, VehicleRestriction } from '../../shared/types.js';
 import type { MediaAsset, MediaKind } from '../../shared/media.js';
 import type { VehicleThumbnail } from '../../shared/vehicle-thumbnails.js';
 import type { VehicleCategory } from '../../shared/vehicle-categories.js';
@@ -15,6 +15,22 @@ export interface Catalog {currency:string;currencyLabel:string;rulesetVersion:st
 export interface AppearanceQuote {quoteId:string;carId:CarId;appearanceVersion:string;selection:Loadout;lineItems:Array<{itemId:string;name:string;price:string;catalogVersion:number}>;total:string;wallet:Wallet;affordable:boolean;noOp:boolean;expiresAt:string}
 export interface AppearanceApplication {applicationId:string|null;appearance:VehicleAppearance;loadout:Loadout;wallet:Wallet;pricePaid:string;lineItems:AppearanceQuote['lineItems'];noOp:boolean}
 export interface LedgerEntry {id:string;kind:string;delta:string;amount?:string;balanceAfter:string;reason:string;createdAt:string}
+export interface RoomInvite {roomId:string;inviteCode:string;phase:RacePhase;config:RoomConfig;humans:number;joinable:boolean;vehicleRestriction:VehicleRestriction}
+
+/** A room selects an accessible, saved appearance without changing the active
+ * garage car, writing cosmetics, buying anything, or touching the wallet. */
+export function savedRaceLoadout(profile:Profile,catalog:Catalog,carId:CarId,restriction?:VehicleRestriction):Loadout{
+  const item=catalog.cars.find(car=>car.id===carId);
+  if(!item||(!profile.inventory.cars.includes(carId)&&item.locked!==false))throw new Error('Kendaraan ini belum dapat digunakan. Pilih mobil milik Anda atau mobil yang dibuka gratis oleh admin.');
+  if(restriction&&!restriction.allowedCarIds.includes(carId))throw new Error('Kendaraan ini tidak termasuk kategori ruang. Pilih kendaraan yang diizinkan sebelum bergabung.');
+  const saved=profile.appearances.find(appearance=>appearance.carId===carId);
+  if(!saved)throw new Error('Konfigurasi tersimpan belum tersedia. Muat ulang profil lalu pilih kendaraan kembali.');
+  return {carId:saved.carId,rimId:saved.rimId||'stock',color:saved.color,finish:saved.finish,rimColor:saved.rimColor||'#c7cdd4',stockRimPainted:saved.stockRimPainted===true,stripeId:saved.stripeId||'none',stripeColor:saved.stripeColor||'#ffffff',appearanceVersion:saved.version};
+}
+
+export async function inspectRoomInvite(code:string):Promise<RoomInvite>{
+  return api<RoomInvite>('/rooms/'+encodeURIComponent(code.trim().toUpperCase()));
+}
 let csrfToken:string|null=null;
 export class ApiError extends Error {constructor(public status:number,public code:string,message:string){super(message);this.name='ApiError';}}
 export function clearAuth(){csrfToken=null;}

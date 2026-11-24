@@ -2,14 +2,14 @@ import { randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import { CAR_IDS, CIRCUIT_IDS } from '../../shared/types.js';
 import {RECONSTRUCTED_CAR_IDS} from '../../shared/catalog.js';
-import type { BeginRaceInput, CarId, FrozenLoadout, LoadoutSelection, RaceResult, RaceRuleset, RaceSettlement, VehicleStats } from '../../shared/types.js';
+import type { BeginRaceInput, CarId, FrozenLoadout, LoadoutSelection, RaceResult, RaceRuleset, RaceSettlement, VehicleStats, VehicleRestriction } from '../../shared/types.js';
 import { transaction } from '../db/pool.js';
 import { assert } from './errors.js';
 import { idempotent } from './idempotency.js';
 import { mutateWallet } from './wallet.js';
 import {AppearanceService} from './appearance.js';
 import {catalogThumbnails} from './vehicle-thumbnails.js';
-import {listVehicleCategories} from './vehicle-categories.js';
+import {categoryId as validateCategoryId,listVehicleCategories} from './vehicle-categories.js';
 export {WHEEL_IDS} from './appearance.js';
 import * as v from './validation.js';
 
@@ -39,6 +39,19 @@ export class EconomyService {
   async getActiveRuleset(): Promise<RaceRuleset> {
     const {databaseId:_,...ruleset}=await readRuleset(this.pool);
     return ruleset;
+  }
+
+  async resolveVehicleRestriction(categoryId:string|null):Promise<VehicleRestriction> {
+    if(categoryId!==null)validateCategoryId(categoryId);
+    // One statement captures the name and assignments together. Availability
+    // for sale is deliberately separate from an existing owner's right to race.
+    const rows=categoryId===null
+      ?await this.pool.query("SELECT NULL::text AS id,NULL::text AS name,array_agg(id) AS car_ids FROM catalog_items WHERE kind='car'")
+      :await this.pool.query("SELECT g.id,g.name,array_agg(c.id) FILTER(WHERE c.id IS NOT NULL) AS car_ids FROM vehicle_categories g LEFT JOIN vehicle_category_assignments a ON a.category_id=g.id LEFT JOIN catalog_items c ON c.id=a.car_id AND c.kind='car' WHERE g.id=$1 GROUP BY g.id,g.name",[categoryId]);
+    assert(rows.rowCount,404,'VEHICLE_CATEGORY_NOT_FOUND','Kategori kendaraan tidak ditemukan. Muat ulang daftar kategori.');
+    const row=rows.rows[0],registered=new Set<string>(row.car_ids??[]),allowedCarIds=CAR_IDS.filter(id=>registered.has(id));
+    assert(allowedCarIds.length,409,'VEHICLE_CATEGORY_EMPTY','Kategori ini belum memiliki kendaraan. Pilih kategori lain.');
+    return Object.freeze({categoryId,categoryName:row.name,allowedCarIds:Object.freeze(allowedCarIds)});
   }
 
   async getCatalog() {
@@ -113,15 +126,22 @@ export class EconomyService {
     const raceId=v.uuid(input.raceId,'Balapan');
     assert(CIRCUIT_IDS.includes(input.config.circuit),400,'INVALID_CIRCUIT','Sirkuit tidak valid.');
     v.integer(input.config.laps,'Lap',1,20);
+    assert(input.config.circuit!=='drag-2km'||input.config.laps===1,400,'INVALID_LAPS','Drag 2 km hanya memiliki satu lintasan.');
     assert(input.participants.length>0 && input.participants.length<=32,400,'INVALID_PARTICIPANTS','Jumlah peserta tidak valid.');
     const humans=input.participants.filter(p=>!p.isBot);
     assert(humans.length>0 && humans.every(p=>p.userId) && new Set(humans.map(p=>p.userId)).size===humans.length,400,'INVALID_PARTICIPANTS','Peserta manusia harus unik.');
     const createdMs=Date.parse(input.scheduledStartAt??input.createdAt);
     assert(Number.isFinite(createdMs),400,'INVALID_START','Waktu balapan tidak valid.');
+    const restriction=input.vehicleRestriction;
+    assert(!input.config.vehicleCategoryId||restriction?.categoryId===input.config.vehicleCategoryId,409,'VEHICLE_CATEGORY_RESTRICTED','Aturan kategori room tidak cocok.');
+    if(restriction){
+      assert(restriction.categoryId===(input.config.vehicleCategoryId??null)&&restriction.allowedCarIds.length>0&&restriction.allowedCarIds.every(id=>CAR_IDS.includes(id)),409,'VEHICLE_CATEGORY_RESTRICTED','Daftar kendaraan room tidak valid.');
+      assert(input.participants.every(p=>restriction.allowedCarIds.includes(p.carId)&&restriction.allowedCarIds.includes(p.loadout.carId)&&p.carId===p.loadout.carId),409,'VEHICLE_CATEGORY_RESTRICTED','Kendaraan peserta tidak sesuai kategori room.');
+    }
     await transaction(this.pool,async client=>{
       const ruleset=await readRuleset(client,input.rulesetVersion);
       const participants=input.participants.map(p=>({id:p.id,userId:p.userId,isBot:p.isBot,carId:p.carId,loadout:p.loadout})).sort((a,b)=>a.id.localeCompare(b.id));
-      const config={...input.config,roomConfig:input.config,roomId:input.roomId,inviteCode:input.inviteCode,participants,beginHash:v.fingerprint(input)};
+      const config={...input.config,roomConfig:input.config,roomId:input.roomId,inviteCode:input.inviteCode,...(restriction?{vehicleRestriction:restriction}:{}),participants,beginHash:v.fingerprint(input)};
       const inserted=await client.query("INSERT INTO races(id,room_code,circuit,laps,ruleset_id,status,config,started_at) VALUES($1,$2,$3,$4,$5,'running',$6::jsonb,$7) ON CONFLICT(id) DO NOTHING RETURNING id",[raceId,input.inviteCode,input.config.circuit,input.config.laps,ruleset.databaseId,JSON.stringify(config),new Date(createdMs).toISOString()]);
       if (!inserted.rowCount) {
         const prior=await client.query('SELECT config FROM races WHERE id=$1',[raceId]);

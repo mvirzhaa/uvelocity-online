@@ -87,7 +87,7 @@ try {
     const health=await http('/health');assert.equal(health.data.application,'UVelocity');assert.equal(health.data.database,'postgresql');assert.equal(health.data.ok,true);
     assert.equal(health.response.headers.get('x-powered-by'),null);
     assert.match(health.response.headers.get('content-security-policy')??'',/frame-ancestors 'self'/);
-    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,14);
+    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,15);
     const db=await application.pool.query('SELECT version()');assert.match(db.rows[0].version,/PostgreSQL/);
   });
 
@@ -108,7 +108,7 @@ try {
   });
 
   await step('HTTP purchase headers and workshop loadout preserve owned rim paint',async()=>{
-    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,16);assert.equal(catalog.wheels.length,4);
+    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,20);assert.equal(catalog.wheels.length,4);
     const wheel=catalog.wheels.find(item=>item.id==='six-spoke')!;assert(wheel);
     const payload={itemId:wheel.itemId,catalogVersion:wheel.catalogVersion},key=randomUUID();
     const purchase=await http('/shop/purchase',{actor:alice,method:'POST',body:payload,key});
@@ -217,6 +217,44 @@ try {
     }
   });
 
+  await step('four new HTTP purchases, paid appearances and category-restricted rooms race on all four circuits',async()=>{
+    const cases=[['honda-crv-rs','city'],['mitsubishi-pajero-sport','beach'],['toyota-fortuner','glacier'],['toyota-innova-zenix','drag-2km']] as const;
+    const fresh=(await http<Catalog>('/catalog')).data;
+    const first=fresh.cars.findIndex(car=>car.id===cases[0][0]);assert.deepEqual(fresh.cars.slice(first,first+4).map(car=>car.id),cases.map(([id])=>id));
+    for(const [id,circuit]of cases){
+      const car=fresh.cars.find(item=>item.id===id)!;assert(car.enabled&&car.locked&&car.categoryId);
+      const before=(await http<Profile>('/profile',{actor:bob})).data;
+      const funds=BigInt(car.price)+50000n;
+      await http('/admin/topups',{actor:operator,method:'POST',key:randomUUID(),body:{userId:bob.id,amount:String(funds),reference:'adapter-family-'+id+'-'+suffix,reason:'Purchase and paid appearance integration fixture'}});
+      const key=randomUUID(),body={itemId:car.id,catalogVersion:car.catalogVersion};
+      const purchase=await http('/shop/purchase',{actor:bob,method:'POST',body,key});
+      const replay=await http('/shop/purchase',{actor:bob,method:'POST',body,key});assert.equal(replay.data.purchaseId,purchase.data.purchaseId);
+      assert.equal(purchase.data.pricePaid,car.price);assert.equal(BigInt(purchase.data.wallet.balance),BigInt(before.wallet.balance)+50000n);
+      const quote=await http('/garage/appearance/quote',{actor:bob,method:'POST',body:{carId:id,rimId:'stock',color:'#365a77',rimColor:'#c4ad72',stockRimPainted:true,stripeId:'twin-racing',stripeColor:'#eeeeee'}});assert(BigInt(quote.data.total)>0n);
+      const painted=await http('/garage/appearance/apply',{actor:bob,method:'POST',body:{quoteId:quote.data.quoteId},key:randomUUID()});assert.equal(BigInt(purchase.data.wallet.balance)-BigInt(painted.data.wallet.balance),BigInt(quote.data.total));
+      await http('/loadout',{actor:bob,method:'PUT',body:{carId:id,rimId:'stock'}});
+      bobProfile=(await http<Profile>('/profile',{actor:bob})).data;assert(bobProfile.inventory.cars.includes(id));assert.equal(bobProfile.loadout.carId,id);assert.equal(bobProfile.loadout.stockRimPainted,true);
+      const observer=observe(await sdk(bob).create('race',{ticket:await ticket(bob),circuit,laps:5,bots:2,maxHumans:2,vehicleCategoryId:car.categoryId,loadout:bobProfile.loadout}));
+      try{
+        await waitFor(()=>observer.snapshot?.members.length===1,id+' category lobby');
+        assert.equal(observer.snapshot!.config.circuit,circuit);assert.equal(observer.snapshot!.config.laps,circuit==='drag-2km'?1:5);
+        const lookup=await http('/rooms/'+observer.snapshot!.inviteCode,{actor:alice});
+        assert.equal(lookup.data.config.vehicleCategoryId,car.categoryId);assert.deepEqual(lookup.data.vehicleRestriction,observer.snapshot!.vehicleRestriction);assert(lookup.data.vehicleRestriction.allowedCarIds.includes(id));assert(!lookup.data.vehicleRestriction.allowedCarIds.includes('brz'));
+        await assert.rejects(sdk(alice).joinById(lookup.data.roomId,{ticket:await ticket(alice),loadout:aliceProfile.loadout}),/VEHICLE_CATEGORY_RESTRICTED/);
+        observer.room.send('sync');await waitFor(()=>observer.snapshot?.phase==='lobby'&&observer.snapshot.members.length===1,'wrong category visitor leaves '+id+' room playable');
+        observer.room.send('ready',{ready:true,assetsLoaded:true});await waitFor(()=>observer.snapshot?.members.every(member=>member.ready&&member.assetsLoaded)===true,id+' readiness');
+        observer.room.send('start');await waitFor(()=>observer.snapshot?.phase==='racing',id+' authoritative start');
+        const scene=observer.snapshot!,racer=scene.racers.find(entry=>entry.userId===bob.id)!;
+        assert.equal(racer.loadout.carId,id);assert.equal(racer.loadout.color,'#365a77');assert.equal(racer.loadout.rimColor,'#c4ad72');assert.equal(racer.loadout.stockRimPainted,true);assert.equal(racer.loadout.stripeId,'twin-racing');assert.deepEqual(racer.loadout.stats,car.stats);
+        assert.equal(scene.racers.length,3);assert(scene.racers.every(entry=>scene.vehicleRestriction!.allowedCarIds.includes(entry.loadout.carId)));
+        const start={x:racer.x,z:racer.z};observer.room.send('input',{seq:1,throttle:1,brake:0,steer:0,nitro:false});
+        await waitFor(()=>{const current=observer.snapshot?.racers.find(entry=>entry.userId===bob.id);return !!current&&current.lastProcessedSeq===1&&current.speed>0&&Math.hypot(current.x-start.x,current.z-start.z)>.01;},id+' authoritative movement');
+        const stored=(await application.pool.query('SELECT circuit,laps,config FROM races WHERE id=$1',[scene.raceId])).rows[0];assert.equal(stored.circuit,circuit);assert.equal(stored.laps,scene.config.laps);assert.deepEqual(stored.config.vehicleRestriction,scene.vehicleRestriction);
+        assert.deepEqual(observer.errors,[]);
+      }finally{if(observer.room.connection.isOpen)await observer.room.leave();}
+    }
+  });
+
   await step('logout revokes HTTP session, outstanding race ticket and active SDK connection',async()=>{
     const client=sdk(alice),oldCookie=alice.cookie!,issuedBeforeLogout=await ticket(alice);
     const observer=observe(await client.create('race',{ticket:await ticket(alice),circuit:'city',laps:1,bots:0,maxHumans:1,loadout:aliceProfile.loadout}));
@@ -232,7 +270,7 @@ try {
     await waitFor(async()=>{const row=await application.pool.query('SELECT status FROM races WHERE id=$1',[observer.snapshot!.raceId]);return row.rows[0]?.status==='finished';},'revoked player DNF persistence');
   });
 
-  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all16 GLB assets',async()=>{
+  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all20 GLB assets',async()=>{
     const shell=await fetch(origin+'/');assert.equal(shell.status,200);assert.match(shell.headers.get('content-type')??'',/text\/html/);assert.match(await shell.text(),/UVelocity/);
     const frame=await fetch(origin+'/game/game.html');assert.equal(frame.status,200);const frameHtml=await frame.text();assert.match(frameHtml,/game-api\.js/);
     assert(!/\son[a-z]+\s*=/i.test(frameHtml),'Production game HTML must bind events in external scripts; inline handlers are blocked by its CSP');

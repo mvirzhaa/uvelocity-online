@@ -34,7 +34,8 @@ before(async()=>{
   await services.admin.updateCatalog(operator.user.id,'panther-grand-touring',{expectedVersion:1,price:'165000',locked:false,reason});
   await services.economy.saveLoadout(player.user.id,{carId:'panther-grand-touring',rimId:'stock'});
   legacy={};for(const table of preserved)legacy[table]=await rows(table);
-  assert.deepEqual(await migrate(pool),['014_vehicle_categories.sql']);
+  await copyFile('database/migrations/014_vehicle_categories.sql',path.join(legacyDirectory,'014_vehicle_categories.sql'));
+  assert.deepEqual(await migrate(pool,legacyDirectory),['014_vehicle_categories.sql']);
   const app=express();app.use(express.json({limit:'32kb'}));app.use('/api',createApiRouter({services,allowedOrigins:[origin],secureCookies:false}));
   http=app.listen(0,'127.0.0.1');await once(http,'listening');const address=http.address();assert(address&&typeof address==='object');base=`http://127.0.0.1:${address.port}/api`;
 });
@@ -61,13 +62,14 @@ async function assign(categoryId:string|null,carId='panther-grand-touring'){
 
 test('014 adds categories for sixteen cars without changing existing offers, ownership, balances or rules',async()=>{
   for(const table of preserved)assert.deepEqual(await rows(table),legacy[table],table);
+  assert.deepEqual(await migrate(pool),['015_suv_catalog.sql']);
   assert.deepEqual(await migrate(pool),[]);
   const response=await request('/catalog',{user:null,origin:null});assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('set-cookie'),null);
   const catalog=await response.json() as any;
   assert.deepEqual(catalog.categories.map((category:VehicleCategory)=>[category.id,category.name,category.sortOrder,category.version]),[
-    ['sport','Sport',10,1],['supercar','Supercar',20,1],['hypercar','Hypercar',30,1],['race','Mobil balap',40,1],['rally','Reli',50,1],['muscle','Muscle',60,1],['mpv','MPV',70,1],['special','Spesial',80,1],
+    ['sport','Sport',10,1],['supercar','Supercar',20,1],['hypercar','Hypercar',30,1],['race','Mobil balap',40,1],['rally','Reli',50,1],['muscle','Muscle',60,1],['mpv','MPV',70,1],['suv','SUV',75,1],['special','Spesial',80,1],
   ]);
-  assert.equal(catalog.cars.length,16);assert(catalog.cars.every((car:any)=>catalog.categories.some((category:VehicleCategory)=>category.id===car.categoryId)));
+  assert.equal(catalog.cars.length,20);assert(catalog.cars.every((car:any)=>catalog.categories.some((category:VehicleCategory)=>category.id===car.categoryId)));
   assert.equal(catalog.cars.find((car:any)=>car.id==='panther-grand-touring').categoryId,'mpv');
   assert.equal(catalog.cars.find((car:any)=>car.id==='bmw-hybrid-v8').categoryId,'race');
   assert.equal(catalog.cars.find((car:any)=>car.id==='jesko-absolut').categoryId,'hypercar');

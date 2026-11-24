@@ -39,6 +39,7 @@ export async function createApplication(options:ApplicationOptions={}){
   authenticate:headers=>services.accounts.authenticateSession(headers),
   gameplayAccess:userId=>services.prayer.status(userId),
   resolveLoadout:(userId,selection,version)=>services.economy.resolveLoadout(userId,selection,version),
+  resolveVehicleRestriction:categoryId=>services.economy.resolveVehicleRestriction(categoryId),
   getActiveRuleset:()=>services.economy.getActiveRuleset(),
   beginRace:input=>services.economy.beginRace(input),
   finalizeRace:result=>services.economy.finalizeRace(result),

@@ -67,6 +67,15 @@ test('Client prediction, renderer readiness and connection lifecycle use the act
     assert.deepEqual(h.room.sent.at(-1)!.value,{ready:false,assetsLoaded:false},'A pending asset check cannot override a later unready action');
    }finally{h.controller.dispose();await flush();}
   });
+  await t.test('Category room readiness preloads only its frozen eligible bot models',async()=>{
+   const h=setup(),sim=runtime(),lobby=snapshot(sim,'lobby');
+   lobby.config={...lobby.config,bots:5,vehicleCategoryId:'suv'};
+   lobby.members[0]!.loadout={...lobby.members[0]!.loadout,carId:'honda-crv-rs',stats:DEFAULT_VEHICLE_STATS['honda-crv-rs']};
+   lobby.vehicleRestriction={categoryId:'suv',categoryName:'SUV',allowedCarIds:['honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner']};
+   h.room.emit('snapshot',lobby);
+   try{await h.controller.ready(true);assert.deepEqual(h.calls.models.at(-1),['honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner']);assert.equal(h.room.sent.at(-1)?.type,'ready');}
+   finally{h.controller.dispose();await flush();}
+  });
   await t.test('Arena acknowledgement waits for models, scene setup, applied grid, actual frame and visible document',async()=>{
    const h=setup(),models=deferred(),started=deferred(),frame=deferred(),visibleFrame=deferred();
    h.game.ensureModels=async ids=>{h.calls.models.push(ids);await models.promise;};h.game.startRace=async value=>{h.calls.start.push(value);await started.promise;};

@@ -25,7 +25,7 @@ const isCode=(code:string)=>(error:unknown)=>(error as {code?:string})?.code===c
 before(async()=>{
   await control.query(`CREATE SCHEMA ${schema}`);
   pool=new pg.Pool({connectionString,options:`-c search_path=${schema}`,max:12});
-  assert.equal((await migrate(pool)).length,14);
+  assert.equal((await migrate(pool)).length,15);
   services=createServices(pool,{prayerNow:()=>new Date(now)});
   const app=express();app.use(express.json({limit:'32kb'}));app.use('/api',createApiRouter({services,allowedOrigins:[origin],secureCookies:false}));
   http=app.listen(0,'127.0.0.1');await once(http,'listening');

@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {api,type User,resolveUrl} from './api.js';
 import type {MediaAsset} from '../../shared/media.js';
+import {CAR_IDS,CIRCUIT_IDS} from '../../shared/types.js';
 import {Icon} from './icons.js';
 import './branding.css';
 
@@ -30,7 +31,7 @@ export function Splash({done,image=null}:{done:()=>void;image?:MediaAsset|null})
 export function Auth({onLogin,serverError,retry,initializing=false}:{initializing?:boolean;onLogin:(user:User)=>void;serverError:string;retry:()=>void}){
  const [register,setRegister]=useState(false),[email,setEmail]=useState(''),[name,setName]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  async function submit(e:FormEvent){e.preventDefault();if(initializing||busy)return;setBusy(true);setError('');try{const r=await api<{user:User}>('/auth/'+(register?'register':'login'),'POST',{email,password,...(register?{displayName:name}:{})});setPassword('');onLogin(r.user);}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
- return <main className="auth-layout"><section className="auth-story"><div className="wordmark auth-wordmark"><img src={`${BASE_URL}/branding/uvelocity-logo.png`} alt="UVelocity"/></div><div className="auth-copy"><span className="eyebrow">UVELOCITY / ONLINE RACING</span><h1>Mulai dari garasi.<br/><em>Menang di lintasan.</em></h1><p>Satu dunia balap, garasi milik Anda. Pilih mobil, rakit gaya, dan ajak teman ke garis start.</p><div className="auth-tracks"><span>NEON CITY</span><span>AZURE COAST</span><span>FROSTPEAK PASS</span></div></div><div className="auth-road"><div/><i/><b>UV</b></div><footer><span>create by civitas UIKA</span><span>16 kendaraan · 3 sirkuit</span></footer></section>
+ return <main className="auth-layout"><section className="auth-story"><div className="wordmark auth-wordmark"><img src={`${BASE_URL}/branding/uvelocity-logo.png`} alt="UVelocity"/></div><div className="auth-copy"><span className="eyebrow">UVELOCITY / ONLINE RACING</span><h1>Mulai dari garasi.<br/><em>Menang di lintasan.</em></h1><p>Satu dunia balap, garasi milik Anda. Pilih mobil, rakit gaya, dan ajak teman ke garis start.</p><div className="auth-tracks"><span>NEON CITY</span><span>AZURE COAST</span><span>FROSTPEAK PASS</span><span>DRAG STRIP 2 KM</span></div></div><div className="auth-road"><div/><i/><b>UV</b></div><footer><span>create by civitas UIKA</span><span>{CAR_IDS.length} kendaraan · {CIRCUIT_IDS.length} lintasan</span></footer></section>
  <section className="auth-form-side"><div className="auth-card"><div className="auth-tag"><Icon name="flag"/> AKSES PEMBALAP</div><h2>{register?'Garasi baru menanti.':'Selamat datang kembali.'}</h2><p>{register?'Buat akun dan mulai dengan Subaru BRZ serta Rp25.000 kredit game.':'Masuk untuk melanjutkan koleksi dan balapan Anda.'}</p><form onSubmit={submit}>
  {register&&<label>Nama pembalap<input value={name} onChange={e=>setName(e.target.value)} minLength={2} maxLength={32} required autoComplete="nickname" placeholder="Nama di lintasan"/></label>}
  <label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="email" maxLength={254} placeholder="nama@email.com"/></label>

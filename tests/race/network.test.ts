@@ -1,3 +1,4 @@
+import {CAR_IDS} from '../../shared/types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -36,6 +37,7 @@ test('Actual Colyseus clients: auth,2/4/8/15humans, readiness, inputs, latency, 
     async authenticate(headers){const userId=headers.cookie?.replace('sid=','');return userId&&!revoked.has(userId)?{id:userId,displayName:'Driver '+userId}:null;},
     async gameplayAccess(){return allowedPrayerStatus();},
     async resolveLoadout(_userId,selection,rulesetId='v1'){if(selection.rimId==='unowned')throw new Error('Not owned');return{...selection,rimId:selection.rimId??'stock',stats:DEFAULT_VEHICLE_STATS[selection.carId],tuningVersion:rulesetId};},
+    async resolveVehicleRestriction(categoryId){if(categoryId)throw new Error('Fixture category unavailable');return{categoryId:null,categoryName:null,allowedCarIds:[...CAR_IDS]};},
     async getActiveRuleset(){return{version:'v1',cars:DEFAULT_VEHICLE_STATS,physics:{...DEFAULT_PHYSICS,tickRate:simulationRate}};},
     async beginRace(input){begun.set(input.raceId,input);},
     async finalizeRace(result){assert.ok(begun.has(result.raceId));results.set(result.raceId,result);let settlement=settlements.get(result.raceId);if(!settlement){settlement={raceId:result.raceId,rewards:result.participants.filter(p=>p.userId).map(p=>({userId:p.userId!,amount:p.status==='finished'?'100':'0',balance:p.status==='finished'?'1100':'1000'}))};settlements.set(result.raceId,settlement);}return settlement;},

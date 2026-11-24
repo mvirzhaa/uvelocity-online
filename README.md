@@ -1,8 +1,25 @@
 # UVelocity
 
-Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, ekonomi rupiah virtual, pembelian mobil dan pelek, cat/striping berbayar, pengaturan akses kendaraan oleh administrator, serta jeda salat bersama berdasarkan lokasi pemain. Pembaruan **1.4.0** menerapkan gaya futuristis biru gelap, cyan, dan emas mengikuti referensi pengguna, disertai bengkel 3D dengan lengan robot serta penerangan cyan. Antarmuka dirapatkan, kendali musik menjadi ikon kecil di header, koleksi menampilkan paling banyak empat kartu sekaligus, splash 3 detik memakai gambar admin, dan kategori kendaraan dapat dikelola admin serta difilter di showroom. Model Panther dan kontinuitas musik dari versi **1.3.1** tetap digunakan. Riwayat fitur sebelumnya tersedia di bawah.
+Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, ekonomi rupiah virtual, pembelian mobil dan pelek, cat/striping berbayar, serta jeda salat bersama. Pembaruan **1.5.0** menambahkan empat kendaraan dari foto pengguna, lintasan drag lurus **2 km**, dan aturan kategori kendaraan saat membuat ruang. Garasi futuristis, empat kartu per halaman, nama mobil ringkas di ponsel, musik di header, serta splash 3 detik bergambar admin tetap digunakan.
 
-**Identitas:** splash tunggal selama **3 detik** memakai JPEG aktif pilihan admin sebagai latar, dengan logo Universitas Ibn Khaldun Bogor, logo **Teknik Informatika UIKA**, dan teks **`create by civitas UIKA`** tetap terlihat di atasnya. Setelah splash, aplikasi menampilkan garasi untuk akun yang sudah masuk atau halaman login. Logo UVelocity transparan yang sudah ada ditampilkan menyatu dengan latar gelap; wadah putih di header dan halaman akun dihapus, dengan penyesuaian kontras melalui CSS. Seluruh **16 aset GLB kendaraan** dan lingkungan sirkuit dipertahankan; lingkungan bengkel diperbarui untuk mengikuti referensi baru. Detail sumber logo ada di [docs/BRANDING.md](docs/BRANDING.md).
+**Identitas:** splash tunggal selama **3 detik** memakai JPEG aktif pilihan admin dengan logo Universitas Ibn Khaldun Bogor, logo **Teknik Informatika UIKA**, dan teks **`create by civitas UIKA`**. Setelah splash, aplikasi menampilkan garasi untuk akun yang sudah masuk atau halaman login. Logo UVelocity transparan menyatu dengan latar gelap. Seluruh **16 GLB kendaraan lama** dipertahankan; katalog sekarang berisi **20 model**. Detail sumber logo ada di [docs/BRANDING.md](docs/BRANDING.md).
+
+## Pembaruan 1.5.0
+
+| Kendaraan baru | Kategori awal | Harga awal kredit game |
+| --- | --- | ---: |
+| Honda CR-V RS e:HEV | SUV | Rp280.000 |
+| Mitsubishi Pajero Sport | SUV | Rp320.000 |
+| Toyota Fortuner GR Sport | SUV | Rp340.000 |
+| Toyota Kijang Innova Zenix Hybrid | MPV | Rp345.000 |
+
+Keempat mobil mempunyai GLB tersendiri, foto referensi bawaan pada kartu, profil suara, roda beranimasi, lampu, cat, pelek, dan striping yang mengikuti sistem lama. Mobil terkunci sampai dibeli atau dibuka admin. Urutan harga bawaan menempatkan **CR-V → Pajero → Fortuner → Zenix**; admin tetap dapat mengubah harga, akses, tuning, dan kategori. Pembelian serta kosmetik tersimpan secara persisten pada setiap kendaraan.
+
+**Drag 2 km:** pilih **Balapan → Buat ruang → Drag · 2 km**. Jalur lurus mempunyai garis start dan finish terpisah dengan jarak tepat 2.000 m. Format selalu satu perjalanan; pengaturan lap kembali tersedia saat memilih sirkuit biasa. Posisi grid manusia dan bot berada pada jarak longitudinal yang sama, dengan lajur terpisah. Area pengereman 700 m berada sesudah finish dan tidak menambah jarak penilaian. Mobil yang sudah selesai melambat tanpa dipindahkan kembali ke start; hasil tetap diselesaikan ketika semua pemain manusia selesai atau DNF.
+
+**Aturan kendaraan ruang:** pilih **Semua kendaraan** atau satu kategori admin, misalnya **SUV**, **MPV**, atau **Sport**. Pilih kendaraan balap yang dimiliki atau sedang dibuka gratis. Bila mobil aktif tidak sesuai, UI meminta pilihan yang memenuhi aturan dan tidak membeli/mengganti mobil aktif secara otomatis. Penerima kode meninjau lintasan serta aturan kategori sebelum bergabung. Server menerapkan aturan pada masuk ruang, penggantian mobil, kesiapan, mulai, reconnect, dan seluruh bot. Nama kategori serta daftar mobil yang diizinkan dibekukan saat ruang dibuat; pengubahan kategori oleh admin berlaku untuk ruang baru.
+
+**Upgrade dari 1.4.0:** jalankan `npm run db:migrate` terhadap database yang sama untuk menerapkan **015_suv_catalog.sql**, kemudian build dan mulai ulang layanan. Compose menjalankan migrasi saat startup. Migrasi menambahkan empat kendaraan, slot foto, kategori/pemetaan awal, dan versi aturan yang menyalin tuning lama. Akun, saldo, koleksi, tampilan, foto admin, serta aturan pertandingan terdahulu tetap dipertahankan.
 
 ## Pembaruan 1.4.0
 
@@ -133,9 +150,9 @@ Pastikan `NODE_ENV=production` di lingkungan proses. Jika menggunakan port nativ
 
 1. **Daftar / masuk.** Akun baru memperoleh Subaru BRZ, roda standar, dan Rp25.000 kredit game satu kali.
 2. **Garasi.** Hanya kendaraan milik permanen pemain, termasuk Subaru BRZ awal, yang tampil di koleksi ini. Gunakan **Sebelumnya/Berikutnya** untuk melihat mobil lain yang dimiliki atau tombol kiri/kanan koleksi untuk membuka kelompok empat kartu berikutnya. Putar mobil dengan menyeret, perbesar dengan scroll, pilih sudut depan/samping/belakang, dan dengarkan profil mesin. Garasi memakai lingkungan bengkel 3D. Ikon musik di dekat kredit mengatur lagu MP3 admin; tekan ikon jika browser meminta interaksi terlebih dahulu.
-3. **Showroom.** Pratinjau seluruh 16 kendaraan, termasuk yang belum dibeli, atau pilih kategori pada filter **Kategori kendaraan**. Kartu ditampilkan maksimal empat per halaman dan dapat ditelusuri dengan tombol kiri/kanan. **Sebelumnya/Berikutnya** menelusuri mobil dalam hasil filter. Mobil berlabel **Milik permanen** selalu bisa dipakai; **Akses gratis admin** bisa dipakai selama dibuka. **Beli akses permanen** membeli kendaraan satu kali dengan saldo akun, termasuk ketika sedang dibuka gratis.
+3. **Showroom.** Pratinjau seluruh 20 kendaraan, termasuk yang belum dibeli, atau pilih kategori pada filter **Kategori kendaraan**. Kartu ditampilkan maksimal empat per halaman dan dapat ditelusuri dengan tombol kiri/kanan. **Sebelumnya/Berikutnya** menelusuri mobil dalam hasil filter. Mobil berlabel **Milik permanen** selalu bisa dipakai; **Akses gratis admin** bisa dipakai selama dibuka. **Beli akses permanen** membeli kendaraan satu kali dengan saldo akun, termasuk ketika sedang dibuka gratis.
 4. **Bengkel.** Pilih kendaraan yang dimiliki, paket pelek, warna bodi/pelek, lapisan metallic/gloss/matte, dan salah satu pola striping. Pratinjau tidak memotong saldo. Tekan **Tinjau biaya & pasang**, periksa rincian, lalu **Bayar & pasang**. Memilih kembali tampilan yang tersimpan gratis.
-5. **Balapan.** Buat ruang atau masukkan kode teman. Pilih sirkuit, jumlah lap, slot manusia, bot, kesulitan, dan kontak antarmobil. Semua pemain menekan **Saya siap balapan**, lalu host memulai persiapan. Halaman loading layar penuh memakai JPEG pilihan admin dan menunjukkan status **Memuat arena / Arena siap** setiap perangkat. Gambar loading tidak menutupi proses pemuatan mesin: arena tetap dirender di bawahnya. Halaman ini hilang ketika seluruh arena siap dan server mengirim hitungan 3–2–1 bersama.
+5. **Balapan.** Buat ruang atau periksa kode teman. Pilih lintasan, lap untuk sirkuit atau satu perjalanan drag 2 km, kategori kendaraan, mobil, slot manusia, bot, kesulitan, dan kontak antarmobil. Semua pemain menekan **Saya siap balapan**, lalu host memulai persiapan. Halaman loading layar penuh memakai JPEG pilihan admin dan menunjukkan status **Memuat arena / Arena siap** setiap perangkat. Gambar loading tidak menutupi proses pemuatan mesin: arena tetap dirender di bawahnya. Halaman ini hilang ketika seluruh arena siap dan server mengirim hitungan 3–2–1 bersama.
 6. **Lokasi & jeda salat.** Atur GPS atau lokasi manual dari Profil. Jika waktu salat seorang peserta masuk, seluruh ruang membeku minimal 15 menit. Setelah itu semua peserta yang masih berada di ruang menekan **Siap melanjutkan**, lalu menunggu hitungan bersama. Jakarta digunakan jika lokasi tidak diperoleh.
 7. **Finish.** Server menentukan lap, posisi, hasil, dan hadiah. Layar hasil menampilkan hadiah akun sendiri. Transaksi dapat diperiksa di profil.
 
@@ -167,14 +184,18 @@ Untuk mobil yang belum dimiliki, buka **Showroom**, lalu klik **Beli akses perma
 | Koenigsegg Regera | Rp2.400.000 |
 | Hennessey Venom F5 | Rp2.200.000 |
 | Isuzu Panther Grand Touring | Rp150.000 |
+| Honda CR-V RS e:HEV | Rp280.000 |
+| Mitsubishi Pajero Sport | Rp320.000 |
+| Toyota Fortuner GR Sport | Rp340.000 |
+| Toyota Kijang Innova Zenix Hybrid | Rp345.000 |
 
-Tiga sirkuit: **Neon City**, **Azure Coast**, dan **Frostpeak Pass**. Masing-masing mempertahankan geometri lintasan, lingkungan kota/pantai/pegunungan es, serta pilihan suasana senja dan malam. Detail grafis dapat dipilih Ringan, Seimbang, atau Tinggi.
+Empat lintasan: **Neon City**, **Azure Coast**, **Frostpeak Pass**, dan **Drag Strip 2 KM**. Tiga sirkuit mempertahankan geometri dan lingkungan kota/pantai/pegunungan es; drag memakai jalur lurus terbuka dengan start, finish, penanda jarak, dan area pengereman. Pilihan suasana senja/malam dan kualitas Ringan/Seimbang/Tinggi tetap tersedia.
 
-Harga dapat berbeda jika administrator mengubah katalog. Delapan model tambahan merupakan rekonstruksi 3D khusus berdasarkan referensi pengguna; bukan mesh pabrikan, hasil scan, atau salinan aset game lain. BMW M4 memakai bentuk F82, Batmobile mengikuti versi 1989, Koenigsegg mengikuti bentuk Regera pada foto terbaru, Venom F5 memakai kokpit terbuka serta roda emas sesuai foto, dan Panther mengikuti foto MPV gelap beserta foto detail depan/belakang kendaraan putih. Warna bawaan Panther tetap gelap; warna tersimpan pemain diterapkan oleh renderer. Delapan aset kendaraan World Tour dipertahankan tanpa perubahan berkas GLB. Angka performa adalah parameter simulasi arcade, bukan klaim spesifikasi mobil asli. Varian Polisi 77 adalah desain fiktif untuk game.
+Harga dapat berbeda jika administrator mengubah katalog. Dua belas model tambahan merupakan rekonstruksi 3D khusus berdasarkan referensi pengguna; bukan mesh pabrikan, hasil scan, atau salinan aset game lain. BMW M4 memakai bentuk F82, Batmobile mengikuti versi 1989, Koenigsegg mengikuti bentuk Regera pada foto terbaru, Venom F5 memakai kokpit terbuka serta roda emas sesuai foto, dan Panther mengikuti foto MPV gelap beserta foto detail depan/belakang kendaraan putih. Warna bawaan Panther tetap gelap; warna tersimpan pemain diterapkan oleh renderer. Delapan aset kendaraan World Tour dipertahankan tanpa perubahan berkas GLB. Angka performa adalah parameter simulasi arcade, bukan klaim spesifikasi mobil asli. Varian Polisi 77 adalah desain fiktif untuk game.
 
 ### Batas ruang
 
-- 1–20 lap.
+- 1–20 lap untuk sirkuit, atau satu perjalanan untuk drag 2 km.
 - 1–15 slot pemain manusia.
 - 0–14 bot.
 - Jumlah slot manusia + bot maksimum **15 peserta total**. Untuk memainkan 14 bot, pilih satu slot manusia. Untuk empat teman dan enam bot, gunakan empat slot manusia serta enam bot.
@@ -298,15 +319,17 @@ Buka **Admin → Foto kendaraan**, pilih model, lalu pilih foto mobil asli yang 
 
 Server mengorientasikan foto, mempertahankan proporsi, dan memperkecilnya agar muat dalam **512 × 288 piksel** tanpa memotong atau memperbesar gambar. Hasil disimpan sebagai WebP maksimal 512 KiB tanpa metadata EXIF/GPS. Kartu memakai bingkai 16:9, pemuatan gambar bertahap saat diperlukan, dan ikon cadangan jika foto belum tersedia atau gagal dimuat. Foto ini melengkapi kartu koleksi; model 3D pada bengkel dan arena tetap digunakan seperti sebelumnya.
 
-Setiap kendaraan mempunyai satu foto aktif dengan versi tersendiri. Penggantian mengubah foto model tersebut bagi semua pemain setelah katalog dimuat ulang; tidak mengubah harga, status kunci, saldo, konfigurasi, atau kepemilikan. Perubahan admin bersamaan ditolak jika memakai versi foto lama, sehingga perlu diperiksa kembali. **Hapus foto** meminta konfirmasi dan alasan; kartu kembali menampilkan ikon. Foto lama dibuang dari penyimpanan saat berhasil diganti/dihapus, sedangkan riwayat perubahan tetap tercatat. Berkas foto tersimpan di PostgreSQL dan ikut backup database.
+Setiap kendaraan mempunyai satu foto aktif dengan versi tersendiri. Penggantian mengubah foto model tersebut bagi semua pemain setelah katalog dimuat ulang; tidak mengubah harga, status kunci, saldo, konfigurasi, atau kepemilikan. Perubahan admin bersamaan ditolak jika memakai versi foto lama, sehingga perlu diperiksa kembali. **Hapus foto** meminta konfirmasi dan alasan; kartu kembali ke foto referensi bawaan jika tersedia atau ikon. Foto lama dibuang dari penyimpanan saat berhasil diganti/dihapus, sedangkan riwayat perubahan tetap tercatat. Berkas foto tersimpan di PostgreSQL dan ikut backup database.
 
-Paket tidak mengisi foto mobil asli secara otomatis. Admin mengunggah foto yang sesuai untuk masing-masing dari 16 model. Foto hanya muncul di Garasi jika kendaraan tersebut dimiliki pemain; Showroom tetap menampilkan semua kendaraan.
+Empat kendaraan baru mempunyai foto referensi bawaan yang disalin dari gambar pengguna di `public/vehicle-photos/`. Foto unggahan admin selalu didahulukan. Menghapus unggahan mengembalikan foto referensi tanpa menghapus atau membuat data foto baru di database. Kendaraan lama tetap memakai foto admin atau ikon cadangan. Foto hanya muncul di Garasi jika kendaraan tersebut dimiliki pemain; Showroom tetap menampilkan semua kendaraan.
 
 ## Memperbarui pemasangan dari versi sebelumnya
 
 Pertahankan `.env` dan volume/database yang sudah digunakan. Buat backup, ganti sumber aplikasi dengan paket ini, lalu jalankan `docker compose up --build -d` atau `npm ci`, `npm run db:migrate`, dan `npm run build` pada pemasangan native. Jangan membuat database baru atau menghapus volume.
 
-**Khusus 1.4.0:** migrasi **014_vehicle_categories.sql** wajib sudah diterapkan sebelum server baru dijalankan. Pada pemasangan native, jalankan `npm run db:migrate` terhadap database yang sama, lalu build dan mulai ulang layanan. Migrasi ini membuat `vehicle_categories` dan `vehicle_category_assignments`, mengisi delapan kategori awal, serta memetakan 16 kendaraan yang sudah ada. Harga, versi penawaran, kepemilikan, saldo, kosmetik, dan aturan balapan lama tetap dipertahankan. Jangan menghapus data agar migrasi dapat berjalan.
+**Khusus 1.5.0:** migrasi **015_suv_catalog.sql** menambahkan empat mobil beserta slot foto dan pemetaan SUV/MPV, serta menerbitkan aturan baru dengan menyalin tuning, fisika, dan hadiah yang sudah aktif. Semua migrasi sebelumnya tetap dijalankan berurutan jika belum terpasang.
+
+**Riwayat 1.4.0:** migrasi **014_vehicle_categories.sql** wajib sudah diterapkan sebelum server baru dijalankan. Pada pemasangan native, jalankan `npm run db:migrate` terhadap database yang sama, lalu build dan mulai ulang layanan. Migrasi ini membuat `vehicle_categories` dan `vehicle_category_assignments`, mengisi delapan kategori awal, serta memetakan 16 kendaraan yang sudah ada. Harga, versi penawaran, kepemilikan, saldo, kosmetik, dan aturan balapan lama tetap dipertahankan. Jangan menghapus data agar migrasi dapat berjalan.
 
 Migrasi tambahan **006** menambahkan akses global, tampilan per kendaraan, serta penawaran/transaksi bengkel. Migrasi **007** menambahkan tujuh kendaraan dan versi aturan baru dengan mempertahankan tuning serta kebijakan hadiah admin sebelumnya. Migrasi **008** menambahkan lokasi dan window jeda salat pribadi yang persisten. Migrasi **009** menambahkan koleksi media serta pilihan musik/gambar aktif; pilihan awal kosong dan tidak mengubah data pemain. Migrasi **010** menambahkan foto kecil per kendaraan dengan versi terpisah dari katalog harga. Migrasi **011** menambahkan status pengecatan pelek bawaan dan tarif perubahan warna striping yang terpisah. Material pelek bawaan lama dipertahankan. Penawaran bengkel lama yang belum dibayar diminta diperbarui karena aturan biaya berubah; riwayat dan respons pembayaran yang sudah berhasil tetap disimpan. Akun, saldo, koleksi, ledger, serta konfigurasi dan versi aturan lama tetap dipertahankan. Migrasi **012** mengubah nama bawaan Koenigsegg tanpa mengganti identitas kendaraan; migrasi **013** menambahkan Panther dan aturan baru sambil mempertahankan tuning admin lama. Pengujian upgrade menggunakan database berisi akun dan konfigurasi lama, bukan hanya database kosong.
 
@@ -318,9 +341,13 @@ GLB siap pakai sudah tersedia di paket; server produksi tidak perlu Blender. Sum
 node scripts/build-racecar-expansion.cjs --publish
 node scripts/build-hypercar-expansion.cjs --publish
 node scripts/build-panther.cjs --publish
+node scripts/build-crv.cjs --publish
+node scripts/build-pajero.cjs --publish
+node scripts/build-fortuner.cjs --publish
+node scripts/build-zenix.cjs --publish
 ```
 
-Skrip memakai Three.js yang dibundel dan menulis kembali delapan GLB rekonstruksi saja. `scripts/modeling-kit.cjs` memuat helper permukaan bodi, material, bukaan roda, hierarchy roda/kemudi, dan eksportir glTF. Catatan asal serta ukuran geometri permainan berada di metadata masing-masing model. Pratinjau render tiga kendaraan terbaru tersedia di `docs/previews/`. Gambar pemeriksaan model, bila disertakan, dibuat dengan Blender Cycles CPU dan bukan tangkapan layar gameplay browser.
+Skrip memakai Three.js yang dibundel; setiap builder menulis hanya GLB kendaraan yang menjadi tanggung jawabnya. Katalog kini memiliki dua belas rekonstruksi tambahan. `scripts/modeling-kit.cjs` memuat helper permukaan bodi, material, bukaan roda, hierarchy roda/kemudi, dan eksportir glTF. Catatan asal serta ukuran geometri permainan berada di metadata masing-masing model. Pratinjau render inspeksi tersedia di `docs/previews/`. Gambar pemeriksaan model, bila disertakan, dibuat dengan Blender Cycles CPU dan bukan tangkapan layar gameplay browser.
 
 ## Komponen teknis
 

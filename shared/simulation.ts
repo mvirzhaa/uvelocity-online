@@ -1,5 +1,5 @@
 import { clamp, DEFAULT_PHYSICS, neutralInput } from './config.js';
-import { CAR_HALF_WIDTH, ROAD_HALF, nearestTrackIndex, pointAt, projectTrackT, signedTrackOffset, wrap, type Track } from './track.js';
+import { CAR_HALF_WIDTH, nearestTrackIndex, pointAt, projectTrackT, signedTrackOffset, wrap, type Track } from './track.js';
 import type { FrozenLoadout, GameplayEvent, PhysicsConfig, RacerState, VehicleInput, VehicleState, VehicleStats } from './types.js';
 
 export function createVehicleState():VehicleState {
@@ -13,9 +13,9 @@ export function createRacer(id:string,name:string,loadout:FrozenLoadout,userId:s
 }
 export function placeStartingGrid(racers:RacerState[],track:Track):void {
   racers.forEach((racer,slot)=>{
-    const row=Math.floor(slot/2),lane=racers.length===1?0:slot%2?3.65:-3.65,back=8.5+row*8.4+(slot%2?1.7:0);
-    const t=wrap(1-back/track.length),point=pointAt(track,t);
-    Object.assign(racer,createVehicleState(),{x:point.x+point.nx*lane,z:point.z+point.nz*lane,heading:Math.atan2(point.tx,point.tz),trackIdx:Math.floor(t*track.samples.length),trackT:t,lastTrackT:t,progress:t-1,
+    const row=Math.floor(slot/2),lane=track.closed?(racers.length===1?0:slot%2?3.65:-3.65):(slot-(racers.length-1)/2)*3,back=track.closed?8.5+row*8.4+(slot%2?1.7:0):8.5;
+    const t=track.closed?wrap(1-back/track.length):-back/track.length,point=pointAt(track,t);
+    Object.assign(racer,createVehicleState(),{x:point.x+point.nx*lane,z:point.z+point.nz*lane,heading:Math.atan2(point.tx,point.tz),trackIdx:track.closed?Math.floor(t*track.samples.length):0,trackT:t,lastTrackT:t,progress:track.closed?t-1:t,
       input:neutralInput(),inputReceivedMs:0,lastProcessedSeq:0,ghost:false,dnf:false,botLane:lane,botTargetLane:lane,botLaneTimer:2+(slot%5)*.43});
   });
 }
@@ -28,13 +28,14 @@ export function shortestAngle(value:number):number {
 export function advanceFinishedVehicle(state:VehicleState,track:Track,dt:number,physics:PhysicsConfig=DEFAULT_PHYSICS):void {
   if(!(dt>0&&dt<=.1)||!state.finished)return;
   state.nitroActive=false;
-  const oldSpeed=state.speed,deceleration=Math.max(5.5,physics.coastDrag);
+  const oldSpeed=state.speed,remainingRunout=track.runout-Math.max(0,state.trackT-1)*track.length;
+  const deceleration=Math.max(5.5,physics.coastDrag,track.closed?0:oldSpeed*oldSpeed/(2*Math.max(1,remainingRunout-5)));
   state.speed=Math.sign(oldSpeed)*Math.max(0,Math.abs(oldSpeed)-deceleration*dt);
   if(state.speed===0)state.speed=0; // Normalize negative zero for snapshots.
   const distance=(oldSpeed+state.speed)*.5*dt;
   if(distance!==0){
-    const from=pointAt(track,state.trackT),nextT=wrap(state.trackT+distance/track.length),to=pointAt(track,nextT);
-    const lane=clamp(signedTrackOffset(track,state.x,state.z,state.trackIdx),-ROAD_HALF+CAR_HALF_WIDTH,ROAD_HALF-CAR_HALF_WIDTH);
+    const from=pointAt(track,state.trackT),rawT=state.trackT+distance/track.length,nextT=track.closed?wrap(rawT):rawT,to=pointAt(track,nextT);
+    const lane=clamp(signedTrackOffset(track,state.x,state.z,state.trackIdx),-track.roadHalf+CAR_HALF_WIDTH,track.roadHalf-CAR_HALF_WIDTH);
     // Translate along the centerline without snapping a finisher to its center.
     state.x+=to.x-from.x+(to.nx-from.nx)*lane;state.z+=to.z-from.z+(to.nz-from.nz)*lane;
     const turn=shortestAngle(Math.atan2(to.tx,to.tz)-state.heading);
@@ -53,7 +54,7 @@ export function advanceVehicle(state:VehicleState,input:VehicleInput,track:Track
   if(state.finished){advanceFinishedVehicle(state,track,dt,physics);return[];}
   const events:GameplayEvent[]=[];
   if(input.reset&&elapsedMs-state.lastResetMs>=physics.resetCooldownMs){
-    const point=track.samples[state.trackIdx]!;
+    const point=track.closed?track.samples[state.trackIdx]!:pointAt(track,state.trackT);
     state.x=point.x;state.z=point.z;state.heading=Math.atan2(point.tx,point.tz);state.speed=clamp(state.speed,0,15);
     state.steerAngle=state.driftAngle=state.bodyRoll=state.bodyPitch=0;state.lastResetMs=elapsedMs;
     // A reset reanchors projection without granting route distance or a gate.
@@ -83,7 +84,7 @@ export function advanceVehicle(state:VehicleState,input:VehicleInput,track:Track
   const beforeX=state.x,beforeZ=state.z,angle=state.heading-state.driftAngle*.45;
   state.x+=Math.sin(angle)*state.speed*dt;state.z+=Math.cos(angle)*state.speed*dt;
   state.trackIdx=nearestTrackIndex(track,state.x,state.z,state.trackIdx);
-  const offset=signedTrackOffset(track,state.x,state.z,state.trackIdx),maximum=ROAD_HALF-CAR_HALF_WIDTH;
+  const offset=signedTrackOffset(track,state.x,state.z,state.trackIdx),maximum=track.roadHalf-CAR_HALF_WIDTH;
   if(Math.abs(offset)>maximum){
     const sign=Math.sign(offset),excess=Math.abs(offset)-maximum,point=track.samples[state.trackIdx]!;
     state.x-=point.nx*sign*(excess+.18);state.z-=point.nz*sign*(excess+.18);
@@ -99,9 +100,10 @@ export function advanceVehicle(state:VehicleState,input:VehicleInput,track:Track
 }
 
 /** Ordered progress gates work identically for every human and bot. */
-export function advanceLapProgress(state:VehicleState,t:number,laps:number,elapsedMs:number,dtMs=0):GameplayEvent[] {
+export function advanceLapProgress(state:VehicleState,t:number,laps:number,elapsedMs:number,dtMs=0,closed=true):GameplayEvent[] {
   if(state.finished)return[];
-  let delta=t-state.lastTrackT;if(delta>.5)delta--;if(delta<-.5)delta++;
+  if(!closed)laps=1;
+  let delta=t-state.lastTrackT;if(closed){if(delta>.5)delta--;if(delta<-.5)delta++;}
   state.lastTrackT=t;state.trackT=t;
   if(!Number.isFinite(delta)||Math.abs(delta)>.12)return[];
   const before=state.progress;state.progress+=delta;if(delta<=0)return[];
@@ -144,12 +146,14 @@ function hashSeed(text:string):number {let result=2166136261;for(const c of text
 function random(racer:RacerState):number {let s=racer.botSeed;s^=s<<13;s^=s>>>17;s^=s<<5;racer.botSeed=s>>>0;return racer.botSeed/4294967296;}
 /** AI supplies controls to exactly the same physical rules as every human. */
 export function botInput(racer:RacerState,racers:RacerState[],track:Track,dt:number,difficulty:'easy'|'normal'|'hard'):VehicleInput {
-  racer.botLaneTimer-=dt;if(racer.botLaneTimer<=0){racer.botLaneTimer=3+random(racer)*3;racer.botTargetLane=(random(racer)-.5)*10;}
+  // A drag grid gives every participant its own equally distant lane. Keep
+  // that lane rather than weaving across a fifteen-wide launch.
+  racer.botLaneTimer-=dt;if(track.closed&&racer.botLaneTimer<=0){racer.botLaneTimer=3+random(racer)*3;racer.botTargetLane=(random(racer)-.5)*10;}
   let leader:RacerState|undefined,gap=Infinity;
   const lane=signedTrackOffset(track,racer.x,racer.z,racer.trackIdx);
-  for(const other of racers){if(other===racer||other.dnf||other.finished)continue;const distance=wrap(other.trackT-racer.trackT)*track.length,otherLane=signedTrackOffset(track,other.x,other.z,other.trackIdx);
+  for(const other of racers){if(other===racer||other.dnf||other.finished)continue;const delta=other.trackT-racer.trackT,distance=(track.closed?wrap(delta):delta)*track.length,otherLane=signedTrackOffset(track,other.x,other.z,other.trackIdx);
     if(distance>.02&&distance<24&&Math.abs(otherLane-lane)<2.7&&distance<gap){leader=other;gap=distance;}}
-  if(leader&&gap<18){const desired=lane>=0?-4.2:4.2;const blocked=racers.some(other=>other!==racer&&!other.finished&&!other.dnf&&Math.abs(shortestTrackDistance(other.trackT-racer.trackT)*track.length)<11&&Math.abs(signedTrackOffset(track,other.x,other.z,other.trackIdx)-desired)<2.7);if(!blocked)racer.botTargetLane=desired;}
+  if(track.closed&&leader&&gap<18){const desired=lane>=0?-4.2:4.2;const blocked=racers.some(other=>other!==racer&&!other.finished&&!other.dnf&&Math.abs(shortestTrackDistance(other.trackT-racer.trackT)*track.length)<11&&Math.abs(signedTrackOffset(track,other.x,other.z,other.trackIdx)-desired)<2.7);if(!blocked)racer.botTargetLane=desired;}
   racer.botLane+=clamp(racer.botTargetLane-racer.botLane,-2.6*dt,2.6*dt);
   const lookAhead=10+Math.max(0,racer.speed)*.36,target=pointAt(track,racer.trackT+lookAhead/track.length);
   const targetHeading=Math.atan2(target.x+target.nx*racer.botLane-racer.x,target.z+target.nz*racer.botLane-racer.z);

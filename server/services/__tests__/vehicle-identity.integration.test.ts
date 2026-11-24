@@ -53,12 +53,12 @@ after(async()=>{
 });
 
 test('012/013 preserve purchased identity, cosmetics, quotes and history while appending Panther',async()=>{
-  assert.deepEqual(await migrate(pool),['012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql']);
+  assert.deepEqual(await migrate(pool),['012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql','015_suv_catalog.sql']);
   assert.deepEqual(await migrate(pool),[]);
-  const count=await pool.query('SELECT count(*)::int n FROM schema_migrations');assert.equal(count.rows[0].n,14);
+  const count=await pool.query('SELECT count(*)::int n FROM schema_migrations');assert.equal(count.rows[0].n,15);
   for(const table of preservedTables)assert.deepEqual(await rows(table),legacy.tables[table],table+' must retain all existing rows');
   assert.deepEqual(await services.economy.getProfile(owner.user.id),legacy.profile);
-  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,16);
+  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,20);
   const renamed=catalog.cars.find(car=>car.id===historicalId)!;
   assert.equal(renamed.name,'Koenigsegg Regera');assert.equal(CAR_NAMES[historicalId],renamed.name);
   const current=await rows('catalog_items');
@@ -77,10 +77,10 @@ test('013 retains published operator tuning and old rulesets; existing saved car
   for(const old of legacy.rulesets)assert.deepEqual(allRules.find((row:any)=>row.id===old.id),old);
   for(const old of legacy.ruleCars)assert.deepEqual(allCars.find((row:any)=>row.ruleset_id===old.ruleset_id&&row.car_id===old.car_id),old);
   const active=await services.admin.getTuning(admin.id);
-  assert.equal(Number(active.version),Number(legacy.rules.version)+1);
+  assert.equal(Number(active.version),Number(legacy.rules.version)+2);
   assert.deepEqual(active.physics,legacy.rules.physics);assert.deepEqual(active.rewardPolicy,legacy.rules.rewardPolicy);
   for(const old of legacy.rules.cars)assert.deepEqual(active.cars.find((car:any)=>car.carId===old.carId),old);
-  assert.equal(active.cars.length,16);
+  assert.equal(active.cars.length,20);
   const saved=await services.economy.resolveLoadout(owner.user.id);
   assert.equal(saved.carId,historicalId);assert.equal(saved.color,'#771166');assert.equal(saved.rimColor,'#bbaa55');assert.equal(saved.stripeId,'twin-racing');assert.equal(saved.stripeColor,'#ccffee');
   assert.equal(saved.stats.topSpeed,377);assert.equal(saved.stats.zeroTo100,2.9);assert.equal(saved.stats.handling,1.03);
