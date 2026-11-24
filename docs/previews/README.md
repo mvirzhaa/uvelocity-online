@@ -35,3 +35,45 @@ sedangkan foto putih membantu membaca proporsi. Pajero mempertahankan
 aksesori bumper dan ban yang tampak pada rujukan. Zenix mengikuti dua foto
 putih/perak depan dan belakang. Ukuran dan detail merupakan rekonstruksi
 untuk permainan, bukan data pabrikan.
+
+## Tambahan 1.6.0 — 24 November 2026
+
+Batmobile Tumbler versi The Dark Knight dan Pontiac Knight Rider 1983 (KITT)
+ditambahkan sebagai dua model tersendiri. Enam PNG berikut dirender langsung
+dari GLB yang disertakan pada `public/game/assets/cars/` dengan Blender Cycles
+CPU, material aset, pencahayaan studio, dan kamera ortografis:
+
+| Kendaraan | Depan | Belakang | Samping |
+| --- | --- | --- | --- |
+| Batmobile Tumbler | `batmobile-tumbler-front.png` | `batmobile-tumbler-rear.png` | `batmobile-tumbler-side.png` |
+| Knight Rider KITT | `knight-rider-kitt-front.png` | `knight-rider-kitt-rear.png` | `knight-rider-kitt-side.png` |
+
+Ini adalah **render inspeksi aset GLB**, bukan screenshot garasi, balapan,
+atau pengujian gambar WebGL. Pencahayaan, refleksi, dan hasil akhir cat di
+garasi mengikuti renderer permainan. PNG KITT menampilkan scanner pada satu
+keadaan material; gerakan scanner di dalam game dijalankan oleh adapter
+runtime dan tidak dapat ditunjukkan oleh gambar diam ini.
+
+Tumbler dibangun mengikuti dua foto depan-samping dan belakang yang diberikan
+pengguna: armor bersudut, kaca depan terbelah, roda depan terbuka, empat ban
+belakang dalam pasangan, suspensi terlihat, dan turbin belakang. KITT mengikuti
+empat foto pengguna: hidung rendah dengan scanner merah, tutup lampu pop-up,
+velg turbocast gelap, atap T-top, kaca hatch melengkung, spoiler belakang,
+serta interior cokelat muda. Keduanya merupakan geometri orisinal buatan
+UVelocity dengan penyederhanaan untuk permainan; proporsi dan detail adalah
+rekonstruksi bergaya berdasarkan referensi, bukan scan, CAD pabrikan, atau
+mesh resmi studio film. Model Batmobile 1989 yang sudah ada tetap tersendiri.
+
+Untuk mengulangi keenam render:
+
+```bash
+blender -b -t 4 --python scripts/render-vehicle-previews.py -- \
+  --models batmobile-tumbler,knight-rider-kitt \
+  --output docs/previews --views front,rear,side --samples 96 --width 1100 --height 700
+```
+
+Di katalog 1.6.0 keduanya masuk **Koleksi Ikonik**, dengan harga awal
+Tumbler **Rp1.500.000** dan KITT **Rp850.000** dalam kredit game. Finish bawaan
+adalah matte untuk Tumbler dan gloss untuk KITT; pengaturan cat tersimpan
+pemain tetap berlaku setelah kendaraan dikustomisasi. Nilai harga dan performa
+merupakan pengaturan permainan dan dapat disesuaikan administrator.

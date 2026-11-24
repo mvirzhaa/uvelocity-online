@@ -62,14 +62,14 @@ async function assign(categoryId:string|null,carId='panther-grand-touring'){
 
 test('014 adds categories for sixteen cars without changing existing offers, ownership, balances or rules',async()=>{
   for(const table of preserved)assert.deepEqual(await rows(table),legacy[table],table);
-  assert.deepEqual(await migrate(pool),['015_suv_catalog.sql']);
+  assert.deepEqual(await migrate(pool),['015_suv_catalog.sql','016_iconic_collectors.sql']);
   assert.deepEqual(await migrate(pool),[]);
   const response=await request('/catalog',{user:null,origin:null});assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');assert.equal(response.headers.get('set-cookie'),null);
   const catalog=await response.json() as any;
   assert.deepEqual(catalog.categories.map((category:VehicleCategory)=>[category.id,category.name,category.sortOrder,category.version]),[
-    ['sport','Sport',10,1],['supercar','Supercar',20,1],['hypercar','Hypercar',30,1],['race','Mobil balap',40,1],['rally','Reli',50,1],['muscle','Muscle',60,1],['mpv','MPV',70,1],['suv','SUV',75,1],['special','Spesial',80,1],
+    ['sport','Sport',10,1],['supercar','Supercar',20,1],['hypercar','Hypercar',30,1],['race','Mobil balap',40,1],['rally','Reli',50,1],['muscle','Muscle',60,1],['mpv','MPV',70,1],['suv','SUV',75,1],['special','Spesial',80,1],['koleksi-ikonik','Koleksi Ikonik',85,1],
   ]);
-  assert.equal(catalog.cars.length,20);assert(catalog.cars.every((car:any)=>catalog.categories.some((category:VehicleCategory)=>category.id===car.categoryId)));
+  assert.equal(catalog.cars.length,22);assert(catalog.cars.every((car:any)=>catalog.categories.some((category:VehicleCategory)=>category.id===car.categoryId)));
   assert.equal(catalog.cars.find((car:any)=>car.id==='panther-grand-touring').categoryId,'mpv');
   assert.equal(catalog.cars.find((car:any)=>car.id==='bmw-hybrid-v8').categoryId,'race');
   assert.equal(catalog.cars.find((car:any)=>car.id==='jesko-absolut').categoryId,'hypercar');

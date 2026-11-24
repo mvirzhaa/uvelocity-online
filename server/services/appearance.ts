@@ -1,6 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import type {Pool,PoolClient} from 'pg';
 import {CAR_IDS,STRIPE_IDS,type CarId,type StripeId,type AppearanceSelection,type VehicleAppearance,type SavedLoadout,type AppearanceLineItem,type AppearanceQuote,type AppearanceApplication,type GameWallet} from '../../shared/types.js';
+import {factoryFinish} from '../../shared/catalog.js';
 import {transaction} from '../db/pool.js';
 import {assert} from './errors.js';
 import {idempotent} from './idempotency.js';
@@ -17,7 +18,7 @@ export function appearanceSelection(appearance:VehicleAppearance):AppearanceSele
  const {carId,rimId,color,finish,rimColor,stripeId,stripeColor}=appearance;return{carId,rimId,color,finish,rimColor,stockRimPainted:appearance.stockRimPainted??false,stripeId,stripeColor};
 }
 function ownedAppearance(row:Record<string,any>):VehicleAppearance{return{carId:requireCarId(row.car_id),rimId:row.rim_id,color:row.color.toLowerCase(),finish:row.finish,rimColor:row.rim_color.toLowerCase(),stockRimPainted:row.stock_rim_painted===true,stripeId:row.stripe_id,stripeColor:row.stripe_color.toLowerCase(),version:String(row.version),owned:true,canCustomize:true};}
-function factoryAppearance(row:Record<string,any>):VehicleAppearance{return{carId:requireCarId(row.id),rimId:'stock',color:v.color(row.metadata?.color??'#2866b8'),finish:'metallic',rimColor:'#c7cdd4',stockRimPainted:false,stripeId:'none',stripeColor:'#ffffff',version:'0',owned:false,canCustomize:false};}
+function factoryAppearance(row:Record<string,any>):VehicleAppearance{return{carId:requireCarId(row.id),rimId:'stock',color:v.color(row.metadata?.color??'#2866b8'),finish:factoryFinish(row.metadata?.finish),rimColor:'#c7cdd4',stockRimPainted:false,stripeId:'none',stripeColor:'#ffffff',version:'0',owned:false,canCustomize:false};}
 function stockPaint(value:unknown):boolean {assert(typeof value==='boolean',400,'INVALID_STOCK_RIM_PAINT','Status cat pelek standar harus berupa boolean.');return value;}
 
 /** Per-car appearance is the authority. Loadouts are a projection of the selected

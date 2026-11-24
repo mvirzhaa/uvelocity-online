@@ -1,4 +1,63 @@
-# Verifikasi implementasi UVelocity 1.5.0
+# Verifikasi implementasi UVelocity 1.6.0
+
+## Verifikasi pembaruan 1.6.0 — 24 November 2026
+
+Basis rilis adalah paket final **1.5.0**. Perubahan mencakup dua kendaraan Koleksi Ikonik, integrasi pembelian dan tampilan tersimpan, rig enam roda Tumbler, scanner KITT, serta pemulihan navigasi pengaturan Admin. Riwayat verifikasi sebelumnya dipertahankan di bawah.
+
+| Pemeriksaan | Hasil rilis 1.6.0 |
+| --- | --- |
+| TypeScript | **Lulus** melalui `npm run typecheck` |
+| Build produksi | **Lulus**; kedua GLB final dalam `dist/client` identik dengan sumber dan manifest memakai digest final |
+| `npm test` | **69 tes lulus**, 0 gagal |
+| `npm run test:backend` | **96 tes lulus**, 0 gagal, PostgreSQL native terisolasi |
+| Integrasi kategori/bot setelah penambahan factory finish | **5 tes terarah lulus**, 0 gagal |
+| `INTEGRATION_STATIC=1 npm run test:integration` | **11 langkah lulus**; HTTP, PostgreSQL, SDK Colyseus dan aset build produksi |
+| `npm run test:ui` | **26 kelompok interaksi lulus**, termasuk perpindahan seluruh delapan menu Admin dan cat bawaan dua mobil baru |
+| `npm run test:vehicle-images-ui` | **7 kelompok lulus**; enam foto referensi bawaan, prioritas unggahan admin dan fallback |
+| Renderer penuh | **19 kelompok lulus**, seluruh **22 model**, 0 warning / 0 error |
+| Renderer setelah perbaikan akhir arah permukaan KITT | **18 kelompok terarah lulus**, kedua model ikonik memakai byte final, 0 warning / 0 error |
+| Arah permukaan KITT | **25 pemeriksaan sinar lulus** pada bodi, kaca, spoiler dan keempat penutup roda |
+| Kompatibilitas aset | Seluruh **20 GLB lama**, migrasi **001–015**, dan **4 modul lingkungan/fallback** sama persis dengan 1.5.0 |
+
+### Navigasi Admin
+
+Penyebab masalah adalah aturan CSS lama `.admin-view>header{display:none}` yang ikut menyembunyikan `header.admin-toolbar`, tempat seluruh tombol pengaturan berada. Aturan ini dihapus. Aturan tata letak toolbar sekarang menargetkan `.admin-view>.admin-toolbar` secara khusus. Desktop mempertahankan navigasi yang membungkus, sedangkan CSS sampai lebar 600 px memakai dua kolom.
+
+Uji menjalankan komponen React yang sebenarnya, membuka **Pemain & kredit, Performa mobil, Harga & toko, Hadiah balapan, Musik & loading, Foto kendaraan, Kategori kendaraan, dan Riwayat admin**. Setiap pilihan menampilkan panel yang sesuai dengan satu tab aktif. Stylesheet diparsing untuk memastikan tidak ada aturan `display:none` atau `visibility:hidden` yang menyembunyikan tombol atau elemen induknya; atribut `hidden`/`inert` juga diperiksa. Data pemain serta layanan admin tidak diganti. Ini adalah verifikasi DOM dan aturan CSS, bukan pengukuran posisi piksel pada browser.
+
+### Pembelian, migrasi dan kategori
+
+Migrasi **016_iconic_collectors.sql** menambah Tumbler dan KITT serta kategori **Koleksi Ikonik**. Kategori admin dengan nama yang sama dipakai kembali; benturan slug dengan nama lain mendapat akhiran tanpa menimpa data. Migrasi membuat versi aturan baru yang menyalin semua pengaturan lama dan hanya menambahkan performa kedua kendaraan. Penawaran, tuning, physics, hadiah, kepemilikan dan tampilan tersimpan sebelumnya dipertahankan.
+
+Pengujian memeriksa debit pembelian idempoten, saldo tidak cukup, akses terkunci/gratis, cat bawaan matte/gloss, prioritas tampilan yang sudah tersimpan, dan nilai metallic lama ketika katalog tidak mempunyai finish khusus. Pengujian HTTP/SDK benar-benar membeli, memasang kosmetik, mengaktifkan dan menggerakkan dua mobil baru di ruang balapan. Aturan kategori ditegakkan untuk manusia dan bot. Pemilihan showroom tidak membeli atau mengaktifkan kendaraan secara otomatis.
+
+### Model, roda dan efek
+
+| GLB baru | Byte | Segitiga | Mesh | Dimensi model X × Y × Z |
+| --- | ---: | ---: | ---: | --- |
+| `batmobile-tumbler` | 7,850,900 | 134,836 | 42 | 2.879 × 1.802 × 4.551 m |
+| `knight-rider-kitt` | 5,172,168 | 142,129 | 47 | 2.008 × 1.288 × 4.926 m |
+
+Ukuran di atas adalah ukuran geometri permainan, bukan spesifikasi kendaraan produksi. Bodi dibuat dari referensi foto pengguna dengan permukaan orisinal. Dua model ini tidak menggunakan ulang bodi kendaraan lain sebagai pengganti.
+
+Tumbler mempunyai enam grup roda terpisah: dua di depan dan empat di belakang. Ban belakang menggunakan radius 0,70 m dan ban depan 0,50 m. Tes menjalankan snapshot balapan dan memeriksa bahwa putaran dikalikan radius menghasilkan jarak tempuh yang sama pada keenam roda, hanya pivot depan yang berbelok, serta semua roda tersembunyi/pulih saat berpindah kamera dashboard. Lampu belakang terhubung dengan material rem. Tiga paket pelek, cat pelek pabrik dan lima pola striping mengikuti rig yang sama.
+
+KITT mempunyai delapan sel scanner merah dengan material yang terpisah untuk setiap kendaraan. Tes memeriksa gerak ke kedua ujung lalu kembali, nilai finite, tidak ada penambahan material/geometri setiap frame, dan pembaruan satu mobil tidak mengubah instance lain. Scanner bergerak pada mobil peserta jauh dan berhenti bersama roda saat jeda salat server. Kamera dashboard kedua mobil memakai posisi mata pengemudi kiri yang disesuaikan. Suara mesin adalah sintesis V8 permainan.
+
+Renderer penuh dijalankan sebelum koreksi terakhir arah permukaan disc roda, spoiler dan tepi T-top KITT. Koreksi tersebut tidak mengubah dimensi atau jumlah segitiga; sesudahnya kedua model final diuji kembali melalui suite terarah, termasuk roda, striping, kokpit, scanner, snapshot online dan jeda salat. Build serta integrasi produksi menggunakan GLB final ini.
+
+### Bukti dan batas pemeriksaan
+
+Enam PNG pada `docs/previews/` dirender langsung dari GLB final dengan Blender Cycles CPU, 1100 × 700 piksel: Tumbler 64 samples, KITT 96 samples. Tampak depan, belakang dan samping ditinjau setelah file model dikunci. Gambar tersebut adalah render studio; pencahayaan dan kamera berbeda dari garasi permainan.
+
+Bukti mesin ada pada `docs/verification/release-1.6.0.json`, `renderer-all-models-1.6.0.json`, `renderer-final-assets-1.6.0.json`, dan `kitt-winding-1.6.0.json`. Hash GLB final:
+
+```text
+Tumbler 21aede893f3a30b75d3caa3c869fb51d739719163d69d4c37b17a46c212be478
+KITT    e18e1d5dcf9a14f7cb7fc6947168ac6b080d68d779e7ef1e603d706bf52eebfb
+```
+
+Harness renderer memakai geometri Three.js yang sebenarnya, Canvas 2D dan DOM dengan pengganti WebGL. Hasil ini tidak mengukur GPU, FPS, shader atau tata letak piksel pada perangkat pengguna. Tidak ada screenshot browser atau pengujian langsung terhadap server publik pada rilis ini. Build Vite berhasil dengan peringatan ukuran chunk JavaScript di atas 500 kB; pemisahan bundle bukan bagian dari perubahan ini. Paket yang diserahkan berisi source terverifikasi; penerapan ke server publik masih memerlukan pemasangan, migrasi, build dan restart sesuai README.
 
 ## Verifikasi pembaruan 1.5.0 — 23 November 2026
 

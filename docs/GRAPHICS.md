@@ -1,3 +1,17 @@
+## Ekspansi Koleksi Ikonik 1.6.0
+
+Dua aset baru berada di `public/game/assets/cars/batmobile-tumbler.glb` dan `knight-rider-kitt.glb`. Keduanya dibuat oleh `scripts/build-tumbler.cjs` dan `scripts/build-kitt.cjs` dari foto yang diberikan pengguna. Seluruh 20 GLB versi 1.5.0 tidak diubah. Metadata ukuran dan anchor berada pada JSON pendamping serta `model-manifest.js`.
+
+Tumbler memakai enam grup roda, dua pivot kemudi depan, dan axle belakang yang menjaga empat ban belakang tetap terpisah. Radius stok depan/belakang adalah 0,50/0,70 m. Adapter memelihara radius asli sebagai `nvStockRollingRadius`; paket pelek memakai radius hasil fit sementara, lalu pemulihan stok kembali ke radius asli. Penyesuaian lebar dibakar ke vertex dan translasi, sehingga pivot tetap berskala satu.
+
+KITT mempertahankan delapan material `kitt_scanner_0` sampai `kitt_scanner_7` sebagai sel lampu terpisah. Adapter mengklon material setiap instance dan hanya mengubah intensitas emissive saat sweep. Tidak ada timer, point light, atau alokasi geometri/material per frame. Waktu dunia yang membeku selama jeda salat juga membekukan scanner. Garasi mengaktifkan ulang render selama kendaraan dengan efek bergerak sedang dipilih.
+
+Kedua kokpit merupakan interior prosedural asli untuk game, dengan posisi mata di dalam kabin, kemudi kiri, instrumen terbaca, dan koridor pandang ke jalan. Tumbler memakai trim gelap/amber, KITT trim tan dan instrumen merah. Bagian luar disembunyikan hanya ketika kamera interior dipakai, lalu dikembalikan pada kamera luar.
+
+Render PNG pada `docs/previews/` berasal dari GLB sebenarnya melalui Blender/Cycles CPU dengan pencahayaan studio. Render bukan screenshot browser dan bukan pengukuran GPU/FPS. Bentuk merupakan interpretasi referensi untuk game.
+
+---
+
 # Grafis, kendaraan, striping, dan bengkel 3D UVelocity
 
 ## Yang dipertahankan

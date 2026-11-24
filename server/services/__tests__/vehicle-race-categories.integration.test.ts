@@ -16,6 +16,8 @@ const connectionString=process.env.TEST_DATABASE_URL;
 assert(connectionString&&/test/i.test(new URL(connectionString).pathname),'Use the isolated native PostgreSQL wrapper.');
 const schema=`uv_race_categories_${process.pid}`,control=new pg.Pool({connectionString,max:2});
 const family=['honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner','toyota-innova-zenix'] as const;
+const iconic=['batmobile-tumbler','knight-rider-kitt'] as const;
+const expanded=[...family,...iconic] as const;
 const reason='Category race integration fixture',password='Vehicle-Race-Fixture-2026!';
 let pool:pg.Pool,services:BackendServices,admin:PublicUser,owner:AuthResult,peer:AuthResult,visitor:AuthResult;
 let server:Server,endpoint:string,registry:ReturnType<typeof registerRaceRooms>;
@@ -39,16 +41,17 @@ function observe(room:Room,autoAck=true):Observed{
 async function ready(states:Observed[]){for(const state of states)state.room.send('ready',{ready:true,assetsLoaded:true});await waitFor(()=>states[0]!.snapshot?.members.every(member=>member.ready)===true,'participants ready');}
 
 before(async()=>{
-  await control.query(`CREATE SCHEMA ${schema}`);pool=new pg.Pool({connectionString,options:`-c search_path=${schema}`,max:10});assert.equal((await migrate(pool)).length,15);
+  await control.query(`CREATE SCHEMA ${schema}`);pool=new pg.Pool({connectionString,options:`-c search_path=${schema}`,max:10});assert.equal((await migrate(pool)).length,16);
   services=createServices(pool,{prayerNow:()=>new Date('2026-11-20T03:00:00Z')});
   admin=await services.accounts.createAdmin({email:'category-admin@example.test',displayName:'Category Admin',password});
   owner=await services.accounts.register({email:'category-owner@example.test',displayName:'Category Owner',password});
   peer=await services.accounts.register({email:'category-peer@example.test',displayName:'Category Peer',password});
   visitor=await services.accounts.register({email:'category-visitor@example.test',displayName:'Category Visitor',password});
-  for(const user of[owner,peer])await services.admin.topup(admin.id,{userId:user.user.id,amount:'2500000',reference:'category-grant-'+user.user.id,reason},'category-grant-'+user.user.id);
-  for(const id of family){const car=await offer(id);await services.economy.purchase(owner.user.id,{itemId:id,catalogVersion:car.catalogVersion},'category-buy-'+id);
+  for(const user of[owner,peer])await services.admin.topup(admin.id,{userId:user.user.id,amount:'6000000',reference:'category-grant-'+user.user.id,reason},'category-grant-'+user.user.id);
+  for(const id of expanded){const car=await offer(id);await services.economy.purchase(owner.user.id,{itemId:id,catalogVersion:car.catalogVersion},'category-buy-'+id);
     const quote=await services.economy.quoteAppearance(owner.user.id,{carId:id,color:'#365a77',rimId:'stock',rimColor:'#c4ad72',stockRimPainted:true,stripeId:'twin-racing',stripeColor:'#eeeeee'});await services.economy.applyAppearance(owner.user.id,{quoteId:quote.quoteId},'category-paint-'+id);}
   await services.economy.purchase(peer.user.id,{itemId:'mitsubishi-pajero-sport',catalogVersion:(await offer('mitsubishi-pajero-sport')).catalogVersion},'category-peer-buy');
+  await services.economy.purchase(peer.user.id,{itemId:'batmobile-tumbler',catalogVersion:(await offer('batmobile-tumbler')).catalogVersion},'category-peer-tumbler');
   const http=createServer();server=new Server({transport:new WebSocketTransport({server:http}),greet:false,gracefullyShutdown:false});
   registry=registerRaceRooms(server,{
     consumeRaceTicket:input=>services.accounts.consumeRaceTicket(input),authenticate:headers=>services.accounts.authenticateSession(headers),gameplayAccess:userId=>services.prayer.status(userId),
@@ -65,6 +68,7 @@ after(async()=>{
 test('category resolver captures canonical models and includes purchased or admin-free cars independently of the sale toggle',async()=>{
   assert.deepEqual((await services.economy.resolveVehicleRestriction(null)).allowedCarIds,CAR_IDS);
   assert.deepEqual((await services.economy.resolveVehicleRestriction('suv')).allowedCarIds,family.slice(0,3));
+  assert.deepEqual((await services.economy.resolveVehicleRestriction('koleksi-ikonik')).allowedCarIds,iconic);
   assert((await services.economy.resolveVehicleRestriction('mpv')).allowedCarIds.includes('toyota-innova-zenix'));
   await assert.rejects(services.economy.resolveVehicleRestriction('missing'),isCode('VEHICLE_CATEGORY_NOT_FOUND'));
   await assert.rejects(services.economy.resolveVehicleRestriction('SUV?'),isCode('INVALID_CATEGORY'));
@@ -79,9 +83,9 @@ test('category resolver captures canonical models and includes purchased or admi
   for(const category of['missing',empty.id,'SUV?']){const client=await sdk(owner);await assert.rejects(client.client.create('race',{ticket:client.ticket,vehicleCategoryId:category,maxHumans:1,bots:0,loadout:await equip(owner,'honda-crv-rs')}));}
 });
 
-test('all four purchases equip paid appearances and reach authoritative multiplayer motion with only eligible category bots',{timeout:20000},async()=>{
-  for(const id of family){
-    const loadout=await equip(owner,id),auth=await sdk(owner),category=id==='toyota-innova-zenix'?'mpv':'suv';
+test('all six new purchases equip paid appearances and reach authoritative multiplayer motion with only eligible category bots',{timeout:20000},async()=>{
+  for(const id of expanded){
+    const loadout=await equip(owner,id),auth=await sdk(owner),category=(iconic as readonly string[]).includes(id)?'koleksi-ikonik':id==='toyota-innova-zenix'?'mpv':'suv';
     const state=observe(await auth.client.create('race',{ticket:auth.ticket,vehicleCategoryId:category,maxHumans:1,bots:3,laps:1,loadout}));
     await waitFor(()=>!!state.snapshot,'new vehicle lobby');await ready([state]);state.room.send('start');await waitFor(()=>state.snapshot?.phase==='racing','new vehicle running');
     const scene=state.snapshot!,own=scene.racers.find(racer=>racer.id===state.room.sessionId)!;
@@ -141,4 +145,31 @@ test('category rename, reassignment and deletion preserve a room snapshot throug
     }
     assert.equal((await services.economy.getProfile(owner.user.id)).wallet.balance,balance);
   }finally{await host.room.leave();await restored.room.leave();}
+});
+
+test('Koleksi Ikonik admits only purchased collectibles and keeps its captured rule after an operator reassigns one vehicle',{timeout:15000},async()=>{
+  const auth=await sdk(owner),host=observe(await auth.client.create('race',{ticket:auth.ticket,vehicleCategoryId:'koleksi-ikonik',circuit:'drag-2km',maxHumans:2,bots:3,loadout:await equip(owner,'knight-rider-kitt')}));
+  await waitFor(()=>!!host.snapshot,'iconic lobby');const frozen=structuredClone(host.snapshot!.vehicleRestriction!);
+  assert.deepEqual(frozen.allowedCarIds,iconic);assert.equal(frozen.categoryName,'Koleksi Ikonik');
+  const blocked=await sdk(visitor);await assert.rejects(blocked.client.joinById(host.room.roomId,{ticket:blocked.ticket,loadout:{carId:'batmobile-tumbler',color:'#202329',finish:'matte',rimId:'stock'}}));
+  const other=await sdk(peer);await assert.rejects(other.client.joinById(host.room.roomId,{ticket:other.ticket,loadout:await equip(peer,'mitsubishi-pajero-sport')}),/VEHICLE_CATEGORY_RESTRICTED/);
+  const previous=(await services.economy.getCatalog()).categories.find(category=>category.id==='koleksi-ikonik')!;
+  await services.admin.updateVehicleCategory(admin.id,previous.id,{name:'Operator film collection',sortOrder:previous.sortOrder,expectedVersion:previous.version,reason});
+  await edit('batmobile-tumbler',{categoryId:'special'});
+  assert.deepEqual((await services.economy.resolveVehicleRestriction(previous.id)).allowedCarIds,['knight-rider-kitt']);
+  assert.deepEqual(registry.findByCode(host.snapshot!.inviteCode)!.vehicleRestriction,frozen);
+  const peerAuth=await sdk(peer),joined=observe(await peerAuth.client.joinById(host.room.roomId,{ticket:peerAuth.ticket,loadout:await equip(peer,'batmobile-tumbler')}));
+  try{
+    await waitFor(()=>host.snapshot?.members.length===2,'iconic purchased peer');await ready([host,joined]);host.room.send('start');
+    await waitFor(()=>host.snapshot?.phase==='racing'&&joined.snapshot?.phase==='racing','frozen iconic start');
+    const scene=host.snapshot!;assert.equal(scene.config.laps,1);assert.equal(scene.racers.length,5);assert.deepEqual(scene.vehicleRestriction,frozen);
+    assert(scene.racers.every(racer=>iconic.includes(racer.loadout.carId as typeof iconic[number])));
+    const bots=scene.racers.filter(racer=>racer.isBot);assert.equal(bots.length,3);
+    assert.deepEqual(new Set(bots.map(racer=>racer.loadout.carId)),new Set(iconic));
+    for(const bot of bots)assert.equal(bot.loadout.finish,bot.loadout.carId==='batmobile-tumbler'?'matte':'gloss');
+    assert.equal(scene.racers.find(racer=>racer.userId===owner.user.id)!.loadout.carId,'knight-rider-kitt');
+    assert.equal(scene.racers.find(racer=>racer.userId===peer.user.id)!.loadout.carId,'batmobile-tumbler');
+    const persisted=(await pool.query('SELECT config FROM races WHERE id=$1',[scene.raceId])).rows[0].config;assert.deepEqual(persisted.vehicleRestriction,frozen);
+    assert.deepEqual((await services.economy.getProfile(visitor.user.id)).inventory.cars,['brz']);
+  }finally{await host.room.leave();await joined.room.leave();}
 });

@@ -15,29 +15,33 @@
     'toyota-fortuner':{eye:[-.36,1.50,.24],headerLift:.28},
     'toyota-innova-zenix':{eye:[-.34,1.51,.36],headerLift:.23}
   });
+  const ICONIC_COCKPITS=Object.freeze({
+    'batmobile-tumbler':{eye:[.3168,1.39,-.13],headerLift:.29,width:1.71},
+    'knight-rider-kitt':{eye:[.34,1.055,-.10],headerLift:.18,width:1.80}
+  });
 
   function create(car){
     const id=car.modelId||car.model?.id||'brz';
     const dims=car.dimensions||[car.model?.width||1.85,1.36,car.model?.length||4.4];
-    const race=RACE_CARS.has(id),prototype=id==='bmw-hybrid-v8',cinema=id==='batmobile-1989',mpv=id==='panther-grand-touring';
+    const race=RACE_CARS.has(id),prototype=id==='bmw-hybrid-v8',kitt=id==='knight-rider-kitt',cinema=id==='batmobile-1989'||id==='batmobile-tumbler',mpv=id==='panther-grand-touring';
     // The MPV's outer bounds include its mirrors. Fit its right-hand driving
     // position to the narrower passenger cabin and the higher seating level.
-    const family=FAMILY_COCKPITS[id];
-    const width=clamp((Number(dims[0])||1.85)*((mpv||family)?.82:1),1.6,2.4),half=width*.43;
+    const family=FAMILY_COCKPITS[id],iconic=ICONIC_COCKPITS[id],fit=family||iconic;
+    const width=iconic?.width||clamp((Number(dims[0])||1.85)*((mpv||family)?.82:1),1.6,2.4),half=width*.43;
     const eyeY=mpv?clamp((Number(dims[1])||2.05)*.73,1.42,1.52):clamp((Number(dims[1])||1.36)*.76,.88,1.13);
-    const eye=family?new T.Vector3(...family.eye):new T.Vector3(mpv?-half*.43:prototype?half*.31:half*.43,eyeY,mpv?.22:cinema?-.64:prototype?-.12:-.30);
-    const headerLift=family?.headerLift??(mpv?.31:.53);
+    const eye=fit?new T.Vector3(...fit.eye):new T.Vector3(mpv?-half*.43:prototype?half*.31:half*.43,eyeY,mpv?.22:cinema?-.64:prototype?-.12:-.30);
+    const headerLift=fit?.headerLift??(mpv?.31:.53);
     const root=new T.Group();root.name='UVelocity cockpit';root.userData.nvCockpit=true;
     root.userData.origin='UVelocity procedural cockpit; not a manufacturer interior';
     root.userData.vehicleId=id;
     root.visible=false;
     const geometries=new Set(),materials=new Set(),textures=new Set();
     const material=(name,props)=>{const m=new T.MeshStandardMaterial(props);m.name=name;materials.add(m);return m;};
-    const soft=material('Cockpit soft-touch graphite',{color:0x192026,roughness:.88,metalness:.08});
+    const soft=material('Cockpit soft-touch trim',{color:kitt?0x594a3b:0x192026,roughness:.88,metalness:.08});
     const carbon=material('Cockpit woven dark trim',{color:0x10181b,roughness:.58,metalness:.27});
     const metal=material('Cockpit brushed aluminium',{color:0x6c787f,roughness:.35,metalness:.85});
     const leather=material('Steering textured leather',{color:0x161b1d,roughness:.83,metalness:.04});
-    const accent=material('Cockpit accent',{color:cinema?0xbe9151:race?0xde9c44:0x42b9a9,roughness:.46,metalness:.4,emissive:cinema?0x241304:0x05241f,emissiveIntensity:.45});
+    const accent=material('Cockpit accent',{color:kitt?0xd52b2b:cinema?0xbe9151:race?0xde9c44:0x42b9a9,roughness:.46,metalness:.4,emissive:kitt?0x610909:cinema?0x241304:0x05241f,emissiveIntensity:.45});
     const buttonRed=material('Steering red button',{color:0xb1433e,roughness:.5,metalness:.15});
     const black=material('Cockpit vent recess',{color:0x060b0d,roughness:.93,metalness:0});
 
@@ -131,9 +135,9 @@
       const next=[speed,gear,lap,total].join('|');
       if(next===displayKey)return;displayKey=next;
       const c=displayCanvas.getContext('2d');c.fillStyle='#071114';c.fillRect(0,0,512,256);
-      c.fillStyle='#77c6b7';c.font='bold 19px sans-serif';c.textAlign='left';c.fillText('UVELOCITY',24,30);
+      c.fillStyle=kitt?'#ff5555':'#77c6b7';c.font='bold 19px sans-serif';c.textAlign='left';c.fillText(kitt?'KITT · SYSTEM':id==='batmobile-tumbler'?'TUMBLER · SYSTEM':'UVELOCITY',24,30);
       c.textAlign='right';c.fillStyle='#bdc9ce';c.fillText('LAP '+lap+' / '+total,488,30);
-      c.textAlign='left';c.fillStyle='#edf4ef';c.font='bold 112px sans-serif';c.fillText(String(speed),22,155);
+      c.textAlign='left';c.fillStyle=kitt?'#ff6262':'#edf4ef';c.font='bold 112px sans-serif';c.fillText(String(speed),22,155);
       c.font='21px sans-serif';c.fillStyle='#9cadb4';c.fillText('KM/JAM',27,188);
       c.fillStyle='#23333a';c.fillRect(365,57,121,137);c.fillStyle='#e6c47a';c.font='bold 78px sans-serif';c.textAlign='center';c.fillText(gear,426,145);c.font='17px sans-serif';c.fillStyle='#a9b8bd';c.fillText('GEAR',426,180);
       for(let i=0;i<22;i++){c.fillStyle=i<Math.min(22,speed/16)?i>17?'#dd8a54':'#58baa4':'#203535';c.fillRect(24+i*21,219,16,12);}
@@ -141,7 +145,7 @@
     }
     update({steerAngle:0,speedKmh:0,gear:'N',lap:1,totalLaps:1});
     return {
-      root,eye,wheel,mark,profile:{vehicleId:id,width,eyeHeight:eyeY,race,prototype,mpv,drivingSide:mpv?'right':'left',origin:root.userData.origin},
+      root,eye,wheel,mark,profile:{vehicleId:id,width,eyeHeight:eye.y,race,prototype,mpv,drivingSide:eye.x<0?'right':'left',origin:root.userData.origin},
       update,
       dispose(){if(disposed)return;disposed=true;root.removeFromParent?root.removeFromParent():root.parent?.remove(root);geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());root.clear();}
     };

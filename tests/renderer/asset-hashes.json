@@ -1,5 +1,5 @@
 {
-  "provenance": "All sixteen existing vehicle GLBs and four environment/fallback modules are preserved byte-for-byte from the canonical UVelocity v1.4.0 package. Four independently authored photo-reference vehicles (CR-V RS e:HEV, Pajero Sport, Fortuner GR Sport and Innova Zenix Hybrid) were added for v1.5.0 and locked after visual review on 23 November 2026. Change asset hashes only after explicit review.",
+  "provenance": "All twenty existing vehicle GLBs and four environment/fallback modules are preserved byte-for-byte from the canonical UVelocity v1.5.0 package. Independently authored photo-reference Tumbler and KITT models were added for v1.6.0 and locked after visual review on 24 November 2026. Change asset hashes only after explicit review.",
   "algorithm": "SHA-256",
   "files": {
     "public/game/assets/cars/aventador.glb": "def52aa321714ecf0c12afa742da2d5662045b5c7ad746acd282c0b9b599f040",
@@ -25,6 +25,8 @@
     "public/game/assets/cars/honda-crv-rs.glb": "3ac700ef14c747fc0b0bed386f600ffcea428a55532eccc11eae6e5792754f90",
     "public/game/assets/cars/mitsubishi-pajero-sport.glb": "2dafeb957cc0e0505e928fdc83bdca1dcdd99fd150f1b8670de9706143b3230a",
     "public/game/assets/cars/toyota-fortuner.glb": "2b769416354e19b46822a7d55a575e42acd59338cfecb4af591e5d730547cc0c",
-    "public/game/assets/cars/toyota-innova-zenix.glb": "93c285543d65a31a59ac8d17875ecc899ab3a8a540443acb1fdb671c9c66158e"
+    "public/game/assets/cars/toyota-innova-zenix.glb": "93c285543d65a31a59ac8d17875ecc899ab3a8a540443acb1fdb671c9c66158e",
+    "public/game/assets/cars/batmobile-tumbler.glb": "21aede893f3a30b75d3caa3c869fb51d739719163d69d4c37b17a46c212be478",
+    "public/game/assets/cars/knight-rider-kitt.glb": "e18e1d5dcf9a14f7cb7fc6947168ac6b080d68d779e7ef1e603d706bf52eebfb"
   }
 }

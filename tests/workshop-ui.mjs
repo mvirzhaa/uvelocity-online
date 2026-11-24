@@ -3,7 +3,8 @@
  * independently covered against native PostgreSQL in services/__tests__.
  */
 import assert from 'node:assert/strict';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,readdir,readFile} from 'node:fs/promises';
+import postcss from 'postcss';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {createRequire} from 'node:module';
@@ -75,9 +76,11 @@ globalThis.fetch=async(url,options={})=>{
   const id=path.slice('/admin/catalog/'.length),service=catalog.services.find(item=>item.id===id);assert.ok(service);assert.equal(body.expectedVersion,service.catalogVersion);assert.ok(body.reason.length>=4);assert.equal(body.locked,undefined,'Color service edits do not change vehicle access');
   const next={...service,price:body.price,enabled:body.enabled,catalogVersion:service.catalogVersion+1};catalog={...catalog,services:catalog.services.map(item=>item.id===id?next:item)};return ok(next);
  }
+ if(path==='/admin/media')return ok({settings:{version:1,garageMusic:null,loadingImage:null,musicVolume:.35},assets:[],limits:{garageMusicBytes:20971520,loadingImageBytes:10485760,maxAssets:40,totalBytes:262144000}});
  if(path.startsWith('/admin/users'))return ok({users:[]});
  if(path.startsWith('/admin/audit'))return ok({entries:[]});
  if(path==='/admin/tuning')return ok({version:'1',bounds:{topSpeed:{min:100,max:450},zeroTo100:{min:1,max:12},handling:{min:.5,max:1.5}},cars:catalog.cars.map(c=>({carId:c.id,topSpeed:300,zeroTo100:3.6,handling:1})),rewardPolicy:{finish:'10000',perLap:'1000',podium:['15000','8000','4000'],minimumDurationMs:15000,maximum:'50000'},physics:{}});
+ if(path==='/admin/vehicle-categories')return ok({categories:catalog.categories??[]});
  if(path==='/admin/vehicle-thumbnails')return ok({cars:catalog.cars.map(item=>({carId:item.id,version:1,thumbnail:item.thumbnail??null})),limits:{inputBytes:4194304,inputPixels:16000000,maxWidth:512,maxHeight:288,outputBytes:524288,acceptedMimeTypes:['image/jpeg','image/png','image/webp']}});
  throw new Error('Unexpected UI request '+method+' '+path);
 };
@@ -145,6 +148,21 @@ try{
  catalog=compactBaseCatalog;await clickText('Showroom');await change(document.querySelector('#showroom-category'),'all');await clickText('Garasi');await click(carButton('brz'));
  console.log('PASS category-filtered cards and model navigation, empty/unassigned categories, admin refresh, and ownership invariants');
 
+ const finishCatalog=copy(catalog),finishProfile=copy(profile),finishMutations=mutations().length;
+ catalog={...catalog,cars:[
+  {...car('batmobile-tumbler','Batmobile Tumbler · The Dark Knight','#202329'),finish:'matte'},
+  {...car('knight-rider-kitt','Pontiac Knight Rider 1983 · KITT','#10141a'),finish:'gloss'},
+  ...catalog.cars.map(item=>item.id==='bmw-m4-gt4'?{...item,finish:'matte'}:item),
+ ]};
+ await clickText('Showroom');await click(carButton('batmobile-tumbler'));
+ assert.equal(previews.at(-1).carId,'batmobile-tumbler');assert.equal(previews.at(-1).finish,'matte');assert.equal(previews.at(-1).color,'#202329');
+ await click(carButton('knight-rider-kitt'));assert.equal(previews.at(-1).finish,'gloss');assert.equal(previews.at(-1).color,'#10141a');
+ await click(carButton('bmw-m4-gt4'));assert.equal(previews.at(-1).finish,saved('bmw-m4-gt4').finish,'Saved owner paint takes priority over a different factory finish');
+ await click(document.querySelector('.collection-next'));await click(carButton('jesko-absolut'));assert.equal(previews.at(-1).finish,'metallic','Legacy offers without a finish retain the historical default');
+ assert.deepEqual(profile,finishProfile);assert.equal(mutations().length,finishMutations,'Showroom factory finishes never buy, equip, or repaint a vehicle');
+ catalog=finishCatalog;await clickText('Garasi');await click(carButton('brz'));
+ console.log('PASS unowned Tumbler and KITT preview their matte/gloss factory finishes, saved paint has priority, and legacy defaults remain metallic without mutations');
+
  const beforePhotoRefresh=previews.length,priorOffer={price:catalog.cars[0].price,locked:catalog.cars[0].locked,catalogVersion:catalog.cars[0].catalogVersion},newPhotoId='87654321-4321-4321-8321-123456789abc';
  catalog={...catalog,cars:catalog.cars.map(item=>item.id==='brz'?{...item,thumbnail:{...item.thumbnail,id:newPhotoId,url:'/api/vehicle-thumbnails/'+newPhotoId}}:item)};await clickText('Garasi');
  assert.equal(document.querySelector('[data-car-thumbnail="brz"] img').getAttribute('src'),'/api/vehicle-thumbnails/'+newPhotoId);assert.equal(previews.length,beforePhotoRefresh,'A photo refresh cannot reset the 3D preview');assert.equal(mutations().length,0);assert.equal(profile.loadout.carId,'brz');assert.deepEqual({price:catalog.cars[0].price,locked:catalog.cars[0].locked,catalogVersion:catalog.cars[0].catalogVersion},priorOffer);
@@ -198,7 +216,45 @@ try{
  await click([...document.querySelectorAll('.stripe-card')].find(item=>item.querySelector('b')?.textContent==='Offset Sport'));await click(stripeSwatch('#d3ad56'));assert.match(document.querySelector('.stripe-color-fee').textContent,/Desain baru.*Rp18.000.*termasuk warna/);await clickText('Tinjau biaya & pasang');assert.deepEqual(latestQuote().lineItems.map(item=>item.itemId),['stripe-offset'],'New design includes the chosen color without a second paint service');await clickText('Bayar Rp18.000 & pasang');assert.equal(saved('bmw-m4-gt4').stripeId,'offset');assert.equal(saved('bmw-m4-gt4').stripeColor,'#d3ad56');await click([...document.querySelectorAll('.stripe-card')].find(item=>item.querySelector('b')?.textContent==='Tanpa striping'));assert.equal(document.querySelector('[aria-label="Pilih warna striping"]').disabled,true);assert.equal(stripeSwatch('#ffffff').disabled,true);await clickText('Kembalikan tampilan tersimpan');
  console.log('PASS same-design recolor uses its separate fee; a new design includes color once and no-pattern color controls are disabled');
 
- await clickText('Admin');await clickText('Harga & toko');assert.equal(document.querySelectorAll('[data-color-service]').length,3);for(const [id,price] of [['paint-body','10000'],['paint-rims','5000'],['stripe-paint','5000']]){await click(document.querySelector('[data-color-service="'+id+'"]'));assert.equal(document.querySelector('.admin-view form input[type="text"]').value,price);assert.match(document.querySelector('.admin-view form').textContent,/Layanan aktif/);}
+ await clickText('Admin');
+ // Regression for the shipped hidden-admin-header bug: DOM interactions alone
+ // can click an element inside display:none, so inspect hiding selectors from
+ // the real stylesheets against the rendered navigation and all its ancestors.
+ const adminNav=document.querySelector('nav[aria-label="Bagian administrator"]');assert.ok(adminNav);
+ assert.equal(adminNav.querySelectorAll('button').length,8);
+ const ancestors=[...adminNav.querySelectorAll('button')];for(let node=adminNav;node;node=node.parentElement)ancestors.push(node);
+ for(const node of ancestors){assert.equal(node.hasAttribute('hidden'),false);assert.equal(node.hasAttribute('inert'),false);assert.notEqual(node.style.display,'none');assert.notEqual(node.style.visibility,'hidden');}
+ for(const filename of (await readdir('client/src')).filter(name=>name.endsWith('.css'))){
+  const css=postcss.parse(await readFile('client/src/'+filename,'utf8'));
+  css.walkRules(rule=>{
+   if(!rule.nodes?.some(decl=>decl.type==='decl'&&((decl.prop==='display'&&decl.value==='none')||(decl.prop==='visibility'&&decl.value==='hidden'))))return;
+   for(const selector of rule.selectors.filter(selector=>!selector.includes('::')))for(const node of ancestors){
+    assert.equal(node.matches(selector),false,filename+' hides the admin navigation via '+selector);
+   }
+  });
+ }
+ const beforeAdminBrowse=mutations().length;
+ for(const [label,selector,text] of [
+  ['Performa mobil','.admin-view .panel','Performa mobil'],
+  ['Harga & toko','.admin-view .panel','Akses kendaraan & harga toko'],
+  ['Hadiah balapan','.admin-view .panel','Hadiah balapan'],
+  ['Musik & loading','.admin-media','Musik & halaman loading'],
+  ['Foto kendaraan','.vehicle-image-editor','Foto kendaraan'],
+  ['Kategori kendaraan','.vehicle-categories-admin','Kategori kendaraan'],
+  ['Riwayat admin','.admin-view .panel','Riwayat administrator'],
+  ['Pemain & kredit','.admin-view .panel','Pemain']
+ ]){
+  await clickText(label);assert.ok(document.querySelector(selector),'Admin section unavailable: '+label);
+  assert.match(document.querySelector(selector).textContent,new RegExp(text,'i'));
+  assert.equal(document.querySelector(selector).querySelector('[role="alert"]'),null,'Admin section loaded without an error: '+label);
+  assert.equal(adminNav.querySelectorAll('[aria-pressed="true"]').length,1);
+  assert.equal(button(label).getAttribute('aria-pressed'),'true');
+ }
+ assert.equal(mutations().length,beforeAdminBrowse,'Changing admin sections must not change settings or balances');
+ const adminCss=await readFile('client/src/vehicle-categories.css','utf8');
+ assert.match(adminCss,/@media\(max-width:600px\)[\s\S]*?\.admin-toolbar \.admin-section-nav\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'Narrow-screen navigation retains all sections in two columns');
+ console.log('PASS all eight admin sections remain reachable, no stylesheet hides their navigation, and mobile uses a two-column menu without mutations');
+ await clickText('Harga & toko');assert.equal(document.querySelectorAll('[data-color-service]').length,3);for(const [id,price] of [['paint-body','10000'],['paint-rims','5000'],['stripe-paint','5000']]){await click(document.querySelector('[data-color-service="'+id+'"]'));assert.equal(document.querySelector('.admin-view form input[type="text"]').value,price);assert.match(document.querySelector('.admin-view form').textContent,/Layanan aktif/);}
  const beforeFeeEdits=chargeCount;await change(document.querySelector('.admin-view form input[type="text"]'),'0');await change(document.querySelector('.admin-view form textarea'),'Warna striping gratis untuk acara kampus');await submit(document.querySelector('.admin-view form'));assert.equal(catalog.services.find(item=>item.id==='stripe-paint').price,'0');assert.match(document.querySelector('[data-color-service="stripe-paint"]').textContent,/Rp0/);const freeEdit=calls.filter(item=>item.path==='/admin/catalog/stripe-paint').at(-1);assert.equal(freeEdit.body.expectedVersion,1);assert.equal(freeEdit.body.enabled,true);
  await click(document.querySelector('[data-color-service="paint-rims"]'));await change(document.querySelector('.admin-view form input[type="text"]'),'7000');await check(document.querySelector('.admin-view form input[type="checkbox"]'),false);await change(document.querySelector('.admin-view form textarea'),'Hentikan sementara layanan cat pelek');await submit(document.querySelector('.admin-view form'));const disabledRims=catalog.services.find(item=>item.id==='paint-rims');assert.equal(disabledRims.price,'7000');assert.equal(disabledRims.enabled,false);assert.match(document.querySelector('[data-color-service="paint-rims"]').textContent,/Rp7.000.*Layanan dinonaktifkan/);assert.equal(chargeCount,beforeFeeEdits);
  console.log('PASS admin exposes all color fees, saves catalog-backed zero prices and disables a service using versioned offers');

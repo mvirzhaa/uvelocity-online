@@ -37,7 +37,7 @@ before(async()=>{
  await services.admin.publishTuning(admin.id,{expectedVersion:'1',carId:'brz',topSpeed:277,zeroTo100:5.2,handling:1.25,reason:'Legacy operator tuning survives expansion'});
  await pool.query("UPDATE catalog_items SET price=165000,version=2 WHERE id='kaze'");
  legacy={wallet:(await pool.query('SELECT * FROM wallets WHERE user_id=$1',[alice.user.id])).rows[0],entries:(await pool.query('SELECT count(*)::int n FROM wallet_entries WHERE user_id=$1',[alice.user.id])).rows[0].n,loadout:(await pool.query('SELECT * FROM loadouts WHERE user_id=$1',[alice.user.id])).rows[0]};
- assert.deepEqual(await migrate(pool),['006_paid_appearances_and_car_access.sql','007_expanded_vehicle_catalog.sql','008_personal_prayer_breaks.sql','009_presentation_media.sql','010_vehicle_thumbnails.sql','011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql','015_suv_catalog.sql']);
+ assert.deepEqual(await migrate(pool),['006_paid_appearances_and_car_access.sql','007_expanded_vehicle_catalog.sql','008_personal_prayer_breaks.sql','009_presentation_media.sql','010_vehicle_thumbnails.sql','011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql','015_suv_catalog.sql','016_iconic_collectors.sql']);
 });
 after(async()=>{if(pool)await pool.end();await control.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);await control.end();if(legacyDirectory)await rm(legacyDirectory,{recursive:true,force:true});});
 
@@ -46,8 +46,8 @@ test('additive migration preserves old users, inventory, balances, selected pain
  const wallet=(await pool.query('SELECT * FROM wallets WHERE user_id=$1',[alice.user.id])).rows[0];assert.deepEqual(wallet,legacy.wallet);
  const selected=(await pool.query('SELECT * FROM loadouts WHERE user_id=$1',[alice.user.id])).rows[0];assert.equal(selected.color,legacy.loadout.color);assert.equal(selected.rim_color,legacy.loadout.rim_color);assert.equal(selected.version,'9');
  const profile=await services.economy.getProfile(alice.user.id);assert.deepEqual(profile.inventory,{cars:['brz','kaze'],wheels:['six-spoke','stock']});assert.equal(profile.appearances.find(a=>a.carId==='brz')!.color,'#abcdef');assert.equal(profile.appearances.find(a=>a.carId==='brz')!.rimColor,'#ddaa66');assert.equal(profile.appearances.find(a=>a.carId==='kaze')!.color,'#d9e1e5');assert.equal(profile.loadout.finish,'matte');
- const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,20);assert.equal(catalog.services.length,9);assert.equal(catalog.stripes.length,5);assert.equal(catalog.cars.find(c=>c.id==='kaze')!.price,'165000');
- const active=await services.economy.getActiveRuleset();assert.equal(active.version,'5');assert.equal(active.cars.brz.topSpeed,277);assert.equal(active.cars['jesko-absolut'].topSpeed,420);
+ const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,22);assert.equal(catalog.services.length,9);assert.equal(catalog.stripes.length,5);assert.equal(catalog.cars.find(c=>c.id==='kaze')!.price,'165000');
+ const active=await services.economy.getActiveRuleset();assert.equal(active.version,'6');assert.equal(active.cars.brz.topSpeed,277);assert.equal(active.cars['jesko-absolut'].topSpeed,420);
  const original=await services.economy.resolveLoadout(alice.user.id,undefined,'1');assert.equal(original.stats.topSpeed,255);assert.equal((await pool.query('SELECT count(*)::int n FROM ruleset_cars WHERE ruleset_id=(SELECT id FROM rulesets WHERE version=2)')).rows[0].n,8);
  assert.equal((await pool.query('SELECT count(*)::int n FROM wallet_entries WHERE user_id=$1',[alice.user.id])).rows[0].n,legacy.entries);
 });

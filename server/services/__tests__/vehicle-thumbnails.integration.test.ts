@@ -51,7 +51,7 @@ before(async()=>{
   assert.deepEqual(await publishedRuleRows(),legacy.rules);
   assert.deepEqual((await pool.query('SELECT row_to_json(l) AS loadout,row_to_json(w) AS wallet FROM loadouts l JOIN wallets w ON w.user_id=l.user_id ORDER BY l.user_id')).rows,beforeAccounts);
   // Upgrade the independent cosmetics schema before exercising current services.
-  assert.deepEqual(await migrate(pool),['011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql','015_suv_catalog.sql']);
+  assert.deepEqual(await migrate(pool),['011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql','015_suv_catalog.sql','016_iconic_collectors.sql']);
   legacy.catalog=(await pool.query('SELECT * FROM catalog_items ORDER BY id')).rows;legacy.profile=await services.economy.getProfile(player.user.id);legacy.rules=await services.economy.getActiveRuleset();
   const app=express();app.use(express.json({limit:'32kb'}));app.use('/api',createApiRouter({services,allowedOrigins:[origin],secureCookies:false}));
   http=app.listen(0,'127.0.0.1');await once(http,'listening');const address=http.address();assert(address&&typeof address==='object');base=`http://127.0.0.1:${address.port}/api`;
@@ -75,7 +75,7 @@ test('additive migration10 preserves purchase catalog, ownership, wallet, tuning
   assert.deepEqual(await migrate(pool),[]);
   assert.deepEqual((await pool.query('SELECT * FROM catalog_items ORDER BY id')).rows,legacy.catalog);
   assert.deepEqual(await services.economy.getProfile(player.user.id),legacy.profile);assert.deepEqual(await services.economy.getActiveRuleset(),legacy.rules);assert.deepEqual(await services.media.getPresentation(),legacy.presentation);
-  const list=await services.vehicleThumbnails.list(operator.user.id);assert.equal(list.cars.length,20);assert(list.cars.every(slot=>slot.version===1&&slot.thumbnail===null));assert.deepEqual(list.limits,LIMITS);
+  const list=await services.vehicleThumbnails.list(operator.user.id);assert.equal(list.cars.length,22);assert(list.cars.every(slot=>slot.version===1&&slot.thumbnail===null));assert.deepEqual(list.limits,LIMITS);
   const catalog=await services.economy.getCatalog();assert(catalog.cars.every(car=>car.thumbnail===null));assert(catalog.wheels.every(wheel=>!('thumbnail' in wheel)));
 });
 

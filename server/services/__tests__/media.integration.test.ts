@@ -25,7 +25,7 @@ const update=(current:PresentationSettings,fields:Record<string,unknown>={})=>({
 before(async()=>{
   await control.query(`CREATE SCHEMA ${schema}`);
   pool=new pg.Pool({connectionString,options:`-c search_path=${schema}`,max:12});
-  assert.equal((await migrate(pool)).length,15);
+  assert.equal((await migrate(pool)).length,16);
   services=createServices(pool,{prayerNow:()=>new Date(now)});
   await services.accounts.createAdmin({email:'media-admin@example.test',displayName:'Media Operator',password});
   operator=await services.accounts.login({email:'media-admin@example.test',password});

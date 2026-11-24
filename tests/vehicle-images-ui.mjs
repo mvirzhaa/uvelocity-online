@@ -75,7 +75,7 @@ try{
   const css=await readFile('client/src/vehicle-images.css','utf8');assert.match(css,/aspect-ratio:16\/9/);assert.match(css,/object-fit:contain/);
   console.log('PASS small lazy model-labelled thumbnail, fixed contain frame, failed/new-source fallback and same-origin URL restriction');
 
-  const addedCars=[['honda-crv-rs','Honda CR-V RS'],['mitsubishi-pajero-sport','Mitsubishi Pajero Sport'],['toyota-fortuner','Toyota Fortuner'],['toyota-innova-zenix','Toyota Kijang Innova Zenix Hybrid']];
+  const addedCars=[['honda-crv-rs','Honda CR-V RS'],['mitsubishi-pajero-sport','Mitsubishi Pajero Sport'],['toyota-fortuner','Toyota Fortuner'],['toyota-innova-zenix','Toyota Kijang Innova Zenix Hybrid'],['batmobile-tumbler','Batmobile Tumbler'],['knight-rider-kitt','Pontiac Knight Rider 1983 · KITT']];
   for(const [id,name] of addedCars){
     const car={id,name,thumbnail:null},photo=`./vehicle-photos/${id}.png`;
     const bytes=await readFile(`public/vehicle-photos/${id}.png`);
@@ -93,7 +93,7 @@ try{
     await act(async()=>document.querySelector('img').dispatchEvent(new window.Event('error',{bubbles:true})));
     assert.equal(document.querySelector('img'),null,'Broken bundled photos have an accessible fallback');
   }
-  console.log('PASS all four bundled reference photos, admin override/removal, URL validation and image failure fallback');
+  console.log('PASS all six bundled reference photos, admin override/removal, URL validation and image failure fallback');
 
   await render(React.createElement(VehicleImageEditor,props));assert.equal(document.querySelector('.vehicle-image-current img').getAttribute('src'),thumb(1).url);
   await choose(new File(['<svg/>'],'bad.svg',{type:'image/svg+xml'}));assert.match(document.querySelector('[role=alert]').textContent,/JPEG, PNG, atau WebP/);assert.equal(uploads.length,0);assert.equal(created.size,0,'Rejected file never gets a preview URL');

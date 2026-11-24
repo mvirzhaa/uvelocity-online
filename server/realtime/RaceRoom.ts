@@ -390,7 +390,8 @@ export function registerRaceRooms(server:Server,services:RealtimeServices,option
         for(let i=0;i<this.config.bots;i++){
           const allowed=this.vehicleRestriction.allowedCarIds,carId=allowed[i%allowed.length]!,stats=ruleset.cars[carId];
           if(!stats)throw new Error('Ruleset is missing a bot vehicle');
-          racers.push(createRacer('bot_'+i,CAR_NAMES[carId]+' · BOT '+String(i+1).padStart(2,'0'),freezeLoadout({carId,color:palette[i]!,finish:'metallic',rimId:'stock',stats,tuningVersion:ruleset.version}),null,true));
+          const finish=carId==='batmobile-tumbler'?'matte':carId==='knight-rider-kitt'?'gloss':'metallic';
+          racers.push(createRacer('bot_'+i,CAR_NAMES[carId]+' · BOT '+String(i+1).padStart(2,'0'),freezeLoadout({carId,color:palette[i]!,finish,rimId:'stock',stats,tuningVersion:ruleset.version}),null,true));
         }
         for(let i=racers.length-1;i>0;i--){const j=randomInt(i+1);[racers[i],racers[j]]=[racers[j]!,racers[i]!];}
         this.runtime=new RaceRuntime(this.config,racers,ruleset.physics,options.inputTimeoutMs??400,options.maxRaceDurationMs);

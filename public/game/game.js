@@ -212,7 +212,7 @@
           ai.pos.copy(p).addScaledVector(right,ai.laneOffset);ai.pos.y=0;ai.heading=Math.atan2(tan.x,tan.z);
           updateLapProgress(ai,open?Math.max(0,Math.min(CURVE_SAMPLES-1,Math.floor(ai.t*(CURVE_SAMPLES-1)))):Math.floor(ai.t*CURVE_SAMPLES)%CURVE_SAMPLES,ai.t);
           ai.visual.root.position.copy(ai.pos);ai.visual.root.rotation.y=ai.heading;
-          ai.visual.wheels.forEach(w=>w.rotation.x+=ai.speed*dt/(ai.visual.wheelRadius||.33));
+          ai.visual.wheels.forEach(w=>w.rotation.x+=ai.speed*dt/(w.userData.nvRollingRadius||w.userData.nvStockRollingRadius||ai.visual.wheelRadius||.33));
           const nextTan=trackTangents[(ai.trackIdx+4)%CURVE_SAMPLES],turn=THREE.MathUtils.clamp(Math.atan2(tan.z*nextTan.x-tan.x*nextTan.z,tan.dot(nextTan))*2,-.36,.36);
           ai.visual.frontPivots.forEach(p=>p.rotation.y=turn);
         }
@@ -253,6 +253,8 @@
         {id:'mitsubishi-pajero-sport',name:'Mitsubishi Pajero Sport',cardName:'Pajero Sport',title:'<small class="make-label">MITSUBISHI</small>Pajero <b>Sport</b>',type:'OFF-ROAD SUV · REKONSTRUKSI REFERENSI',short:'MITSUBISHI · PAJERO',class:'C · 625',description:'Pajero Sport hitam mengikuti foto pengguna: bumper baja off-road, ban tebal, side step, dan lampu belakang vertikal.',color:'#151a1d',topSpeed:195,zeroTo100:10.5,drive:'AWD',handling:.94,ratings:[54,43,78],branded:true,newArrival:true,representation:'reference-recreation'},
         {id:'toyota-fortuner',name:'Toyota Fortuner GR Sport',cardName:'Fortuner GR Sport',title:'<small class="make-label">TOYOTA</small>Fortuner <b>GR Sport</b>',type:'DIESEL SUV · REKONSTRUKSI REFERENSI',short:'TOYOTA · FORTUNER',class:'C · 640',description:'Fortuner GR Sport dari foto pengguna, dengan bodi SUV tinggi, grille depan khas, pijakan samping, dan lampu belakang memanjang.',color:'#20262b',topSpeed:205,zeroTo100:9.8,drive:'AWD',handling:.96,ratings:[57,48,80],branded:true,newArrival:true,representation:'reference-recreation'},
         {id:'toyota-innova-zenix',name:'Toyota Kijang Innova Zenix Hybrid',cardName:'Innova Zenix Hybrid',title:'<small class="make-label">TOYOTA</small>Innova <b>Zenix Hybrid</b>',type:'HYBRID MPV · REKONSTRUKSI REFERENSI',short:'TOYOTA · INNOVA ZENIX',class:'C · 635',description:'MPV keluarga dari foto pengguna: kabin luas, grille trapesium, empat pintu, dan lampu belakang horizontal.',color:'#d5d9dd',topSpeed:195,zeroTo100:9.5,drive:'FWD',handling:1.01,ratings:[54,49,85],branded:true,newArrival:true,representation:'reference-recreation'}
+        ,{id:'batmobile-tumbler',name:'Batmobile Tumbler · The Dark Knight',cardName:'Batmobile Tumbler',title:'<small class="make-label">THE DARK KNIGHT</small>Batmobile <b>Tumbler</b>',type:'KOLEKSI IKONIK · REKONSTRUKSI REFERENSI',short:'DARK KNIGHT · TUMBLER',class:'A · 790',description:'Koleksi sinematik dari foto pengguna: armor bersudut, dua roda depan terbuka, empat ban belakang, suspensi mekanis, dan turbin belakang.',color:'#202329',defaultFinish:'matte',topSpeed:240,zeroTo100:5.2,drive:'AWD',handling:.82,ratings:[72,80,68],branded:true,newArrival:true,representation:'reference-recreation'},
+        {id:'knight-rider-kitt',name:'Pontiac Knight Rider 1983 · KITT',cardName:'Knight Rider · KITT',title:'<small class="make-label">PONTIAC · 1983</small>Knight Rider <b>KITT</b>',type:'KOLEKSI IKONIK · REKONSTRUKSI REFERENSI',short:'KNIGHT RIDER · KITT',class:'A · 835',description:'Koleksi dari referensi Pontiac Knight Rider: bodi hitam rendah, scanner merah bergerak, tutup lampu pop-up, velg turbocast, dan kaca hatch melengkung.',color:'#10141a',defaultFinish:'gloss',topSpeed:280,zeroTo100:4.8,drive:'RWD',handling:1.08,ratings:[84,83,90],branded:true,newArrival:true,representation:'reference-recreation'}
       ];
       const PALETTE = [
         {name:'Signal Orange',hex:'#ed6b2f'}, {name:'Crimson Red',hex:'#b92842'},
@@ -496,7 +498,7 @@
       function renderGarage(dt,now){
         renderer.toneMappingExposure=.94;
         const stage=$('garage-stage'),rect=stage.getBoundingClientRect();
-        if(garageCar?.modelId==='veyron77'){NVImportedCars.updateEffects?.(garageCar,now/1000);garageNeedsRender=true;}
+        if(garageCar?.animatedEffects){NVImportedCars.updateEffects?.(garageCar,now/1000);garageNeedsRender=true;}
         if(garageOrbit.auto&&!document.hidden){garageOrbit.yaw+=dt*.15;garageNeedsRender=true;}
         if(!garageNeedsRender&&now-lastGarageRender<180)return;
         lastGarageRender=now;garageNeedsRender=false;
@@ -947,7 +949,9 @@ const NV_AUDIO_PROFILES = Object.freeze({
   'honda-crv-rs':Object.freeze({id:'honda-crv-rs',gearRatios:Object.freeze([1.24]),label:'Hybrid inline-4 · sintesis',character:'Empat silinder SUV yang halus; suara sintetis untuk permainan',cylinders:4,layout:'inline-4',fuel:'hybrid',turbochargers:0,idleRpm:850,redlineRpm:6200,gears:1,group:[0,.50],fireMix:.65,bankMix:.35,crankMix:.05,edge:1.18,pulseVariation:.015,bodyHz:165,bodyGain:3.4,intakeHz:900,intakeGain:1.8,maxCutoff:3000,drive:1.25,level:.83,roughness:2.2,shiftTime:.26,turboBase:0,turboRange:0,spoolTime:.5,releaseLevel:0,overrun:0}),
   'mitsubishi-pajero-sport':Object.freeze({id:'mitsubishi-pajero-sport',gearRatios:Object.freeze([.14,.23,.34,.46,.59,.74,.93,1.24]),label:'Turbodiesel inline-4 · sintesis',character:'Bass diesel dan desis turbo untuk SUV off-road',cylinders:4,layout:'inline-4',fuel:'diesel',turbochargers:1,idleRpm:750,redlineRpm:4500,gears:8,group:[0,.50],fireMix:.76,bankMix:.41,crankMix:.12,edge:1.07,pulseVariation:.065,bodyHz:118,bodyGain:5.2,intakeHz:710,intakeGain:1.9,maxCutoff:2450,drive:1.55,level:.93,roughness:6.6,shiftTime:.24,turboBase:680,turboRange:1280,spoolTime:.74,releaseLevel:.10,overrun:0}),
   'toyota-fortuner':Object.freeze({id:'toyota-fortuner',label:'Turbodiesel inline-4 · sintesis',character:'Denyut diesel dalam dengan induksi turbo bertahap',cylinders:4,layout:'inline-4',fuel:'diesel',turbochargers:1,idleRpm:770,redlineRpm:4600,gears:6,group:[0,.50],fireMix:.72,bankMix:.45,crankMix:.11,edge:1.10,pulseVariation:.060,bodyHz:130,bodyGain:4.9,intakeHz:760,intakeGain:2.0,maxCutoff:2550,drive:1.50,level:.92,roughness:6.0,shiftTime:.26,turboBase:720,turboRange:1240,spoolTime:.78,releaseLevel:.09,overrun:0}),
-  'toyota-innova-zenix':Object.freeze({id:'toyota-innova-zenix',gearRatios:Object.freeze([1.24]),label:'Hybrid inline-4 · sintesis',character:'Nada MPV empat silinder yang lembut; suara sintetis permainan',cylinders:4,layout:'inline-4',fuel:'hybrid',turbochargers:0,idleRpm:820,redlineRpm:6000,gears:1,group:[0,.50],fireMix:.63,bankMix:.36,crankMix:.06,edge:1.14,pulseVariation:.018,bodyHz:155,bodyGain:3.6,intakeHz:860,intakeGain:1.7,maxCutoff:2850,drive:1.28,level:.84,roughness:2.4,shiftTime:.28,turboBase:0,turboRange:0,spoolTime:.5,releaseLevel:0,overrun:0})
+  'toyota-innova-zenix':Object.freeze({id:'toyota-innova-zenix',gearRatios:Object.freeze([1.24]),label:'Hybrid inline-4 · sintesis',character:'Nada MPV empat silinder yang lembut; suara sintetis permainan',cylinders:4,layout:'inline-4',fuel:'hybrid',turbochargers:0,idleRpm:820,redlineRpm:6000,gears:1,group:[0,.50],fireMix:.63,bankMix:.36,crankMix:.06,edge:1.14,pulseVariation:.018,bodyHz:155,bodyGain:3.6,intakeHz:860,intakeGain:1.7,maxCutoff:2850,drive:1.28,level:.84,roughness:2.4,shiftTime:.28,turboBase:0,turboRange:0,spoolTime:.5,releaseLevel:0,overrun:0}),
+  'batmobile-tumbler':Object.freeze({id:'batmobile-tumbler',label:'V8 & turbin fiksi · sintesis',character:'Denyut mesin berat dan desis turbin sinematik; bukan rekaman kendaraan',cylinders:8,layout:'fictional-v8-turbine',turbochargers:1,idleRpm:820,redlineRpm:6200,gears:5,group:[0,.125,.375,.750],fireMix:.56,bankMix:.73,crankMix:.095,edge:1.20,pulseVariation:.050,bodyHz:95,bodyGain:5.7,intakeHz:1250,intakeGain:3.5,maxCutoff:4200,drive:1.66,level:.91,roughness:5.9,shiftTime:.24,turboBase:1200,turboRange:2400,spoolTime:.85,releaseLevel:.21,overrun:.08}),
+  'knight-rider-kitt':Object.freeze({id:'knight-rider-kitt',label:'V8 klasik · sintesis',character:'Denyut V8 coupe klasik untuk permainan; bukan audio dari serial',cylinders:8,layout:'crossplane-v8',turbochargers:0,idleRpm:750,redlineRpm:5800,gears:4,group:[0,.125,.375,.750],fireMix:.52,bankMix:.76,crankMix:.11,edge:1.10,pulseVariation:.040,bodyHz:108,bodyGain:5.3,intakeHz:850,intakeGain:2.2,maxCutoff:3450,drive:1.58,level:.89,roughness:5.3,shiftTime:.25,turboBase:0,turboRange:0,spoolTime:.55,releaseLevel:0,overrun:.10})
 });
 
 class ProceduralAudio {
@@ -1904,8 +1908,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         car.visual.bodyTiltGroup.rotation.x = car.bodyPitch;
 
         // Putar & belokkan roda
-        const wheelSpin = (car.speed * dt) / (car.visual.wheelRadius || 0.4);
-        car.visual.wheels.forEach(w => { w.rotation.x += wheelSpin; });
+        car.visual.wheels.forEach(w => { w.rotation.x += (car.speed * dt) / (w.userData.nvRollingRadius || w.userData.nvStockRollingRadius || car.visual.wheelRadius || 0.4); });
         car.visual.frontPivots.forEach(p => { p.rotation.y = car.steerAngle; });
 
         // Lampu rem menyala terang saat mengerem
@@ -2680,7 +2683,7 @@ window.NVEngineAudio=Object.freeze({version:'2.0.0',profiles:NV_AUDIO_PROFILES,P
         for(const racer of allRacers){
           const car=racer.visual,pose=nvUpdateResultRollout(racer,dt);car.root.position.copy(pose.pos);car.root.rotation.y=pose.heading+pose.driftAngle*.55;car.bodyTiltGroup.rotation.z=pose.bodyRoll;car.bodyTiltGroup.rotation.x=pose.bodyPitch;
           const moving=!nvPrayerPhase()&&!onlineRender.paused&&(onlineRender.phase==='racing'||nvResultPhase());
-          car.wheels.forEach(w=>w.rotation.x+=(moving?pose.speed:0)*dt/(w.userData.nvRollingRadius||car.wheelRadius||.33));car.frontPivots.forEach(p=>p.rotation.y=pose.steerAngle);
+          car.wheels.forEach(w=>w.rotation.x+=(moving?pose.speed:0)*dt/(w.userData.nvRollingRadius||w.userData.nvStockRollingRadius||car.wheelRadius||.33));car.frontPivots.forEach(p=>p.rotation.y=pose.steerAngle);
           car.brakeMat.color.setHex((racer===playerCar?input.brake>.1:racer.previousSpeed-racer.speed>.35)?0xff3b48:0xa51d2e);
           for(const flame of car.flames){flame.visible=nvDrivingNitro(racer);if(flame.visible)flame.scale.set(1,1,.85+Math.random()*.65);}
         }

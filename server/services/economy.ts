@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import { CAR_IDS, CIRCUIT_IDS } from '../../shared/types.js';
-import {RECONSTRUCTED_CAR_IDS} from '../../shared/catalog.js';
+import {factoryFinish,RECONSTRUCTED_CAR_IDS} from '../../shared/catalog.js';
 import type { BeginRaceInput, CarId, FrozenLoadout, LoadoutSelection, RaceResult, RaceRuleset, RaceSettlement, VehicleStats, VehicleRestriction } from '../../shared/types.js';
 import { transaction } from '../db/pool.js';
 import { assert } from './errors.js';
@@ -56,7 +56,7 @@ export class EconomyService {
 
   async getCatalog() {
     const [ruleset,result,thumbnails,categories]=await Promise.all([this.getActiveRuleset(),this.pool.query('SELECT c.*,a.category_id FROM catalog_items c LEFT JOIN vehicle_category_assignments a ON a.car_id=c.id ORDER BY c.kind,c.price,c.id'),catalogThumbnails(this.pool),listVehicleCategories(this.pool)]);
-    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,...(row.kind==='car'?{locked:row.locked,thumbnail:thumbnails.get(row.id)??null,categoryId:row.category_id??null}:{}),
+    const items=result.rows.map(row=>({id:row.id,itemId:row.id,kind:row.kind,name:row.name,price:row.price,catalogVersion:row.version,enabled:row.active,...row.metadata,...(row.kind==='car'?{locked:row.locked,finish:factoryFinish(row.metadata?.finish),thumbnail:thumbnails.get(row.id)??null,categoryId:row.category_id??null}:{}),
       ...(row.kind==='car'?{stats:ruleset.cars[row.id as CarId],...ruleset.cars[row.id as CarId],tuningVersion:ruleset.version}:{cosmeticOnly:true}),
       ...(RECONSTRUCTED_CAR_IDS.includes(row.id)?{modelOrigin:'reference-reconstruction',modelNote:'Rekonstruksi 3D berdasarkan referensi'}:{})}));
     return {currency:'RP_GAME',currencyLabel:'Rp · kredit game',rulesetVersion:ruleset.version,tuningBounds:TUNING_BOUNDS,categories,cars:items.filter(x=>x.kind==='car'),wheels:items.filter(x=>x.kind==='wheel'),services:items.filter(x=>x.kind==='service'),stripes:items.filter(x=>x.kind==='service'&&x.service==='stripe-install')};

@@ -1,10 +1,58 @@
-# UVelocity
+# UVelocity — Online Racing
 
-Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, ekonomi rupiah virtual, pembelian mobil dan pelek, cat/striping berbayar, serta jeda salat bersama. Pembaruan **1.5.0** menambahkan empat kendaraan dari foto pengguna, lintasan drag lurus **2 km**, dan aturan kategori kendaraan saat membuat ruang. Garasi futuristis, empat kartu per halaman, nama mobil ringkas di ponsel, musik di header, serta splash 3 detik bergambar admin tetap digunakan.
+Game balap 3D dengan garasi bengkel, akun pembalap, multiplayer realtime, kredit game, pembelian kendaraan dan pelek, cat/striping tersimpan, serta jeda salat bersama. Pembaruan **1.6.0** menambahkan **Batmobile Tumbler — The Dark Knight** dan **Pontiac Knight Rider 1983 — KITT**, sekaligus memperbaiki menu pengaturan Admin yang tersembunyi. Katalog berisi **22 kendaraan** dan tetap menggunakan empat lintasan, termasuk drag lurus 2 km.
 
-**Identitas:** splash tunggal selama **3 detik** memakai JPEG aktif pilihan admin dengan logo Universitas Ibn Khaldun Bogor, logo **Teknik Informatika UIKA**, dan teks **`create by civitas UIKA`**. Setelah splash, aplikasi menampilkan garasi untuk akun yang sudah masuk atau halaman login. Logo UVelocity transparan menyatu dengan latar gelap. Seluruh **16 GLB kendaraan lama** dipertahankan; katalog sekarang berisi **20 model**. Detail sumber logo ada di [docs/BRANDING.md](docs/BRANDING.md).
+Garasi navy/cyan/emas, empat kartu per halaman, nama mobil di bawah viewport pada ponsel, musik ringkas di header, serta splash 3 detik dengan gambar admin dan logo UIKA/TI tetap digunakan. Seluruh **20 GLB kendaraan dari 1.5.0** dipertahankan byte demi byte.
 
-## Pembaruan 1.5.0
+## Pembaruan 1.6.0
+
+### Dua kendaraan dalam Koleksi Ikonik
+
+| Kendaraan | ID | Harga awal kredit game | Cat bawaan | Penggerak / tuning arcade |
+| --- | --- | ---: | --- | --- |
+| Batmobile Tumbler · The Dark Knight | `batmobile-tumbler` | Rp1.500.000 | Hitam arang, matte | AWD; 240 km/j; 0–100 dalam 5,2 detik; handling 0,82 |
+| Pontiac Knight Rider 1983 · KITT | `knight-rider-kitt` | Rp850.000 | Hitam, gloss | RWD; 280 km/j; 0–100 dalam 4,8 detik; handling 1,08 |
+
+Harga adalah **kredit virtual permainan**, sedangkan performa merupakan pengaturan arcade. Admin dapat mengubah harga, akses, kategori, serta tuning melalui menu yang sudah ada.
+
+Tumbler memiliki armor bersudut, dua roda depan terbuka, **empat ban belakang** dalam dua pasang, suspensi mekanis, dan turbin belakang. Keenam roda mempunyai grup animasi serta penyesuaian pelek masing-masing. Ban belakang beradius lebih besar sehingga kecepatan putarnya mengikuti jarak tempuh yang sama dengan ban depan. Lebar model disesuaikan menjadi sekitar 2,879 m agar muat di jalur drag 3 m.
+
+KITT memiliki hidung rendah, tutup lampu pop-up tertutup, slot **scanner merah bergerak bolak-balik**, velg turbocast hitam, atap T-top, kaca hatch melengkung, dan spoiler belakang. Scanner menggunakan material per kendaraan; gerakannya tampil pada garasi maupun mobil peserta balapan, dan berhenti saat jeda salat bersama. Tidak ada audio dialog atau rekaman dari film/serial yang disertakan; profil mesin dibuat melalui sintesis permainan.
+
+Kedua mobil memakai GLB tersendiri dari referensi gambar pengguna, foto kartu bawaan, lampu/knalpot, kamera dashboard yang disesuaikan, dan sistem cat, pelek, striping, kepemilikan, serta balapan yang sama. Model merupakan rekonstruksi untuk game, bukan CAD resmi atau hasil pemindaian. Render depan/samping/belakang dari GLB sebenarnya tersedia di `docs/previews/`.
+
+Buka **Showroom → kategori Koleksi Ikonik**, lalu pilih kendaraan dan beli menggunakan kredit game. Kendaraan yang telah dimiliki tersedia di garasi. Untuk pertandingan khusus, pilih **Balapan → Buat ruang → Kategori kendaraan ruang → Koleksi Ikonik**. Batasan kategori berlaku bagi manusia dan bot serta tetap dibekukan untuk ruang yang sudah dibuat. Batmobile 1989 tetap kendaraan terpisah dengan identitas serta koleksi lamanya.
+
+### Menu Admin dipulihkan
+
+Aturan lama `.admin-view>header{display:none}` menyembunyikan header baru yang berisi navigasi pengaturan. Aturan tersebut dihapus, dan gaya toolbar dipersempit ke header pengaturan yang sebenarnya. Navigasi tampil membungkus pada desktop dan dua kolom pada lebar sampai 600 px. Delapan bagian tersedia kembali:
+
+- Pemain & kredit
+- Performa mobil
+- Harga & toko
+- Hadiah balapan
+- Musik & loading
+- Foto kendaraan
+- Kategori kendaraan
+- Riwayat admin
+
+Perbaikan ini memulihkan navigasi; pengaturan dan data admin tetap memakai layanan yang sama. Judul besar “Pusat Kendali” tidak ditambahkan kembali.
+
+### Memasang pembaruan dari 1.5.0
+
+Salin isi paket pembaruan ke folder proyek yang sama. Paket lengkap juga tersedia untuk instalasi baru. Pertahankan `.env`, database, dan volume yang digunakan saat ini.
+
+```bash
+npm ci
+npm run db:migrate
+npm run build
+```
+
+Mulai ulang layanan aplikasi setelah build. Untuk Compose, gunakan `docker compose up --build -d`; alur startup yang ada menjalankan migrasi. **016_iconic_collectors.sql** menambah dua penawaran, slot foto, kategori Koleksi Ikonik, dan versi aturan baru yang menyalin seluruh tuning/physics/hadiah sebelumnya. Kategori admin bernama sama dipakai kembali; benturan slug tidak menimpa kategori lain. Saved appearance yang sudah ada tidak ditulis ulang.
+
+Setelah server diperbarui, muat ulang penuh browser jika tampilan lama masih tersimpan. Perbaikan Admin berasal dari CSS aplikasi yang ikut dibangun ulang, jadi mengganti source tanpa build tidak memperbarui bundle produksi. Lihat `docs/VERIFICATION.md` untuk hasil pengujian dan batasnya. Paket ini berisi source; deployment ke server publik belum dilakukan.
+
+## Riwayat pembaruan 1.5.0
 
 | Kendaraan baru | Kategori awal | Harga awal kredit game |
 | --- | --- | ---: |

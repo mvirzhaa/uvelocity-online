@@ -1,9 +1,9 @@
 {
   "name": "uvelocity",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "type": "module",
-  "description": "UVelocity \u2014 multiplayer 3D racing with PostgreSQL accounts, virtual Rupiah, garage and administration.",
+  "description": "UVelocity — multiplayer 3D racing with PostgreSQL accounts, virtual Rupiah, garage and administration.",
   "engines": {
     "node": ">=22.12.0"
   },

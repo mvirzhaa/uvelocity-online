@@ -5,7 +5,7 @@
  * both CC-BY-4.0. Attribution and modification details are included in credits.
  * Subaru BRZ 2022 by mixmamo.studio (via the attributed Ridgeline conversion)
  * and Bugatti Veyron Super Sport 2011 by Galaxy Car Showroom, CC-BY-4.0.
- * Seven expansion GLBs are original reference-based UVelocity recreations.
+ * Expansion GLBs are original reference-based UVelocity recreations.
  * They are not manufacturer meshes, scans or replacements for the eight sources.
  * Assets decoded and texture resolutions optimized for this browser game.
  */
@@ -83,7 +83,7 @@
     const root=new THREE.Group();root.name='nv-'+id;
     const bodyTiltGroup=new THREE.Group();bodyTiltGroup.name='body-tilt';root.add(bodyTiltGroup);
     const model=templates[id].clone(true);bodyTiltGroup.add(model);
-    const paintMaterials=[],rimMaterials=[],glassMaterials=[],ownMaterials=[],ownGeometries=[],ownTextures=[];
+    const paintMaterials=[],rimMaterials=[],glassMaterials=[],scannerMaterials=[],ownMaterials=[],ownGeometries=[],ownTextures=[];
     const materialMap=new Map();
     const brakeMat=new THREE.MeshBasicMaterial({color:0xb02330,toneMapped:false});
     ownMaterials.push(brakeMat);
@@ -91,7 +91,7 @@
       if(materialMap.has(original))return materialMap.get(original);
       const name=original.name||'';
       let material;
-      if(/^light_rear/.test(name)){
+      if(/^light_rear/.test(name)||(id==='batmobile-tumbler'&&name==='tumbler_rear_markers')){
         material=brakeMat;
         if(original.map){brakeMat.map=original.map;brakeMat.needsUpdate=true;}
       }
@@ -100,6 +100,8 @@
         material.envMapIntensity=/chrome|mirror|rim_machined/i.test(name)?1.25:1.05;
         if(/^paint(?:_|$)/.test(name))paintMaterials.push(material);
         if(/^rim_paint/.test(name))rimMaterials.push(material);
+        const scannerCell=/^kitt_scanner_(\d+)$/.exec(name);
+        if(scannerCell){scannerMaterials[Number(scannerCell[1])]=material;material.toneMapped=false;}
         if(/^glass(?:_clear)?$/.test(name)) {
           // Keep interior visible while preserving readable reflective windows.
           material.transmission=.38;
@@ -130,19 +132,27 @@
       const pivot=model.getObjectByName('steer_'+side);
       const wheel=model.getObjectByName('wheel_'+side);
       if(pivot){root.attach(pivot);frontPivots.push(pivot);}
-      if(wheel)wheels.push(wheel);
-    }
-    for(const side of ['RL','RR']) {
-      const wheel=model.getObjectByName('wheel_'+side);
       if(wheel){
-        // The authored expansion rigs keep fixed rear calipers on their axle.
-        // Preserve that assembly independently from visual body roll.
-        if(meta.representation==='reference-recreation'&&wheel.parent?.name==='axle_'+side)root.attach(wheel.parent);
-        else root.attach(wheel);
+        if(meta.wheelRadii?.[side])wheel.userData.nvStockRollingRadius=meta.wheelRadii[side];
         wheels.push(wheel);
       }
     }
-    const shadowGeo=new THREE.PlaneGeometry(2.7,meta.length+1.0);
+    // Capture all rear groups before reparenting their axle. A dual rear axle
+    // retains two independently fitted, spinning tyres on each side.
+    const rearWheels=['RL','RR',...(meta.dualRearWheels?['RL_inner','RR_inner']:[])].map(side=>({side,wheel:model.getObjectByName('wheel_'+side)}));
+    for(const {side,wheel} of rearWheels) {
+      if(wheel){
+        // The authored expansion rigs keep fixed rear calipers on their axle.
+        // Preserve that assembly independently from visual body roll.
+        if(meta.representation==='reference-recreation'&&/^axle_(?:RL|RR)$/.test(wheel.parent?.name||'')){
+          if(wheel.parent.parent!==root)root.attach(wheel.parent);
+        }
+        else root.attach(wheel);
+        if(meta.wheelRadii?.[side])wheel.userData.nvStockRollingRadius=meta.wheelRadii[side];
+        wheels.push(wheel);
+      }
+    }
+    const shadowGeo=new THREE.PlaneGeometry(Math.max(2.7,templates[id].userData.dimensions[0]+.25),meta.length+1.0);
     const shadowMat=new THREE.MeshBasicMaterial({map:getShadowTexture(),transparent:true,opacity:.67,depthWrite:false,toneMapped:false});
     const shadow=new THREE.Mesh(shadowGeo,shadowMat);shadow.rotation.x=-Math.PI/2;shadow.position.y=.025;shadow.renderOrder=1;
     root.add(shadow);ownGeometries.push(shadowGeo);ownMaterials.push(shadowMat);
@@ -155,8 +165,9 @@
       flame.position.set(position[0],position[1],position[2]-.48);flame.visible=false;
       bodyTiltGroup.add(flame);return flame;
     });
-    const car={root,bodyTiltGroup,wheels,frontPivots,brakeMat,flames,flameMat,paintMaterials,rimMaterials,glassMaterials,modelId:id,wheelRadius:meta.wheelRadius,imported:true,ownMaterials,ownGeometries,ownTextures,source:meta.source,representation:meta.representation||'imported-model',headlightPositions:meta.headlightPositions||null,dimensions:templates[id].userData.dimensions.slice()};
-    recolor(car,colorHex,opts.finish||'gloss');
+    const car={root,bodyTiltGroup,wheels,frontPivots,brakeMat,flames,flameMat,paintMaterials,rimMaterials,glassMaterials,scannerMaterials,animatedEffects:scannerMaterials.length>0||id==='veyron77',modelId:id,wheelRadius:meta.wheelRadius,imported:true,ownMaterials,ownGeometries,ownTextures,source:meta.source,representation:meta.representation||'imported-model',headlightPositions:meta.headlightPositions||null,dimensions:templates[id].userData.dimensions.slice()};
+    recolor(car,colorHex,opts.finish||meta.defaultFinish||'gloss');
+    if(scannerMaterials.length)updateEffects(car,0);
     if(opts.rimColor)rimMaterials.forEach(m=>m.color.set(opts.rimColor).convertSRGBToLinear());
     if(meta.police&&window.NVPolice&&typeof window.NVPolice.decorate==='function')window.NVPolice.decorate(car,opts);
     return car;
@@ -165,6 +176,15 @@
   // timeSeconds is elapsed animation time in seconds; safe for every car model.
   function updateEffects(car,timeSeconds) {
     if(car&&car.modelId==='veyron77'&&window.NVPolice&&typeof window.NVPolice.updateEffects==='function')window.NVPolice.updateEffects(car,timeSeconds);
+    const cells=car?.scannerMaterials;
+    if(cells?.length){
+      // Only per-instance emissive values change: no lights, timers, geometry,
+      // or material allocation in the animation loop. A triangular sweep also
+      // behaves deterministically after pause/resume and on remote vehicles.
+      const time=Number.isFinite(timeSeconds)?timeSeconds:0,phase=((time*1.15)%2+2)%2;
+      const head=(phase<=1?phase:2-phase)*(cells.length-1);
+      cells.forEach((material,index)=>{material.emissiveIntensity=.10+3.2*Math.exp(-((index-head)**2)/.78);});
+    }
   }
 
   function recolor(car,colorHex,finish) {

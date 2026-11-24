@@ -1,4 +1,4 @@
-/* Eight preserved licensed source models plus twelve original reference recreations. */
+/* Eight preserved licensed source models plus fourteen original reference recreations. */
 window.NV_MODEL_URLS = {
   "veloce": "./assets/cars/veloce.glb",
   "apex": "./assets/cars/apex.glb",
@@ -19,7 +19,9 @@ window.NV_MODEL_URLS = {
   "honda-crv-rs": "./assets/cars/honda-crv-rs.glb?v=3ac700ef14c7",
   "mitsubishi-pajero-sport": "./assets/cars/mitsubishi-pajero-sport.glb?v=2dafeb957cc0",
   "toyota-fortuner": "./assets/cars/toyota-fortuner.glb?v=2b769416354e",
-  "toyota-innova-zenix": "./assets/cars/toyota-innova-zenix.glb?v=93c285543d65"
+  "toyota-innova-zenix": "./assets/cars/toyota-innova-zenix.glb?v=93c285543d65",
+  "batmobile-tumbler": "./assets/cars/batmobile-tumbler.glb?v=21aede893f3a",
+  "knight-rider-kitt": "./assets/cars/knight-rider-kitt.glb?v=e18e1d5dcf9a"
 };
 
 /* Dimensions and effect anchors belong to these authored game meshes. */
@@ -409,5 +411,87 @@ window.NV_MODEL_METADATA = {
     "representation": "reference-recreation",
     "displayName": "Toyota Kijang Innova Zenix Hybrid",
     "modelRevision": "mpv-expansion-1.5.0"
+  },
+  "batmobile-tumbler": {
+    "length": 4.550840669870377,
+    "wheelRadius": 0.5,
+    "headlightPositions": [
+      [
+        -0.64064,
+        1.584,
+        0.083
+      ],
+      [
+        0.64064,
+        1.584,
+        0.083
+      ]
+    ],
+    "exhaustPositions": [
+      [
+        0,
+        0.99,
+        -2.405
+      ]
+    ],
+    "tail": -2.405,
+    "exhaustX": 0,
+    "exhaustY": 0.99,
+    "wheelRadii": {
+      "FL": 0.5,
+      "FR": 0.5,
+      "RL": 0.7,
+      "RR": 0.7,
+      "RL_inner": 0.7,
+      "RR_inner": 0.7
+    },
+    "cockpitEye": [
+      0.31679999999999997,
+      1.39,
+      -0.13
+    ],
+    "source": "Original UVelocity reference-based recreation",
+    "representation": "reference-recreation",
+    "defaultFinish": "matte",
+    "dualRearWheels": true
+  },
+  "knight-rider-kitt": {
+    "length": 4.925730466842651,
+    "wheelRadius": 0.339,
+    "headlightPositions": [
+      [
+        -0.49,
+        0.392,
+        2.315848574328844
+      ],
+      [
+        0.49,
+        0.392,
+        2.315848574328844
+      ]
+    ],
+    "exhaustPositions": [
+      [
+        -0.629,
+        0.214,
+        -2.378
+      ],
+      [
+        -0.508,
+        0.214,
+        -2.378
+      ]
+    ],
+    "tail": -2.378,
+    "exhaustX": 0.629,
+    "exhaustY": 0.214,
+    "cockpitEye": [
+      0.34,
+      1.055,
+      -0.1
+    ],
+    "source": "Original UVelocity reference-based recreation",
+    "representation": "reference-recreation",
+    "defaultFinish": "gloss"
   }
 };

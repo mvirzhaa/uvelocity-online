@@ -1,0 +1,204 @@
+{
+  "id": "knight-rider-kitt",
+  "file": "/game/assets/cars/knight-rider-kitt.glb",
+  "bytes": 5172168,
+  "triangles": 142129,
+  "meshCount": 47,
+  "nodeCount": 56,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "rim_machined_edge",
+    "kitt_tread_rubber",
+    "brake_caliper",
+    "paint_body",
+    "kitt_window_rubber",
+    "kitt_satin_trim",
+    "kitt_scanner_0",
+    "kitt_scanner_1",
+    "kitt_scanner_2",
+    "kitt_scanner_3",
+    "kitt_scanner_4",
+    "kitt_scanner_5",
+    "kitt_scanner_6",
+    "kitt_scanner_7",
+    "kitt_lamp_reflector",
+    "light_front",
+    "kitt_foglight_clear_lens",
+    "glass",
+    "light_amber",
+    "light_rear",
+    "kitt_rear_smoked_lens",
+    "kitt_plate_gold",
+    "kitt_tan_upholstery",
+    "kitt_tan_stitch",
+    "kitt_cockpit_green",
+    "kitt_cockpit_amber"
+  ],
+  "bounds": {
+    "min": [
+      -1.003999948501587,
+      1.3351440453224228e-8,
+      -2.4776148796081543
+    ],
+    "max": [
+      1.003999948501587,
+      1.2881993055343628,
+      2.448115587234497
+    ]
+  },
+  "dimensions": [
+    2.007999897003174,
+    1.2881992921829224,
+    4.925730466842651
+  ],
+  "provenance": "Original UVelocity photo-reference reconstruction of 1983 Pontiac Knight Rider KITT using four user-supplied images dated 24 November 2026; independently authored surfaces, not a film studio, manufacturer or extracted game asset.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-kitt.cjs",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "displayName": "Knight Rider Pontiac 1983 (KITT)",
+  "revision": "iconic-collection-1.6.0",
+  "wheelRadius": 0.339,
+  "wheelWidth": 0.245,
+  "wheelCenters": {
+    "FL": [
+      0.78,
+      0.339,
+      1.17
+    ],
+    "FR": [
+      -0.78,
+      0.339,
+      1.17
+    ],
+    "RL": [
+      0.78,
+      0.339,
+      -1.4
+    ],
+    "RR": [
+      -0.78,
+      0.339,
+      -1.4
+    ]
+  },
+  "headlightPositions": [
+    [
+      -0.49,
+      0.392,
+      2.315848574328844
+    ],
+    [
+      0.49,
+      0.392,
+      2.315848574328844
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      -0.629,
+      0.214,
+      -2.378
+    ],
+    [
+      -0.508,
+      0.214,
+      -2.378
+    ]
+  ],
+  "tail": -2.378,
+  "exhaustX": 0.629,
+  "exhaustY": 0.214,
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "scannerMaterials": [
+    "kitt_scanner_0",
+    "kitt_scanner_1",
+    "kitt_scanner_2",
+    "kitt_scanner_3",
+    "kitt_scanner_4",
+    "kitt_scanner_5",
+    "kitt_scanner_6",
+    "kitt_scanner_7"
+  ],
+  "scannerNodes": [
+    "kitt_scanner_0",
+    "kitt_scanner_1",
+    "kitt_scanner_2",
+    "kitt_scanner_3",
+    "kitt_scanner_4",
+    "kitt_scanner_5",
+    "kitt_scanner_6",
+    "kitt_scanner_7"
+  ],
+  "scannerPositions": [
+    [
+      -0.2275,
+      0.6825,
+      2.4224903020966795
+    ],
+    [
+      -0.1625,
+      0.6825,
+      2.4289864231561973
+    ],
+    [
+      -0.0975,
+      0.6825,
+      2.432680739118011
+    ],
+    [
+      -0.0325,
+      0.6825,
+      2.434105367451855
+    ],
+    [
+      0.0325,
+      0.6825,
+      2.434105367451855
+    ],
+    [
+      0.0975,
+      0.6825,
+      2.432680739118011
+    ],
+    [
+      0.1625,
+      0.6825,
+      2.4289864231561973
+    ],
+    [
+      0.2275,
+      0.6825,
+      2.4224903020966795
+    ]
+  ],
+  "cockpitEye": [
+    0.34,
+    1.055,
+    -0.1
+  ],
+  "features": [
+    "dedicated long low 1983 Pontiac silhouette",
+    "sculpted round fenders and true open wheel arches",
+    "eight individual red scanner cells in recessed slot",
+    "closed pop-up headlamp lids",
+    "six recessed rectangular fog lamp units",
+    "offset Trans Am bonnet bulge",
+    "black turbocast aero disc wheels with fine machined lips",
+    "glazed T-top and centre roof bar",
+    "compound curved wraparound fastback rear glass",
+    "low factory style rear spoiler",
+    "smoked full width rear lamp fascia",
+    "tan contoured seats and left-hand steering yoke"
+  ],
+  "length": 4.925730466842651
+}

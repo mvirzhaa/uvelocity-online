@@ -56,7 +56,7 @@ before(async()=>{
     VALUES($1,$2,'brz',1,$3::jsonb,'[]',0,true,now()+$4::interval)`,[id,oldStock.user.id,JSON.stringify({...original,rimId:'stock',rimColor:'#bb7788'}),expires]);
   legacy={catalog:(await pool.query('SELECT * FROM catalog_items ORDER BY id')).rows,wallets:(await pool.query('SELECT * FROM wallets ORDER BY user_id')).rows,history:(await pool.query('SELECT * FROM wallet_entries ORDER BY id')).rows,
     quotes:(await pool.query('SELECT id,expires_at,applied_response FROM appearance_quotes ORDER BY id')).rows,appearanceHistory:(await pool.query('SELECT * FROM appearance_applications')).rows};
-  assert.deepEqual(await migrate(pool),['011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql','015_suv_catalog.sql']);
+  assert.deepEqual(await migrate(pool),['011_stock_rim_and_stripe_paint.sql','012_reference_vehicle_name.sql','013_panther_grand_touring.sql','014_vehicle_categories.sql','015_suv_catalog.sql','016_iconic_collectors.sql']);
 });
 after(async()=>{if(pool)await pool.end();await control.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);await control.end();if(legacyDirectory)await rm(legacyDirectory,{recursive:true,force:true});});
 

@@ -1,0 +1,155 @@
+{
+  "assetSha256": "e18e1d5dcf9a14f7cb7fc6947168ac6b080d68d779e7ef1e603d706bf52eebfb",
+  "checks": [
+    {
+      "surface": "hood centre",
+      "mesh": "paint_body",
+      "outward_facing": 0.96078,
+      "status": "pass"
+    },
+    {
+      "surface": "left hood crown",
+      "mesh": "paint_body",
+      "outward_facing": 0.99607,
+      "status": "pass"
+    },
+    {
+      "surface": "right hood crown",
+      "mesh": "paint_body",
+      "outward_facing": 0.99609,
+      "status": "pass"
+    },
+    {
+      "surface": "T-top centre bar",
+      "mesh": "paint_body",
+      "outward_facing": 1.0,
+      "status": "pass"
+    },
+    {
+      "surface": "T-top glass",
+      "mesh": "glass",
+      "outward_facing": 0.9986,
+      "status": "pass"
+    },
+    {
+      "surface": "left door",
+      "mesh": "paint_body",
+      "outward_facing": 0.9956,
+      "status": "pass"
+    },
+    {
+      "surface": "right door",
+      "mesh": "paint_body",
+      "outward_facing": 0.9956,
+      "status": "pass"
+    },
+    {
+      "surface": "left door glass",
+      "mesh": "glass",
+      "outward_facing": 0.92326,
+      "status": "pass"
+    },
+    {
+      "surface": "right door glass",
+      "mesh": "glass",
+      "outward_facing": 0.92326,
+      "status": "pass"
+    },
+    {
+      "surface": "left rear sail",
+      "mesh": "paint_body",
+      "outward_facing": 0.88783,
+      "status": "pass"
+    },
+    {
+      "surface": "right rear sail",
+      "mesh": "paint_body",
+      "outward_facing": 0.88783,
+      "status": "pass"
+    },
+    {
+      "surface": "rear hatch",
+      "mesh": "glass",
+      "outward_facing": 0.39068,
+      "status": "pass"
+    },
+    {
+      "surface": "rear fascia",
+      "mesh": "kitt_rear_smoked_lens",
+      "outward_facing": 0.99894,
+      "status": "pass"
+    },
+    {
+      "surface": "rear bumper",
+      "mesh": "paint_body",
+      "outward_facing": 0.92309,
+      "status": "pass"
+    },
+    {
+      "surface": "front nose",
+      "mesh": "paint_body",
+      "outward_facing": 0.83424,
+      "status": "pass"
+    },
+    {
+      "surface": "front upper fascia",
+      "mesh": "paint_body",
+      "outward_facing": 0.94548,
+      "status": "pass"
+    },
+    {
+      "surface": "rear spoiler top",
+      "mesh": "paint_body",
+      "outward_facing": 0.99984,
+      "status": "pass"
+    },
+    {
+      "surface": "left rocker",
+      "mesh": "kitt_window_rubber",
+      "outward_facing": 1.0,
+      "status": "pass"
+    },
+    {
+      "surface": "right rocker",
+      "mesh": "kitt_window_rubber",
+      "outward_facing": 1.0,
+      "status": "pass"
+    },
+    {
+      "surface": "underfloor",
+      "mesh": "kitt_window_rubber",
+      "outward_facing": 1.0,
+      "status": "pass"
+    },
+    {
+      "surface": "windscreen",
+      "mesh": "glass",
+      "outward_facing": 0.59048,
+      "status": "pass"
+    },
+    {
+      "surface": "left front wheel disc",
+      "mesh": "rim_paint",
+      "outward_facing": 0.99521,
+      "status": "pass"
+    },
+    {
+      "surface": "right front wheel disc",
+      "mesh": "rim_paint",
+      "outward_facing": 0.99521,
+      "status": "pass"
+    },
+    {
+      "surface": "left rear wheel disc",
+      "mesh": "rim_paint",
+      "outward_facing": 0.99521,
+      "status": "pass"
+    },
+    {
+      "surface": "right rear wheel disc",
+      "mesh": "rim_paint",
+      "outward_facing": 0.99521,
+      "status": "pass"
+    }
+  ]
+}

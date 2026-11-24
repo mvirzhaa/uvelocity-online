@@ -1,6 +1,9 @@
-import type { CarId, VehicleStats } from './types.js';
+import type { CarId, Finish, VehicleStats } from './types.js';
 
-export const RECONSTRUCTED_CAR_IDS:readonly CarId[]=['bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5','panther-grand-touring','honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner','toyota-innova-zenix'];
+/** Invalid or absent optional metadata preserves the historical factory finish. */
+export function factoryFinish(value:unknown):Finish{return value==='matte'||value==='gloss'?value:'metallic';}
+
+export const RECONSTRUCTED_CAR_IDS:readonly CarId[]=['bmw-hybrid-v8','bmw-m4-gt4','amg-gt4','sls-amg-gt3','batmobile-1989','jesko-absolut','venom-f5','panther-grand-touring','honda-crv-rs','mitsubishi-pajero-sport','toyota-fortuner','toyota-innova-zenix','batmobile-tumbler','knight-rider-kitt'];
 
 /** Offline defaults only. Online racers always use a server-frozen ruleset. */
 export const DEFAULT_VEHICLE_STATS: Record<CarId, VehicleStats> = {
@@ -24,6 +27,9 @@ export const DEFAULT_VEHICLE_STATS: Record<CarId, VehicleStats> = {
   'mitsubishi-pajero-sport': {topSpeed:195,zeroTo100:10.5,handling:.94},
   'toyota-fortuner': {topSpeed:205,zeroTo100:9.8,handling:.96},
   'toyota-innova-zenix': {topSpeed:195,zeroTo100:9.5,handling:1.01},
+  // Fictional collectible vehicles use arcade game balance, not screen or factory specifications.
+  'batmobile-tumbler': {topSpeed:240,zeroTo100:5.2,handling:.82},
+  'knight-rider-kitt': {topSpeed:280,zeroTo100:4.8,handling:1.08},
 };
 export const CAR_NAMES: Record<CarId, string> = {
   brz: 'Subaru BRZ', veyron77: 'Bugatti Veyron Polisi 77', aventador: 'Lamborghini Aventador',
@@ -33,4 +39,5 @@ export const CAR_NAMES: Record<CarId, string> = {
   'sls-amg-gt3':'Mercedes-Benz SLS AMG GT3','batmobile-1989':'Batmobile 1989','jesko-absolut':'Koenigsegg Regera','venom-f5':'Hennessey Venom F5',
   'panther-grand-touring':'Isuzu Panther Grand Touring',
   'honda-crv-rs':'Honda CR-V RS e:HEV','mitsubishi-pajero-sport':'Mitsubishi Pajero Sport','toyota-fortuner':'Toyota Fortuner GR Sport','toyota-innova-zenix':'Toyota Kijang Innova Zenix Hybrid',
+  'batmobile-tumbler':'Batmobile Tumbler · The Dark Knight','knight-rider-kitt':'Pontiac Knight Rider 1983 · KITT',
 };

@@ -1,0 +1,91 @@
+{
+  "release": "1.6.0",
+  "date": "2026-11-24",
+  "baseVersion": "1.5.0",
+  "baseArchiveSha256": "4016031fb8890104f9c9c49c3751dc0358ce78d506e97d64360a9ac724be2ac2",
+  "checks": {
+    "backend": {
+      "passed": 96,
+      "failed": 0
+    },
+    "race": {
+      "passed": 69,
+      "failed": 0
+    },
+    "botFinishTargeted": {
+      "passed": 5,
+      "failed": 0
+    },
+    "ui": {
+      "passedGroups": 26
+    },
+    "photos": {
+      "passedGroups": 7
+    },
+    "productionIntegration": {
+      "passedSteps": 11,
+      "nativePostgres": true,
+      "realHttpAndSdk": true,
+      "builtStaticAssets": true
+    },
+    "rendererAllModels": {
+      "passedGroups": 19,
+      "modelCount": 22,
+      "warningCount": 0,
+      "errorCount": 0,
+      "beforeFinalKittWindingCorrection": true
+    },
+    "rendererFinalAssets": {
+      "passedGroups": 18,
+      "modelCount": 2,
+      "warningCount": 0,
+      "errorCount": 0
+    },
+    "kittWinding": {
+      "passedRays": 25
+    }
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "buildWarnings": [
+    "Vite JavaScript chunk exceeds500kB"
+  ],
+  "assets": {
+    "batmobile-tumbler": {
+      "sha256": "21aede893f3a30b75d3caa3c869fb51d739719163d69d4c37b17a46c212be478",
+      "bytes": 7850900,
+      "triangles": 134836,
+      "meshes": 42,
+      "dimensions": [
+        2.8789199719429015,
+        1.8024617910385132,
+        4.550840669870377
+      ],
+      "productionBytesMatchSource": true
+    },
+    "knight-rider-kitt": {
+      "sha256": "e18e1d5dcf9a14f7cb7fc6947168ac6b080d68d779e7ef1e603d706bf52eebfb",
+      "bytes": 5172168,
+      "triangles": 142129,
+      "meshes": 47,
+      "dimensions": [
+        2.007999897003174,
+        1.2881992921829224,
+        4.925730466842651
+      ],
+      "productionBytesMatchSource": true
+    }
+  },
+  "adminFix": {
+    "cause": "Legacy .admin-view>header{display:none} hid header.admin-toolbar",
+    "tabsTested": 8,
+    "mobileCssColumns": 2,
+    "mobileBreakpointPx": 600,
+    "method": "Actual React DOM interaction and stylesheet visibility checks"
+  },
+  "limits": [
+    "Renderer tests use CPU geometry, Canvas2D, DOM and a WebGL stub; noGPU/FPS measurement.",
+    "Blender PNGs are finalGLB studio renders, notbrowser screenshots.",
+    "No production server deployment or live server verification performed."
+  ]
+}

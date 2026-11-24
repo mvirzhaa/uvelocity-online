@@ -1,0 +1,258 @@
+{
+  "id": "batmobile-tumbler",
+  "file": "/game/assets/cars/batmobile-tumbler.glb",
+  "bytes": 7850900,
+  "triangles": 134836,
+  "meshCount": 42,
+  "nodeCount": 53,
+  "materials": [
+    "tire_rubber",
+    "rim_paint",
+    "dark_metal",
+    "tumbler_satin_steel",
+    "tumbler_bronze_mechanisms",
+    "carbon",
+    "tumbler_armor_edges",
+    "paint_body",
+    "paint_aero",
+    "tumbler_trim",
+    "glass",
+    "tumbler_projector_lens",
+    "light_front",
+    "tumbler_rear_markers",
+    "tumbler_turbine_interior",
+    "interior_seat"
+  ],
+  "bounds": {
+    "min": [
+      -1.4394599859714508,
+      0.00047261714935298293,
+      -2.4030001163482666
+    ],
+    "max": [
+      1.4394599859714508,
+      1.8029344081878662,
+      2.14784055352211
+    ]
+  },
+  "dimensions": [
+    2.8789199719429015,
+    1.8024617910385132,
+    4.550840669870377
+  ],
+  "provenance": "Original UVelocity reference-based reconstruction of the Batmobile Tumbler from two user-supplied photographs. Not a scan, film-production CAD asset, or official studio mesh.",
+  "author": "UVelocity original mesh authoring",
+  "source": "scripts/build-tumbler.cjs",
+  "displayName": "Batmobile Tumbler — The Dark Knight",
+  "referenceBased": true,
+  "officialManufacturerAsset": false,
+  "representation": "original-reference-recreation",
+  "revision": "iconic-collection-1.6.0",
+  "wheelRadius": 0.5,
+  "rearWheelRadius": 0.7,
+  "wheelWidth": 0.4224,
+  "rearWheelWidth": 0.48400000000000004,
+  "wheelCenters": {
+    "FL": [
+      1.056,
+      0.5,
+      1.65
+    ],
+    "FR": [
+      -1.056,
+      0.5,
+      1.65
+    ],
+    "RL": [
+      1.1880000000000002,
+      0.7,
+      -1.53
+    ],
+    "RR": [
+      -1.1880000000000002,
+      0.7,
+      -1.53
+    ],
+    "RL_inner": [
+      0.6688000000000001,
+      0.7,
+      -1.53
+    ],
+    "RR_inner": [
+      -0.6688000000000001,
+      0.7,
+      -1.53
+    ]
+  },
+  "axleCenters": {
+    "FL": [
+      1.056,
+      0.5,
+      1.65
+    ],
+    "FR": [
+      -1.056,
+      0.5,
+      1.65
+    ],
+    "RL": [
+      0.9284,
+      0.7,
+      -1.53
+    ],
+    "RR": [
+      -0.9284,
+      0.7,
+      -1.53
+    ]
+  },
+  "wheelRadii": {
+    "FL": 0.5,
+    "FR": 0.5,
+    "RL": 0.7,
+    "RR": 0.7,
+    "RL_inner": 0.7,
+    "RR_inner": 0.7
+  },
+  "wheelRimRadii": {
+    "FL": 0.3,
+    "FR": 0.3,
+    "RL": 0.37,
+    "RR": 0.37,
+    "RL_inner": 0.37,
+    "RR_inner": 0.37
+  },
+  "wheelGroups": [
+    {
+      "name": "wheel_FL",
+      "center": [
+        1.056,
+        0.5,
+        1.65
+      ],
+      "radius": 0.5,
+      "width": 0.4224
+    },
+    {
+      "name": "wheel_FR",
+      "center": [
+        -1.056,
+        0.5,
+        1.65
+      ],
+      "radius": 0.5,
+      "width": 0.4224
+    },
+    {
+      "name": "wheel_RL",
+      "center": [
+        1.1880000000000002,
+        0.7,
+        -1.53
+      ],
+      "radius": 0.7,
+      "width": 0.48400000000000004
+    },
+    {
+      "name": "wheel_RR",
+      "center": [
+        -1.1880000000000002,
+        0.7,
+        -1.53
+      ],
+      "radius": 0.7,
+      "width": 0.48400000000000004
+    },
+    {
+      "name": "wheel_RL_inner",
+      "center": [
+        0.6688000000000001,
+        0.7,
+        -1.53
+      ],
+      "radius": 0.7,
+      "width": 0.48400000000000004
+    },
+    {
+      "name": "wheel_RR_inner",
+      "center": [
+        -0.6688000000000001,
+        0.7,
+        -1.53
+      ],
+      "radius": 0.7,
+      "width": 0.48400000000000004
+    }
+  ],
+  "dualRearWheels": true,
+  "wheelCount": 6,
+  "frontWheelCount": 2,
+  "rearWheelCount": 4,
+  "wheelbase": 3.18,
+  "frontTrack": 2.112,
+  "rearTrack": 1.8568,
+  "lateralTrackFit": 0.88,
+  "headlightPositions": [
+    [
+      -0.64064,
+      1.584,
+      0.083
+    ],
+    [
+      0.64064,
+      1.584,
+      0.083
+    ]
+  ],
+  "rearLampPositions": [
+    [
+      -0.4752,
+      1.4,
+      -1.97
+    ],
+    [
+      0.4752,
+      1.4,
+      -1.97
+    ]
+  ],
+  "exhaustPositions": [
+    [
+      0,
+      0.99,
+      -2.405
+    ]
+  ],
+  "tail": -2.405,
+  "exhaustX": 0,
+  "exhaustY": 0.99,
+  "up": "+Y",
+  "forward": "+Z",
+  "units": "metres",
+  "paintMaterials": [
+    "paint_body",
+    "paint_aero"
+  ],
+  "rimMaterial": "rim_paint",
+  "defaultColor": "#30343a",
+  "defaultFinish": "matte",
+  "cockpitEye": [
+    0.31679999999999997,
+    1.39,
+    -0.13
+  ],
+  "features": [
+    "six actual tires: two steerable front and four paired rear",
+    "unequal front and rear rolling radii",
+    "angular layered armored body",
+    "split V windshield",
+    "open front wishbone suspension",
+    "bronze mechanical linkages",
+    "large deep central turbine with physical nozzle ribs and fan",
+    "separate swept rear armor wings",
+    "paired corner projector lamps",
+    "original reference-based game reconstruction"
+  ],
+  "length": 4.550840669870377,
+  "sha256": "21aede893f3a30b75d3caa3c869fb51d739719163d69d4c37b17a46c212be478"
+}

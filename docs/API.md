@@ -127,11 +127,13 @@ Public response:
 
 Each car has `id`, `itemId` (same as `id`), `kind:"car"`, `name`, `price`, `catalogVersion`, `enabled`, `locked`, `color`, `drive`, `stats:{topSpeed,zeroTo100,handling}`, the same three stats at the top level for UI compatibility, `tuningVersion`, `categoryId:string|null`, and `thumbnail:VehicleThumbnail|null` as described under vehicle collection photos. The starter car also has `starter:true`.
 
+Since **1.6.0**, each server car response also includes the validated factory `finish`: `"metallic"`, `"gloss"`, or `"matte"`. The client contract declares `CatalogItem.finish?: Finish` for compatibility with older responses. Absent or invalid finish metadata resolves to `"metallic"`, preserving the default for the previous twenty vehicles. Tumbler starts matte; KITT starts gloss. The showroom uses this value when the account has no saved appearance for the selected car. A permanently owned car's saved appearance takes priority. The same factory finish is used for a new purchase and temporary admin-unlocked access; neither reading the catalog nor previewing a car repaints an existing purchase.
+
 Since 1.4.0, `categories` is an ordered array of `VehicleCategory` objects, defined in `shared/vehicle-categories.ts` as `{id:string,name:string,sortOrder:number,version:number}`. The server orders by `sortOrder`, case-insensitive name, then ID. `categoryId:null` means the car is unassigned. The response still contains the complete catalog; the showroom filters this list locally by all cars, a category ID, or unassigned cars. Category changes do not equip a vehicle or create a purchase. The collection renders at most four cards per page; changing pages only changes the visible card group.
 
 Each wheel has `id`, `itemId`, `kind:"wheel"`, `name`, `price`, `catalogVersion`, `enabled`, `color`, `cosmeticOnly:true`, and optional `spokes`/`starter`. Wheel selection and wheel color do not modify vehicle stats.
 
-`locked` controls free use independently of `enabled` (sale availability). Permanent ownership always grants use, even when locked or not for sale. `services` contains paid paint and stripe services; `stripes` is the five install-service subset. The twelve reference-based models also expose `modelOrigin` and `modelNote`.
+`locked` controls free use independently of `enabled` (sale availability). Permanent ownership always grants use, even when locked or not for sale. `services` contains paid paint and stripe services; `stripes` is the five install-service subset. The fourteen reference-based models also expose `modelOrigin` and `modelNote`.
 
 Disabled offers remain in the catalog with `enabled:false` so existing owners can still render and use their assets. Purchases of disabled offers fail.
 
@@ -159,14 +161,16 @@ Initial catalog:
 | `mitsubishi-pajero-sport` | Mitsubishi Pajero Sport | 320000 |
 | `toyota-fortuner` | Toyota Fortuner GR Sport | 340000 |
 | `toyota-innova-zenix` | Toyota Kijang Innova Zenix Hybrid | 345000 |
+| `batmobile-tumbler` | Batmobile Tumbler · The Dark Knight | 1500000 |
+| `knight-rider-kitt` | Pontiac Knight Rider 1983 · KITT | 850000 |
 | `stock` | Roda bawaan | 0; starter |
 | `six-spoke` | Six Spoke | 20000 |
 | `multi-spoke` | Multi Spoke | 35000 |
 | `mesh` | Mesh Gold | 50000 |
 
-Prices and tuning are game design values, not market prices or manufacturer performance specifications. The catalogue contains 20 cars; a race still allows at most 15 participants (14 bots). The historical `jesko-absolut` key is retained for the Regera reference update, preserving purchases, photos, appearances and race history. Migration 012 changes only the original default label; operator-custom labels survive. Panther is added by migration 013 with a new ruleset that copies existing published vehicle tuning, physics and reward policy.
+Prices and tuning are game design values, not market prices or manufacturer performance specifications. The catalogue contains **22 cars in 1.6.0**; a race still allows at most 15 participants (14 bots). The historical `jesko-absolut` key is retained for the Regera reference update, preserving purchases, photos, appearances and race history. Migration 012 changes only the original default label; operator-custom labels survive. Panther is added by migration 013 with a new ruleset that copies existing published vehicle tuning, physics and reward policy.
 
-Migration **014_vehicle_categories.sql** adds separate category and assignment tables, without changing the existing offer rows or their versions. It seeds these editable presentation groups:
+Migration **014_vehicle_categories.sql** adds separate category and assignment tables, without changing the existing offer rows or their versions. The editable category map, including the additive 1.5.0 and 1.6.0 groups, is:
 
 | Category ID | Initial name | Assigned cars |
 | --- | --- | --- |
@@ -179,8 +183,13 @@ Migration **014_vehicle_categories.sql** adds separate category and assignment t
 | `mpv` | MPV | `panther-grand-touring`, `toyota-innova-zenix` (1.5.0) |
 | `suv` | SUV (1.5.0) | `honda-crv-rs`, `mitsubishi-pajero-sport`, `toyota-fortuner` |
 | `special` | Spesial | `veyron77`, `batmobile-1989` |
+| `koleksi-ikonik` | Koleksi Ikonik (1.6.0) | `batmobile-tumbler`, `knight-rider-kitt` |
 
 Migration **015_suv_catalog.sql** adds the four purchasable family vehicles, thumbnail slots, SUV/MPV assignments, and a new immutable ruleset copied from the previous active publication. Existing prices, ownership, appearances, category edits, physics and rewards are retained. An existing category named SUV is reused; a conflicting custom slug is not renamed. These initial prices put CR-V, Pajero, Fortuner and Zenix together in that order under the existing price sort. Operator price edits can change their order.
+
+Migration **016_iconic_collectors.sql** adds Tumbler and KITT as two distinct purchasable reference recreations, their thumbnail slots, and the **Koleksi Ikonik** category. Initial prices are **Rp1.500.000** and **Rp850.000** in virtual game credits; administrators can edit them through the existing versioned offers. A same-name operator category is reused regardless of its ID; a conflicting `koleksi-ikonik` slug receives a free numbered suffix without renaming the existing group. Only the two new cars are assigned, so `batmobile-1989` remains in its previous category. The category is available to showroom filtering and the existing frozen vehicle-category room rules.
+
+The new immutable ruleset copies all twenty previous cars, physics and rewards from the active publication before appending the two new arcade profiles. The purchase trigger reads each new car's validated factory finish without resetting previously saved appearances. Defaults are `#202329` / matte / AWD for Tumbler and `#10141a` / gloss / RWD for KITT. These are original, stylized game reconstructions based on the supplied photographs, not studio meshes, scans, factory CAD, or claims of exact film performance. The bundled Blender inspection views are documented in `docs/previews/README.md`.
 
 ### `POST /shop/purchase`
 

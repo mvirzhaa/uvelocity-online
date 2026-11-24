@@ -16,9 +16,9 @@
 .vehicle-category-removal p{margin:0;font-size:14px}
 .vehicle-category-removal button{justify-self:start}
 .vehicle-category-form .form-error,.vehicle-category-assignment .form-error{margin:0}
-.admin-toolbar{display:flex;align-items:center;gap:12px;min-width:0}
+.admin-view>.admin-toolbar{display:flex;align-items:center;gap:12px;min-width:0}
 .admin-toolbar .admin-section-nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
 .admin-toolbar .admin-section-nav button{padding:9px 12px;min-height:42px;font-size:13px}
-@media(max-width:1000px){.vehicle-category-columns{grid-template-columns:1fr}.admin-toolbar{align-items:flex-start}.vehicle-category-form,.vehicle-category-assignment{padding:18px}}
-@media(max-width:600px){.vehicle-categories-admin>.section-heading{align-items:flex-start;gap:8px}.vehicle-categories-admin>.section-heading p{font-size:14px}.vehicle-category-fields{grid-template-columns:minmax(0,1fr) 112px}.vehicle-category-actions>.primary{width:100%}.admin-toolbar{display:block}.admin-toolbar>.pill{margin-bottom:10px}.admin-toolbar .admin-section-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.admin-toolbar .admin-section-nav button{justify-content:flex-start;text-align:left;min-width:0;padding:9px;font-size:13px;gap:7px}}
+@media(max-width:1000px){.vehicle-category-columns{grid-template-columns:1fr}.admin-view>.admin-toolbar{align-items:flex-start}.vehicle-category-form,.vehicle-category-assignment{padding:18px}}
+@media(max-width:600px){.vehicle-categories-admin>.section-heading{align-items:flex-start;gap:8px}.vehicle-categories-admin>.section-heading p{font-size:14px}.vehicle-category-fields{grid-template-columns:minmax(0,1fr) 112px}.vehicle-category-actions>.primary{width:100%}.admin-view>.admin-toolbar{display:block}.admin-toolbar>.pill{margin-bottom:10px}.admin-toolbar .admin-section-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.admin-toolbar .admin-section-nav button{justify-content:flex-start;text-align:left;min-width:0;padding:9px;font-size:13px;gap:7px}}
 @media(max-width:380px){.vehicle-category-fields{grid-template-columns:1fr}.vehicle-category-form,.vehicle-category-assignment{padding:15px}}

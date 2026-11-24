@@ -1,0 +1,1012 @@
+{
+  "verification": "CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering",
+  "passed": [
+    "SHA-256 integrity of the twenty pre-existing GLBs and unchanged city/biome/police/fallback modules, plus reviewed new reference vehicles.",
+    "3D cyan workshop: 98 merged draws / 28820 triangles, two articulated service arms outside the clear 6.2 \u00d7 8.2 m bay, floor-mounted cyan display rings, finite PBR geometry, orbit visibility, quality and owned-resource disposal.",
+    "Showroom front/side/rear/cycle, explicit-only quality changes, dusk/night, credits and asset-ready API verified.",
+    "Vehicle expansion: distinct hypercar canopies, tall Panther and four family bodies, finite loaded geometry with matching effect anchors, and diesel/hybrid synthesis with a four-cylinder firing harmonic.",
+    "Iconic collection: distinct final GLBs, six separately fitted Tumbler wheels with rear rolling radii, and an isolated bidirectional eight-cell KITT scanner.",
+    "Selected cars: dedicated sound profiles, extended-model camera framing, three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.",
+    "Five vinyl patterns on every loaded car: paint-only clipping, every vertex within 1.52 mm of its source triangle, normals, one draw, material-group exclusion and clean removal.",
+    "Selected fitted procedural cockpits including the higher right-side family vehicle seats: finite PBR geometry, driver seat and wheel in camera frustum, clear windshield rays at three aspect ratios, correct steering direction/clamp, source nodes untouched and owned geometry released.",
+    "Selected stock rims: legacy factory appearance, explicit same-default RGB paint, exact Veyron triangle material isolation, no tire/brake/body/texture mutations, per-car clone isolation, custom/stock/factory restoration and owned-resource disposal.",
+    "Dashboard camera: actual driver-eye transform, live snapshot steering rather than keyboard animation, 4-mode keyboard/touch/API cycle, near clip and exterior restoration, no hidden rival cars.",
+    "Touch controls: independent gas/steer/nitro, two fingers per pedal, pointerup/cancel/lost capture, capture-failure fallback, complete pause/hide/blur reset, blocked paused/hidden presses, stale release isolation, brake and pressed accessibility state.",
+    "Online renderer: supplied state only, normalized input, no local physics/laps/results, stock cameras/effects, visibility suspension, stale snapshot guard, clean exit.",
+    "Room prayer pause: held/external/reset inputs cleared and blocked, wheels/particles/world animation and driving audio frozen, scene/model identity retained, paused and resume-countdown frame barriers valid, server-only resume and fresh-input restart.",
+    "Loading barrier: no ack without applied snapshot or visible scene frame, server-only countdown, motion stopped while loading, frame wait aborted on exit, stale slow model completion cannot reopen arena.",
+    "Finished cars: neutral held/external/reset/nitro controls, official racing-phase coasting snapshots, silent prayer freeze, immediate result phase with unfinished bots, separate 3-second monotonic visual/wheel/HUD/audio rollout, repeated result snapshots never restart, official positions/speed/laps/times/results remain unchanged.",
+    "2km drag world: independent timing gantries exactly2000m apart,45m/15-lane fair strip,700m braking pavement,148 mesh draws/50898 instance triangles, clear driving corridor, open map, forced one journey, quality/day settings, nonwrapping authoritative and visual finish rollout, circuit restoration and owned-resource disposal.",
+    "Frozen loadout/online appearance: missing stock flag preserves factory, same-RGB flag-only changes repaint local/remote stock rims, repeated snapshots reuse materials, default restoration and interior camera survive model reconstruction.",
+    "Iconic cars in an online drag snapshot: all six Tumbler tyres roll equal road distance, only front pivots steer, dashboard restores every wheel, remote KITT scanner animates and freezes with the shared prayer pause.",
+    "All three existing worlds switch through the public API."
+  ],
+  "expansion": {
+    "dimensions": {
+      "jesko-absolut": [
+        2.2899999618530273,
+        1.2189999914169312,
+        5.207694053649902
+      ],
+      "venom-f5": [
+        2.319999933242798,
+        1.4299999570846558,
+        5.052602052688599
+      ],
+      "panther-grand-touring": [
+        2.2760000228881836,
+        1.8804969828128815,
+        4.731774568557739
+      ],
+      "honda-crv-rs": [
+        2.196000099182129,
+        1.8476442193984985,
+        4.7770094871521
+      ],
+      "mitsubishi-pajero-sport": [
+        2.378999948501587,
+        2.039102077960968,
+        5.166977167129517
+      ],
+      "toyota-fortuner": [
+        2.194000005722046,
+        1.9712373077869416,
+        4.9245476722717285
+      ],
+      "toyota-innova-zenix": [
+        2.190337657928467,
+        1.9444558715820313,
+        4.870171308517456
+      ]
+    },
+    "closedCanopyRays": {
+      "regera": 9,
+      "venom": 0,
+      "total": 9
+    },
+    "averageRoofHeightGap": 1.201506704026009,
+    "averageBonnetHeightDifference": 0.03533519920512669,
+    "diesel": {
+      "idleRpm": 780,
+      "redlineRpm": 4600,
+      "dominantCycleHarmonic": 4,
+      "synthesis": true
+    },
+    "familyEngines": {
+      "honda-crv-rs": {
+        "fuel": "hybrid",
+        "idleRpm": 850,
+        "redlineRpm": 6200,
+        "dominantCycleHarmonic": 4
+      },
+      "mitsubishi-pajero-sport": {
+        "fuel": "diesel",
+        "idleRpm": 750,
+        "redlineRpm": 4500,
+        "dominantCycleHarmonic": 4
+      },
+      "toyota-fortuner": {
+        "fuel": "diesel",
+        "idleRpm": 770,
+        "redlineRpm": 4600,
+        "dominantCycleHarmonic": 4
+      },
+      "toyota-innova-zenix": {
+        "fuel": "hybrid",
+        "idleRpm": 820,
+        "redlineRpm": 6000,
+        "dominantCycleHarmonic": 4
+      }
+    }
+  },
+  "iconicVehicles": {
+    "batmobile-tumbler": {
+      "dimensions": [
+        2.8789199719429015,
+        1.8024617910385132,
+        4.550840669870377
+      ],
+      "meshes": 42,
+      "triangles": 134836,
+      "syntheticAudio": true,
+      "wheelCenters": [
+        [
+          1.056,
+          0.5,
+          1.65
+        ],
+        [
+          -1.056,
+          0.5,
+          1.65
+        ],
+        [
+          1.188,
+          0.7,
+          -1.53
+        ],
+        [
+          -1.188,
+          0.7,
+          -1.53
+        ],
+        [
+          0.6688000000000001,
+          0.7,
+          -1.53
+        ],
+        [
+          -0.6688000000000001,
+          0.7,
+          -1.53
+        ]
+      ]
+    },
+    "knight-rider-kitt": {
+      "dimensions": [
+        2.007999897003174,
+        1.2881992921829224,
+        4.925730466842651
+      ],
+      "meshes": 47,
+      "triangles": 142129,
+      "syntheticAudio": true,
+      "scanner": {
+        "cells": 8,
+        "bidirectional": true,
+        "instanceIsolated": true,
+        "noFrameAllocations": true
+      }
+    }
+  },
+  "fittedModels": [
+    "veloce",
+    "apex",
+    "cinder",
+    "kaze",
+    "aventador",
+    "skyline",
+    "brz",
+    "veyron77",
+    "bmw-hybrid-v8",
+    "bmw-m4-gt4",
+    "amg-gt4",
+    "sls-amg-gt3",
+    "batmobile-1989",
+    "jesko-absolut",
+    "venom-f5",
+    "panther-grand-touring",
+    "honda-crv-rs",
+    "mitsubishi-pajero-sport",
+    "toyota-fortuner",
+    "toyota-innova-zenix",
+    "batmobile-tumbler",
+    "knight-rider-kitt"
+  ],
+  "cockpits": [
+    {
+      "id": "veloce",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "apex",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "cinder",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "kaze",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "aventador",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "skyline",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "brz",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "veyron77",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "bmw-hybrid-v8",
+      "draws": 44,
+      "triangles": 5812
+    },
+    {
+      "id": "bmw-m4-gt4",
+      "draws": 44,
+      "triangles": 5812
+    },
+    {
+      "id": "amg-gt4",
+      "draws": 44,
+      "triangles": 5812
+    },
+    {
+      "id": "sls-amg-gt3",
+      "draws": 44,
+      "triangles": 5812
+    },
+    {
+      "id": "batmobile-1989",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "jesko-absolut",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "venom-f5",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "panther-grand-touring",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "honda-crv-rs",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "mitsubishi-pajero-sport",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "toyota-fortuner",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "toyota-innova-zenix",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "batmobile-tumbler",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "knight-rider-kitt",
+      "draws": 42,
+      "triangles": 5716
+    }
+  ],
+  "stockRimPaint": [
+    {
+      "id": "veloce",
+      "paintedNodes": 8,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "apex",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "cinder",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "kaze",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "aventador",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "skyline",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "brz",
+      "paintedNodes": 32,
+      "paintMaterials": 8,
+      "composite": []
+    },
+    {
+      "id": "veyron77",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": [
+        {
+          "wheel": 0,
+          "painted": 4336,
+          "retained": 2550
+        },
+        {
+          "wheel": 1,
+          "painted": 4409,
+          "retained": 2578
+        },
+        {
+          "wheel": 2,
+          "painted": 4743,
+          "retained": 2573
+        },
+        {
+          "wheel": 3,
+          "painted": 4805,
+          "retained": 2539
+        }
+      ]
+    },
+    {
+      "id": "bmw-hybrid-v8",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "bmw-m4-gt4",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "amg-gt4",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "sls-amg-gt3",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "batmobile-1989",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "jesko-absolut",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "venom-f5",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "panther-grand-touring",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "honda-crv-rs",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "mitsubishi-pajero-sport",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "toyota-fortuner",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "toyota-innova-zenix",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "batmobile-tumbler",
+      "paintedNodes": 6,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "knight-rider-kitt",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    }
+  ],
+  "stripes": [
+    {
+      "id": "veloce",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 7898
+        },
+        {
+          "id": "offset",
+          "triangles": 5955
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 2570
+        },
+        {
+          "id": "circuit",
+          "triangles": 5879
+        },
+        {
+          "id": "heritage",
+          "triangles": 11111
+        }
+      ]
+    },
+    {
+      "id": "apex",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 2171
+        },
+        {
+          "id": "offset",
+          "triangles": 2007
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 1577
+        },
+        {
+          "id": "circuit",
+          "triangles": 2129
+        },
+        {
+          "id": "heritage",
+          "triangles": 3392
+        }
+      ]
+    },
+    {
+      "id": "cinder",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 1510
+        },
+        {
+          "id": "offset",
+          "triangles": 1577
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 1477
+        },
+        {
+          "id": "circuit",
+          "triangles": 1922
+        },
+        {
+          "id": "heritage",
+          "triangles": 3184
+        }
+      ]
+    },
+    {
+      "id": "kaze",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 1704
+        },
+        {
+          "id": "offset",
+          "triangles": 1573
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 1644
+        },
+        {
+          "id": "circuit",
+          "triangles": 1556
+        },
+        {
+          "id": "heritage",
+          "triangles": 2889
+        }
+      ]
+    },
+    {
+      "id": "aventador",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 951
+        },
+        {
+          "id": "offset",
+          "triangles": 905
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 2576
+        },
+        {
+          "id": "circuit",
+          "triangles": 1740
+        },
+        {
+          "id": "heritage",
+          "triangles": 3131
+        }
+      ]
+    },
+    {
+      "id": "skyline",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 3932
+        },
+        {
+          "id": "offset",
+          "triangles": 4193
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 3017
+        },
+        {
+          "id": "circuit",
+          "triangles": 5393
+        },
+        {
+          "id": "heritage",
+          "triangles": 5448
+        }
+      ]
+    },
+    {
+      "id": "brz",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 1753
+        },
+        {
+          "id": "offset",
+          "triangles": 1542
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 2384
+        },
+        {
+          "id": "circuit",
+          "triangles": 2048
+        },
+        {
+          "id": "heritage",
+          "triangles": 2703
+        }
+      ]
+    },
+    {
+      "id": "veyron77",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 2777
+        },
+        {
+          "id": "offset",
+          "triangles": 2211
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 1315
+        },
+        {
+          "id": "circuit",
+          "triangles": 2265
+        },
+        {
+          "id": "heritage",
+          "triangles": 3875
+        }
+      ]
+    },
+    {
+      "id": "bmw-hybrid-v8",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 7064
+        },
+        {
+          "id": "offset",
+          "triangles": 5375
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 5345
+        },
+        {
+          "id": "circuit",
+          "triangles": 7035
+        },
+        {
+          "id": "heritage",
+          "triangles": 11913
+        }
+      ]
+    },
+    {
+      "id": "bmw-m4-gt4",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 6371
+        },
+        {
+          "id": "offset",
+          "triangles": 5571
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 3714
+        },
+        {
+          "id": "circuit",
+          "triangles": 5071
+        },
+        {
+          "id": "heritage",
+          "triangles": 9428
+        }
+      ]
+    },
+    {
+      "id": "amg-gt4",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 5427
+        },
+        {
+          "id": "offset",
+          "triangles": 5071
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 5518
+        },
+        {
+          "id": "circuit",
+          "triangles": 6340
+        },
+        {
+          "id": "heritage",
+          "triangles": 9470
+        }
+      ]
+    },
+    {
+      "id": "sls-amg-gt3",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 5625
+        },
+        {
+          "id": "offset",
+          "triangles": 5056
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 6113
+        },
+        {
+          "id": "circuit",
+          "triangles": 6582
+        },
+        {
+          "id": "heritage",
+          "triangles": 9788
+        }
+      ]
+    },
+    {
+      "id": "batmobile-1989",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 14842
+        },
+        {
+          "id": "offset",
+          "triangles": 9316
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 6513
+        },
+        {
+          "id": "circuit",
+          "triangles": 9951
+        },
+        {
+          "id": "heritage",
+          "triangles": 20203
+        }
+      ]
+    },
+    {
+      "id": "jesko-absolut",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 8152
+        },
+        {
+          "id": "offset",
+          "triangles": 6410
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 4606
+        },
+        {
+          "id": "circuit",
+          "triangles": 6343
+        },
+        {
+          "id": "heritage",
+          "triangles": 11982
+        }
+      ]
+    },
+    {
+      "id": "venom-f5",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 5163
+        },
+        {
+          "id": "offset",
+          "triangles": 5053
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 4411
+        },
+        {
+          "id": "circuit",
+          "triangles": 5386
+        },
+        {
+          "id": "heritage",
+          "triangles": 9208
+        }
+      ]
+    },
+    {
+      "id": "panther-grand-touring",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 13635
+        },
+        {
+          "id": "offset",
+          "triangles": 11383
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 4528
+        },
+        {
+          "id": "circuit",
+          "triangles": 8299
+        },
+        {
+          "id": "heritage",
+          "triangles": 18096
+        }
+      ]
+    },
+    {
+      "id": "honda-crv-rs",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 6773
+        },
+        {
+          "id": "offset",
+          "triangles": 6004
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 3120
+        },
+        {
+          "id": "circuit",
+          "triangles": 5928
+        },
+        {
+          "id": "heritage",
+          "triangles": 10157
+        }
+      ]
+    },
+    {
+      "id": "mitsubishi-pajero-sport",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 4576
+        },
+        {
+          "id": "offset",
+          "triangles": 4263
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 3040
+        },
+        {
+          "id": "circuit",
+          "triangles": 3996
+        },
+        {
+          "id": "heritage",
+          "triangles": 7493
+        }
+      ]
+    },
+    {
+      "id": "toyota-fortuner",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 7764
+        },
+        {
+          "id": "offset",
+          "triangles": 6700
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 3610
+        },
+        {
+          "id": "circuit",
+          "triangles": 6999
+        },
+        {
+          "id": "heritage",
+          "triangles": 11754
+        }
+      ]
+    },
+    {
+      "id": "toyota-innova-zenix",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 7070
+        },
+        {
+          "id": "offset",
+          "triangles": 6118
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 4229
+        },
+        {
+          "id": "circuit",
+          "triangles": 5253
+        },
+        {
+          "id": "heritage",
+          "triangles": 10863
+        }
+      ]
+    },
+    {
+      "id": "batmobile-tumbler",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 126
+        },
+        {
+          "id": "offset",
+          "triangles": 128
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 155
+        },
+        {
+          "id": "circuit",
+          "triangles": 261
+        },
+        {
+          "id": "heritage",
+          "triangles": 291
+        }
+      ]
+    },
+    {
+      "id": "knight-rider-kitt",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 9529
+        },
+        {
+          "id": "offset",
+          "triangles": 7447
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 5836
+        },
+        {
+          "id": "circuit",
+          "triangles": 7004
+        },
+        {
+          "id": "heritage",
+          "triangles": 14018
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "runContext": {
+    "version": "1.6.0",
+    "kittAssetSha256": "9148f84572a9354bd1295ac91ec1b39bdd9b89c8ff32451214fc07421df92cb7",
+    "note": "Full22-model run before final KITT winding correction. Final changed assets have a separate18-group run."
+  }
+}

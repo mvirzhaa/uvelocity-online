@@ -51,7 +51,7 @@ after(async()=>{
 });
 
 test('015 appends four offers and reuses the operator SUV group without changing existing accounts, purchases, paint or categories',async()=>{
-  assert.deepEqual(await migrate(pool),['015_suv_catalog.sql']);assert.deepEqual(await migrate(pool),[]);
+  assert.deepEqual(await migrate(pool),['015_suv_catalog.sql','016_iconic_collectors.sql']);assert.deepEqual(await migrate(pool),[]);
   for(const table of preserved)assert.deepEqual(await rows(table),legacy.tables[table],table);
   assert.deepEqual(await services.economy.getProfile(owner.user.id),legacy.profile);
   for(const table of ['catalog_items','vehicle_thumbnail_slots','vehicle_categories','vehicle_category_assignments'] as const){
@@ -59,7 +59,7 @@ test('015 appends four offers and reuses the operator SUV group without changing
     const previous=table==='catalog_items'?legacy.catalog:table==='vehicle_thumbnail_slots'?legacy.slots:table==='vehicle_categories'?legacy.categories:legacy.assignments;
     const current=await rows(table);for(const row of previous)assert.deepEqual(current.find(item=>item[key]===row[key]),row,`${table} ${row[key]}`);
   }
-  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,20);
+  const catalog=await services.economy.getCatalog();assert.equal(catalog.cars.length,22);
   const start=catalog.cars.findIndex(car=>car.id===ids[0]);assert.deepEqual(catalog.cars.slice(start,start+4).map(car=>car.id),ids);
   for(const [index,id]of ids.entries()){
     const car=catalog.cars.find(item=>item.id===id)!;
@@ -77,10 +77,10 @@ test('015 copies operator tuning into a new immutable ruleset and preserves ever
     const current=await rows(table);
     for(const row of previous)assert.deepEqual(current.find(item=>table==='rulesets'?item.id===row.id:item.ruleset_id===row.ruleset_id&&item.car_id===row.car_id),row);
   }
-  const active=await services.admin.getTuning(admin.id);assert.equal(Number(active.version),Number(legacy.rules.version)+1);
+  const active=await services.admin.getTuning(admin.id);assert.equal(Number(active.version),Number(legacy.rules.version)+2);
   assert.deepEqual(active.physics,legacy.rules.physics);assert.deepEqual(active.rewardPolicy,legacy.rules.rewardPolicy);
   for(const row of legacy.rules.cars)assert.deepEqual(active.cars.find(car=>car.carId===row.carId),row);
-  assert.equal(active.cars.length,20);
+  assert.equal(active.cars.length,22);
   const old=await services.economy.resolveLoadout(owner.user.id,undefined,legacy.rules.version);assert.equal(old.carId,'panther-grand-touring');assert.equal(old.stats.topSpeed,182);
 });
 

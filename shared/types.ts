@@ -1,5 +1,5 @@
 /** Wire and simulation contracts. This module has no browser or server imports. */
-export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze', 'bmw-hybrid-v8', 'bmw-m4-gt4', 'amg-gt4', 'sls-amg-gt3', 'batmobile-1989', 'jesko-absolut', 'venom-f5', 'panther-grand-touring', 'honda-crv-rs', 'mitsubishi-pajero-sport', 'toyota-fortuner', 'toyota-innova-zenix'] as const;
+export const CAR_IDS = ['brz', 'veyron77', 'aventador', 'skyline', 'veloce', 'apex', 'cinder', 'kaze', 'bmw-hybrid-v8', 'bmw-m4-gt4', 'amg-gt4', 'sls-amg-gt3', 'batmobile-1989', 'jesko-absolut', 'venom-f5', 'panther-grand-touring', 'honda-crv-rs', 'mitsubishi-pajero-sport', 'toyota-fortuner', 'toyota-innova-zenix', 'batmobile-tumbler', 'knight-rider-kitt'] as const;
 export type CarId = typeof CAR_IDS[number];
 export const CIRCUIT_IDS = ['city', 'beach', 'glacier', 'drag-2km'] as const;
 export type CircuitId = typeof CIRCUIT_IDS[number];

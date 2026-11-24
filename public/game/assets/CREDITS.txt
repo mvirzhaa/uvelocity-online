@@ -125,3 +125,16 @@ retains the custom steel bumpers and recovery fittings shown in the photos.
 Drag Strip 2 KM is original procedural UVelocity geometry, including the
 straight pavement, start and finish gates, lane markings, distance signs,
 lighting and braking runout. No external track asset is included.
+
+
+UVelocity 1.6.0 — Iconic collection
+Batmobile Tumbler / The Dark Knight and Pontiac Knight Rider 1983 / KITT:
+original UVelocity reference-based game meshes authored in build-tumbler.cjs
+and build-kitt.cjs from the user's supplied images on 24 November 2026.
+These are not official studio or manufacturer assets, scans, CAD models, or
+geometry copied from another game. All 20 earlier GLBs remain unchanged.
+The eight-cell KITT scanner, six-wheel Tumbler animation, fitted procedural
+cockpits and individual audio profiles are original game code. Audio is
+procedural synthesis; no film dialogue, soundtrack or vehicle recording is used.
+The characters, vehicle names and associated marks identify the supplied
+references; no endorsement by their respective owners is asserted.

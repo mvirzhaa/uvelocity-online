@@ -87,7 +87,7 @@ try {
     const health=await http('/health');assert.equal(health.data.application,'UVelocity');assert.equal(health.data.database,'postgresql');assert.equal(health.data.ok,true);
     assert.equal(health.response.headers.get('x-powered-by'),null);
     assert.match(health.response.headers.get('content-security-policy')??'',/frame-ancestors 'self'/);
-    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,15);
+    const migrated=await application.pool.query('SELECT count(*)::int AS n FROM schema_migrations');assert.equal(migrated.rows[0].n,16);
     const db=await application.pool.query('SELECT version()');assert.match(db.rows[0].version,/PostgreSQL/);
   });
 
@@ -108,7 +108,7 @@ try {
   });
 
   await step('HTTP purchase headers and workshop loadout preserve owned rim paint',async()=>{
-    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,20);assert.equal(catalog.wheels.length,4);
+    catalog=(await http<Catalog>('/catalog')).data;assert.equal(catalog.cars.length,22);assert.equal(catalog.wheels.length,4);
     const wheel=catalog.wheels.find(item=>item.id==='six-spoke')!;assert(wheel);
     const payload={itemId:wheel.itemId,catalogVersion:wheel.catalogVersion},key=randomUUID();
     const purchase=await http('/shop/purchase',{actor:alice,method:'POST',body:payload,key});
@@ -217,12 +217,13 @@ try {
     }
   });
 
-  await step('four new HTTP purchases, paid appearances and category-restricted rooms race on all four circuits',async()=>{
-    const cases=[['honda-crv-rs','city'],['mitsubishi-pajero-sport','beach'],['toyota-fortuner','glacier'],['toyota-innova-zenix','drag-2km']] as const;
+  await step('six expansion HTTP purchases, paid appearances and category-restricted rooms race on all four circuits',async()=>{
+    const cases=[['honda-crv-rs','city'],['mitsubishi-pajero-sport','beach'],['toyota-fortuner','glacier'],['toyota-innova-zenix','drag-2km'],['batmobile-tumbler','drag-2km'],['knight-rider-kitt','city']] as const;
     const fresh=(await http<Catalog>('/catalog')).data;
-    const first=fresh.cars.findIndex(car=>car.id===cases[0][0]);assert.deepEqual(fresh.cars.slice(first,first+4).map(car=>car.id),cases.map(([id])=>id));
+    const first=fresh.cars.findIndex(car=>car.id===cases[0][0]);assert.deepEqual(fresh.cars.slice(first,first+4).map(car=>car.id),cases.slice(0,4).map(([id])=>id));
     for(const [id,circuit]of cases){
       const car=fresh.cars.find(item=>item.id===id)!;assert(car.enabled&&car.locked&&car.categoryId);
+      if(id==='batmobile-tumbler'||id==='knight-rider-kitt'){assert.equal(car.categoryId,'koleksi-ikonik');assert.equal(car.finish,id==='batmobile-tumbler'?'matte':'gloss');}
       const before=(await http<Profile>('/profile',{actor:bob})).data;
       const funds=BigInt(car.price)+50000n;
       await http('/admin/topups',{actor:operator,method:'POST',key:randomUUID(),body:{userId:bob.id,amount:String(funds),reference:'adapter-family-'+id+'-'+suffix,reason:'Purchase and paid appearance integration fixture'}});
@@ -270,7 +271,7 @@ try {
     await waitFor(async()=>{const row=await application.pool.query('SELECT status FROM races WHERE id=$1',[observer.snapshot!.raceId]);return row.rows[0]?.status==='finished';},'revoked player DNF persistence');
   });
 
-  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all20 GLB assets',async()=>{
+  if(staticArtifacts)await step('production HTTP routes serve React shell, game iframe, branding and all22 GLB assets',async()=>{
     const shell=await fetch(origin+'/');assert.equal(shell.status,200);assert.match(shell.headers.get('content-type')??'',/text\/html/);assert.match(await shell.text(),/UVelocity/);
     const frame=await fetch(origin+'/game/game.html');assert.equal(frame.status,200);const frameHtml=await frame.text();assert.match(frameHtml,/game-api\.js/);
     assert(!/\son[a-z]+\s*=/i.test(frameHtml),'Production game HTML must bind events in external scripts; inline handlers are blocked by its CSP');

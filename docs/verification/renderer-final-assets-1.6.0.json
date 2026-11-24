@@ -1,0 +1,173 @@
+{
+  "verification": "CPU geometry + real Canvas 2D + DOM; no WebGL/GPU rendering",
+  "passed": [
+    "SHA-256 integrity of the twenty pre-existing GLBs and unchanged city/biome/police/fallback modules, plus reviewed new reference vehicles.",
+    "3D cyan workshop: 98 merged draws / 28820 triangles, two articulated service arms outside the clear 6.2 \u00d7 8.2 m bay, floor-mounted cyan display rings, finite PBR geometry, orbit visibility, quality and owned-resource disposal.",
+    "Showroom front/side/rear/cycle, explicit-only quality changes, dusk/night, credits and asset-ready API verified.",
+    "Iconic collection: distinct final GLBs, six separately fitted Tumbler wheels with rear rolling radii, and an isolated bidirectional eight-cell KITT scanner.",
+    "Selected cars: dedicated sound profiles, extended-model camera framing, three fitted wheel sets, finite geometry, stock envelope, original geometry and visibility restoration.",
+    "Five vinyl patterns on every loaded car: paint-only clipping, every vertex within 1.52 mm of its source triangle, normals, one draw, material-group exclusion and clean removal.",
+    "Selected fitted procedural cockpits including the higher right-side family vehicle seats: finite PBR geometry, driver seat and wheel in camera frustum, clear windshield rays at three aspect ratios, correct steering direction/clamp, source nodes untouched and owned geometry released.",
+    "Selected stock rims: legacy factory appearance, explicit same-default RGB paint, exact Veyron triangle material isolation, no tire/brake/body/texture mutations, per-car clone isolation, custom/stock/factory restoration and owned-resource disposal.",
+    "Dashboard camera: actual driver-eye transform, live snapshot steering rather than keyboard animation, 4-mode keyboard/touch/API cycle, near clip and exterior restoration, no hidden rival cars.",
+    "Touch controls: independent gas/steer/nitro, two fingers per pedal, pointerup/cancel/lost capture, capture-failure fallback, complete pause/hide/blur reset, blocked paused/hidden presses, stale release isolation, brake and pressed accessibility state.",
+    "Online renderer: supplied state only, normalized input, no local physics/laps/results, stock cameras/effects, visibility suspension, stale snapshot guard, clean exit.",
+    "Room prayer pause: held/external/reset inputs cleared and blocked, wheels/particles/world animation and driving audio frozen, scene/model identity retained, paused and resume-countdown frame barriers valid, server-only resume and fresh-input restart.",
+    "Loading barrier: no ack without applied snapshot or visible scene frame, server-only countdown, motion stopped while loading, frame wait aborted on exit, stale slow model completion cannot reopen arena.",
+    "Finished cars: neutral held/external/reset/nitro controls, official racing-phase coasting snapshots, silent prayer freeze, immediate result phase with unfinished bots, separate 3-second monotonic visual/wheel/HUD/audio rollout, repeated result snapshots never restart, official positions/speed/laps/times/results remain unchanged.",
+    "2km drag world: independent timing gantries exactly2000m apart,45m/15-lane fair strip,700m braking pavement,148 mesh draws/50898 instance triangles, clear driving corridor, open map, forced one journey, quality/day settings, nonwrapping authoritative and visual finish rollout, circuit restoration and owned-resource disposal.",
+    "Frozen loadout/online appearance: missing stock flag preserves factory, same-RGB flag-only changes repaint local/remote stock rims, repeated snapshots reuse materials, default restoration and interior camera survive model reconstruction.",
+    "Iconic cars in an online drag snapshot: all six Tumbler tyres roll equal road distance, only front pivots steer, dashboard restores every wheel, remote KITT scanner animates and freezes with the shared prayer pause.",
+    "All three existing worlds switch through the public API."
+  ],
+  "expansion": null,
+  "iconicVehicles": {
+    "batmobile-tumbler": {
+      "dimensions": [
+        2.8789199719429015,
+        1.8024617910385132,
+        4.550840669870377
+      ],
+      "meshes": 42,
+      "triangles": 134836,
+      "syntheticAudio": true,
+      "wheelCenters": [
+        [
+          1.056,
+          0.5,
+          1.65
+        ],
+        [
+          -1.056,
+          0.5,
+          1.65
+        ],
+        [
+          1.188,
+          0.7,
+          -1.53
+        ],
+        [
+          -1.188,
+          0.7,
+          -1.53
+        ],
+        [
+          0.6688000000000001,
+          0.7,
+          -1.53
+        ],
+        [
+          -0.6688000000000001,
+          0.7,
+          -1.53
+        ]
+      ]
+    },
+    "knight-rider-kitt": {
+      "dimensions": [
+        2.007999897003174,
+        1.2881992921829224,
+        4.925730466842651
+      ],
+      "meshes": 47,
+      "triangles": 142129,
+      "syntheticAudio": true,
+      "scanner": {
+        "cells": 8,
+        "bidirectional": true,
+        "instanceIsolated": true,
+        "noFrameAllocations": true
+      }
+    }
+  },
+  "fittedModels": [
+    "batmobile-tumbler",
+    "knight-rider-kitt"
+  ],
+  "cockpits": [
+    {
+      "id": "batmobile-tumbler",
+      "draws": 42,
+      "triangles": 5716
+    },
+    {
+      "id": "knight-rider-kitt",
+      "draws": 42,
+      "triangles": 5716
+    }
+  ],
+  "stockRimPaint": [
+    {
+      "id": "batmobile-tumbler",
+      "paintedNodes": 6,
+      "paintMaterials": 1,
+      "composite": []
+    },
+    {
+      "id": "knight-rider-kitt",
+      "paintedNodes": 4,
+      "paintMaterials": 1,
+      "composite": []
+    }
+  ],
+  "stripes": [
+    {
+      "id": "batmobile-tumbler",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 126
+        },
+        {
+          "id": "offset",
+          "triangles": 128
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 155
+        },
+        {
+          "id": "circuit",
+          "triangles": 261
+        },
+        {
+          "id": "heritage",
+          "triangles": 291
+        }
+      ]
+    },
+    {
+      "id": "knight-rider-kitt",
+      "patterns": [
+        {
+          "id": "twin-racing",
+          "triangles": 9529
+        },
+        {
+          "id": "offset",
+          "triangles": 7447
+        },
+        {
+          "id": "side-sweep",
+          "triangles": 5836
+        },
+        {
+          "id": "circuit",
+          "triangles": 7004
+        },
+        {
+          "id": "heritage",
+          "triangles": 14018
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "runContext": {
+    "version": "1.6.0",
+    "kittAssetSha256": "e18e1d5dcf9a14f7cb7fc6947168ac6b080d68d779e7ef1e603d706bf52eebfb",
+    "note": "Final Tumbler and KITT bytes after KITT winding correction."
+  }
+}

@@ -10,13 +10,15 @@ type ThumbnailCar=Pick<CatalogItem,'id'|'name'|'thumbnail'>;
 const errorMessage=(error:unknown)=>error instanceof Error?error.message:'Foto kendaraan belum berhasil diperbarui.';
 const sizeLabel=(bytes:number)=>bytes>=1024*1024?`${(bytes/1024/1024).toFixed(1).replace('.0','')} MB`:`${Math.ceil(bytes/1024)} KB`;
 const allowedTypes=new Set(['image/jpeg','image/png','image/webp']);
-// User-supplied reference photos are bundled only for the four new vehicles.
+// User-supplied reference photos are bundled for the added collection vehicles.
 // Admin-uploaded images retain priority and their existing URL validation.
 const referencePhotos:Readonly<Record<string,string>>={
   'honda-crv-rs':'./vehicle-photos/honda-crv-rs.png',
   'mitsubishi-pajero-sport':'./vehicle-photos/mitsubishi-pajero-sport.png',
   'toyota-fortuner':'./vehicle-photos/toyota-fortuner.png',
   'toyota-innova-zenix':'./vehicle-photos/toyota-innova-zenix.png',
+  'batmobile-tumbler':'./vehicle-photos/batmobile-tumbler.png',
+  'knight-rider-kitt':'./vehicle-photos/knight-rider-kitt.png',
 };
 function fileType(file:File){
   if(file.type)return allowedTypes.has(file.type)?file.type:null;
